@@ -1,6 +1,7 @@
 package com.enterprise.automation.reporting;
 
 import io.qameta.allure.Allure;
+import io.qameta.allure.AttachmentOptions;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 
@@ -35,22 +36,22 @@ public final class Report {
     // Attachments go to the current step (or the test when no step is open); null is written as empty
 
     public static void attachText(String name, String text) {
-        Allure.addAttachment(name, "text/plain", text == null ? "" : text, ".txt");
+        Allure.attachment(name, "text/plain", text == null ? "" : text, AttachmentOptions.withFileExtension(".txt"));
     }
 
     public static void attachJson(String name, String json) {
-        Allure.addAttachment(name, "application/json", json == null ? "" : json, ".json");
+        Allure.attachment(name, "application/json", json == null ? "" : json, AttachmentOptions.withFileExtension(".json"));
     }
 
     public static void attachHtml(String name, String html) {
-        Allure.addAttachment(name, "text/html", new ByteArrayInputStream(
-                (html == null ? "" : html).getBytes(StandardCharsets.UTF_8)), ".html");
+        Allure.attachment(name, "text/html", new ByteArrayInputStream(
+                (html == null ? "" : html).getBytes(StandardCharsets.UTF_8)), AttachmentOptions.withFileExtension(".html"));
     }
 
     public static void attachPng(String name, byte[] png) {
         // No screenshot could be taken (browser gone): nothing to attach
         if (png != null) {
-            Allure.addAttachment(name, "image/png", new ByteArrayInputStream(png), ".png");
+            Allure.attachment(name, "image/png", new ByteArrayInputStream(png), AttachmentOptions.withFileExtension(".png"));
         }
     }
 }

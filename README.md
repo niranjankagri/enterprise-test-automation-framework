@@ -47,7 +47,7 @@ Layers depend downwards only; tests contain no Selenium, HTTP or SQL. Full descr
 | Assertions | AssertJ |
 | Test data | Datafaker, JSON and CSV files |
 | Logging | SLF4J + Logback (per-thread, per-test context) |
-| Reporting | Allure 2 |
+| Reporting | Allure 3 (allure-testng) |
 | Containers | Docker, docker compose, Selenium Grid (hub + Chrome/Firefox/Edge nodes) |
 | CI/CD | GitHub Actions, Dependabot, dependency review, Checkstyle |
 

@@ -55,7 +55,7 @@ A production-style test automation platform for a web application that has a **U
 | Assertions | AssertJ |
 | Test data | Datafaker, JSON, CSV |
 | Logging | SLF4J + Logback |
-| Reporting | Allure 2 |
+| Reporting | Allure 3 (allure-testng) |
 | Containers / CI | Docker, docker compose, Selenium Grid, GitHub Actions, Dependabot |
 
 ## 2. Quick start
@@ -539,7 +539,7 @@ SUITE=regression BROWSER=firefox THREADS=4 docker compose -f docker/docker-compo
 | `run-suite.yml` | reusable | one suite on Java 17 with Maven cache; uploads results even when tests fail |
 | `allure-report.yml` | reusable | merges all `results-*` artifacts into one Allure report artifact |
 
-Failed tests fail the job; evidence is uploaded with `if: always()`. Artifacts: `results-<run>` (Allure results, screenshots, logs, metadata, Surefire reports; 14 days), `allure-report` (30 days), `demo-app-jar` (7 days). Dependabot opens grouped weekly update PRs for Maven and Actions. Details: [ci-cd.md](ci-cd.md).
+Failed tests fail the job; evidence is uploaded with `if: always()`. Artifacts: `results-<run>` (Allure results, screenshots, logs, metadata, Surefire reports; 14 days), `allure-report` (30 days), `demo-app-jar` (7 days). Dependabot opens grouped weekly update PRs for Maven and Actions (Surefire is held on 3.5.x: 3.6 drops TestNG suite files). Details: [ci-cd.md](ci-cd.md).
 
 ## 19. Quality gates and security
 

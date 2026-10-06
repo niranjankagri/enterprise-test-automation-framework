@@ -55,7 +55,7 @@ public class ReportEvidenceListener implements IInvokedMethodListener, ITestList
             return;
         }
         // Data-driven parameters such as a "password" column must not appear in the report
-        Allure.getLifecycle().updateTestCase(testCase -> testCase.getParameters().stream()
+        Allure.getLifecycle().updateTest(testCase -> testCase.getParameters().stream()
                 .filter(p -> ParameterMasking.isSecret(p.getName()))
                 .forEach(p -> p.setValue("****")));
         // Browser evidence only for failed UI tests (API/unit tests have no browser)
