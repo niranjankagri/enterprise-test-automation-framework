@@ -5,6 +5,7 @@ import static com.enterprise.automation.api.ApiAssertions.expectStatus;
 import static com.enterprise.automation.api.ApiAssertions.matchesSchema;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.enterprise.automation.api.ApiClient;
 import com.enterprise.automation.api.ApiSession;
 import com.enterprise.automation.api.JsonMapper;
 import com.enterprise.automation.api.models.ErrorResponse;
@@ -53,6 +54,16 @@ public class AuthApiTest extends BaseApiTest {
         // Both problems reported in one response
         assertThat(error.fieldErrors()).containsEntry("username", "Username is required")
                 .containsEntry("password", "Password is required");
+    }
+
+    public void theClientsRequestIdIsUsedForCorrelation() {
+        // ApiClient sends an X-Request-Id with every call; the application logs and returns it
+        Response traced = ApiClient.anonymous().withRequestId("trace-auth-0001").get("/customers");
+        // An id that is not a safe token is not echoed back: the application makes its own
+        Response unsafe = ApiClient.anonymous().withRequestId("<script>alert(1)</script>").get("/customers");
+
+        assertThat(traced.getHeader(ApiClient.REQUEST_ID)).isEqualTo("trace-auth-0001");
+        assertThat(unsafe.getHeader(ApiClient.REQUEST_ID)).matches("[0-9a-f-]{36}");
     }
 
     public void requestsWithoutTokenGet401() {

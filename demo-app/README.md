@@ -23,7 +23,7 @@ Accounts: `admin` (role ADMIN, full access) and `viewer` (role VIEWER, read-only
 
 ## API
 
-All endpoints except login need `Authorization: Bearer <token>`. Errors share one shape: `{status, error, message, path, timestamp, fieldErrors?}`. Every response has an `X-Request-Id` header.
+All endpoints except login need `Authorization: Bearer <token>`. Errors share one shape: `{status, error, message, path, timestamp, fieldErrors?}`. Every response has an `X-Request-Id` header: the client's own (letters, digits, dashes, at most 64) or a new UUID.
 
 | Method | Path | Role | Notes |
 |---|---|---|---|

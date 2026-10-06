@@ -8,6 +8,7 @@ import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.net.URI;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * The HTTP layer every service uses: base URL, JSON, bearer token, logging.
@@ -18,6 +19,9 @@ import java.util.Map;
  */
 public final class ApiClient {
 
+    /** Header carrying the correlation id of every call. */
+    public static final String REQUEST_ID = "X-Request-Id";
+
     // Stateless filters, shared by all clients and threads
     private static final ApiLoggingFilter LOGGING = new ApiLoggingFilter();
     private static final ReportingApiFilter REPORTING = new ReportingApiFilter();
@@ -26,20 +30,28 @@ public final class ApiClient {
     private final URI baseUri;
     // Bearer token, or null for anonymous calls
     private final String token;
+    // Fixed correlation id, or null for a new one per call (the normal case)
+    private final String requestId;
 
-    private ApiClient(URI baseUri, String token) {
+    private ApiClient(URI baseUri, String token, String requestId) {
         this.baseUri = baseUri;
         this.token = token;
+        this.requestId = requestId;
     }
 
     /** Anonymous client for the configured API base URL. */
     public static ApiClient anonymous() {
-        return new ApiClient(ConfigManager.config().apiBaseUrl(), null);
+        return new ApiClient(ConfigManager.config().apiBaseUrl(), null, null);
     }
 
     /** Same base URL, authenticated with {@code bearerToken}. */
     public ApiClient withToken(String bearerToken) {
-        return new ApiClient(baseUri, bearerToken);
+        return new ApiClient(baseUri, bearerToken, requestId);
+    }
+
+    /** Same client, sending {@code id} as the correlation id of every call (to trace a call by a known id). */
+    public ApiClient withRequestId(String id) {
+        return new ApiClient(baseUri, token, id);
     }
 
     // One method per HTTP verb; bodies are any object (serialized to JSON) or a ready JSON string
@@ -86,6 +98,9 @@ public final class ApiClient {
                 // Send and expect JSON
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
+                // Correlation id: the application logs and returns it, our log and report show it, so one
+                // request can be followed from test to server even when the call fails without a response
+                .header(REQUEST_ID, requestId != null ? requestId : UUID.randomUUID().toString())
                 // Report step + attachments first, then the log line (the report filter wraps the logging one)
                 .filter(REPORTING)
                 .filter(LOGGING);

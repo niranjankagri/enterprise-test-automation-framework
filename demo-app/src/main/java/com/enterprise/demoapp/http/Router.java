@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
  * Minimal REST router for the JDK HTTP server.
  *
  * <p>Routes are declared as {@code GET /api/customers/{id}} with an access level. Every response
- * is JSON and carries an {@code X-Request-Id} header; every error has the same shape:
+ * is JSON and carries an {@code X-Request-Id} header (the client's, if it sent one); every error has the same shape:
  * {@code {status, error, message, path, timestamp, fieldErrors}}.
  */
 public final class Router implements HttpHandler {
@@ -43,6 +43,8 @@ public final class Router implements HttpHandler {
         boolean authenticate(String token, Request request);
     }
 
+    // What a client-supplied X-Request-Id may look like
+    private static final Pattern SAFE_ID = Pattern.compile("[A-Za-z0-9-]{1,64}");
     // Logger for unexpected server errors (500s)
     private static final Logger LOG = LoggerFactory.getLogger(Router.class);
     // Finds "{name}" placeholders in a route template such as /api/customers/{id}
@@ -70,9 +72,9 @@ public final class Router implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        // A unique id per request: returned as a header and written to the log, so a client-side
-        // failure can be matched with the server-side log line
-        String requestId = UUID.randomUUID().toString();
+        // An id per request: returned as a header and written to the log, so a client-side failure
+        // can be matched with the server-side log line. A client may send its own (correlation id).
+        String requestId = requestId(exchange.getRequestHeaders().getFirst("X-Request-Id"));
         exchange.getResponseHeaders().set("X-Request-Id", requestId);
         // Only the path is used for routing; the query string is read later by Request
         String path = exchange.getRequestURI().getPath();
@@ -94,6 +96,12 @@ public final class Router implements HttpHandler {
             // Always release the connection, whatever happened
             exchange.close();
         }
+    }
+
+    /** The client's id if it is a safe token (letters, digits, dashes; at most 64), otherwise a new UUID. */
+    private static String requestId(String fromClient) {
+        // Never echo arbitrary text into headers and logs
+        return fromClient != null && SAFE_ID.matcher(fromClient).matches() ? fromClient : UUID.randomUUID().toString();
     }
 
     /** Finds the route for {@code path} and the request method, checks access and runs it. */

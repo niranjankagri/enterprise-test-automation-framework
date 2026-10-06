@@ -12,7 +12,8 @@ import java.util.stream.Collectors;
 
 /**
  * Puts every API call into the report as a step ("POST /api/customers -> 201") with the request
- * and the response attached: method, URL, headers, body.
+ * and the response attached: method, URL, headers, body, status, duration and the correlation id
+ * ({@code X-Request-Id}, sent by {@link ApiClient} and also written to the application's log).
  *
  * <p>Written here instead of using Allure's REST Assured filter because that one attaches
  * {@code Authorization} headers and password fields as they are. Here everything goes through
@@ -31,8 +32,10 @@ public final class ReportingApiFilter implements Filter {
             // Attach the request before sending, so it is in the report even if the call throws
             Report.attachText("Request", describeRequest(request));
             holder[0] = context.next(request, responseSpec);
+            // Summary first (status, duration, correlation id), then headers and body
             Report.attachText("Response " + holder[0].getStatusCode(), describeResponse(holder[0]));
-            Report.log("-> " + holder[0].getStatusCode() + " in " + holder[0].getTime() + " ms");
+            Report.log("-> " + holder[0].getStatusCode() + " in " + holder[0].getTime() + " ms [X-Request-Id "
+                    + holder[0].getHeader(ApiClient.REQUEST_ID) + "]");
         });
         return holder[0];
     }
@@ -46,12 +49,13 @@ public final class ReportingApiFilter implements Filter {
                 + (body == null ? "" : "\n\n" + SecretMasker.mask(String.valueOf(body)));
     }
 
-    /** Status line, headers and body of a response as readable text, secrets masked. */
+    /** Status line, duration, request id, headers and body of a response as readable text, secrets masked. */
     private static String describeResponse(Response response) {
         String headers = response.getHeaders().asList().stream().map(ReportingApiFilter::header)
                 .collect(Collectors.joining("\n"));
         String body = response.asString();
-        return response.getStatusLine() + "\n" + headers + (body.isEmpty() ? "" : "\n\n" + SecretMasker.mask(body));
+        return response.getStatusLine() + "\nDuration: " + response.getTime() + " ms\nRequest ID: "
+                + response.getHeader(ApiClient.REQUEST_ID) + "\n\n" + headers +(body.isEmpty() ? "" : "\n\n" + SecretMasker.mask(body));
     }
 
     /** "Name: value"; Authorization keeps "Bearer ****", other secret headers (Cookie, X-Api-Key) become "****". */

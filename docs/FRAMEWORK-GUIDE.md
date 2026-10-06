@@ -155,7 +155,7 @@ Every interactive element has a `data-testid`. Every signed-in page sets `body[d
 
 ### 4.3 REST API
 
-All endpoints except login need `Authorization: Bearer <token>`. Errors always have the shape `{status, error, message, path, timestamp, fieldErrors?}`, and every response carries an `X-Request-Id` header.
+All endpoints except login need `Authorization: Bearer <token>`. Errors always have the shape `{status, error, message, path, timestamp, fieldErrors?}`, and every response carries an `X-Request-Id` header (the client's correlation id if it sent a safe one, otherwise a new UUID).
 
 | Method | Path | Who | Behaviour |
 |---|---|---|---|
@@ -492,7 +492,7 @@ Only transient infrastructure failures are retried, at most `retry.count` times:
   The test name comes from the MDC (`TestLogContextListener`; set-up/clean-up methods are tagged with their own name, e.g. `CustomerApiTest.cleanUp`), the component from the logger's package (`LogComponent`: UI, API, DB, DRIVER, CONFIG, DATA, TEST, APP, LIB), so parallel logs can be filtered per test and per layer.
 - Per test: `START` (with parameters, secrets masked), `PASS` / `FAIL` / `SKIP` with duration.
 - Per failure: a `FAILURE DIAGNOSTICS` block (test, parameters, groups, thread, duration, environment, browser, retry candidate or not, cause).
-- Per API call: one line with method, path, status and duration; bodies at DEBUG with secrets masked; the application's `X-Request-Id` is logged to correlate with its own log.
+- Per API call: one line with method, path, status, duration and correlation id; bodies at DEBUG with secrets masked. `ApiClient` sends a new `X-Request-Id` with every call (`withRequestId(...)` fixes it); the application logs and returns the same id, so a call can be followed from the test into the application's log, even when it fails without a response.
 - At start: the configuration summary and run metadata; at the end: the suite's result counts.
 
 ## 16. Reporting

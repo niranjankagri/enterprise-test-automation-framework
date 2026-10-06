@@ -20,7 +20,7 @@ Requires Node.js (for `npx`) and Java. CI publishes the generated report as a bu
 | Which environment / browser? | "Environment" panel: environment, base URL, API URL, browser, headless, execution, parallelism, database |
 | Which build? | "Environment": framework version, Git commit, build number, build URL; "Executor": local run or CI build with a link |
 | Which test data? | parameters of data-driven tests; typed values in UI steps (passwords as `****`); request bodies |
-| Which API request and response? | a step per call (`POST /api/customers`) with "Request" and "Response 201" attachments: method, URL, headers, body |
+| Which API request and response? | a step per call (`POST /api/customers`) with "Request" and "Response 201" attachments: method, URL, headers, body, status, duration and the correlation id (`X-Request-Id`, the same id the application logs) |
 | Which database rows? | a step per query (`SQL: SELECT ...`) with parameters and rows |
 | Which screenshot? | "Screenshot at failure", plus "Page URL" and "Page source"; also saved in `automation/target/screenshots` |
 | Which log? | "Test log": only this test's log lines, even in parallel runs |
