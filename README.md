@@ -2,7 +2,7 @@
 
 A production-style QA automation framework: UI, API and database testing with Java 17, Selenium, TestNG and REST Assured.
 
-> **Status:** Milestones 1–7 of 10 (foundation, configuration and driver platform, UI automation, test data, API automation, database and integration, parallel execution and resilience) are done. The roadmap is below; this README grows with each milestone.
+> **Status:** Milestones 1–7 of 10 (foundation, configuration and driver platform, UI automation, test data, API automation, database and integration, parallel execution and resilience, reporting) are done. The roadmap is below; this README grows with each milestone.
 
 Its companion repository, [selenium-java-framework](https://github.com/niranjankagri/selenium-java-framework), is an interview-focused Selenium + Java + TestNG lab. This repository holds the production-style work that lab leaves out.
 
@@ -181,6 +181,16 @@ Test groups so far: `smoke` (fast, read-only), `sanity` (key happy paths and rol
 - **Logs**: every line carries thread and test name (`automation/target/logs/automation.log`).
 - **Execution metadata**: `automation/target/execution-metadata.json` records environment, URLs, browser, parallelism, Java, OS, framework version, Git commit, build number and the result counts.
 
+## Reporting
+
+Allure report with no reporting code in the tests: every UI action, API call (request/response attached) and SQL query is a step; failed UI tests get a screenshot, the page URL and the page source; every test gets its own log; the Environment panel shows environment, browser, Git commit and build number; failures are sorted into product defects, test defects, wait timeouts and infrastructure problems. Secrets are masked everywhere.
+
+```bash
+npx allure-commandline serve automation/target/allure-results
+```
+
+Details: [docs/reporting.md](docs/reporting.md).
+
 ## Running the tests
 
 Requirements: JDK 17 or newer, Maven 3.9+, Chrome or Edge (Selenium Manager can download Firefox).
@@ -205,7 +215,7 @@ Logs go to the console (INFO) and to `automation/target/logs/automation.log` (DE
 | 5 | API automation platform | ✅ done |
 | 6 | Database & end-to-end integration | ✅ done |
 | 7 | Execution engine, parallelism & resilience | ✅ done |
-| 8 | Observability & reporting | planned |
+| 8 | Observability & reporting | ✅ done |
 | 9 | Docker, Selenium Grid, cloud & CI/CD | planned |
 | 10 | Quality engineering, documentation & portfolio polish | planned |
 

@@ -41,7 +41,6 @@
         <slf4j.version>2.0.17</slf4j.version>
         <logback.version>1.6.5</logback.version>
         <allure.version>2.35.5</allure.version>
-        <aspectj.version>1.9.25</aspectj.version>
         <datafaker.version>2.7.0</datafaker.version>
 
         <!-- Application under test -->
@@ -137,6 +136,8 @@
                         <compilerArgs>
                             <!-- Warnings are cheap to fix early and expensive to fix later -->
                             <arg>-Xlint:all,-processing,-options</arg>
+                            <!-- Keep parameter names: reports show "password" instead of "arg2", so it can be masked -->
+                            <arg>-parameters</arg>
                         </compilerArgs>
                     </configuration>
                 </plugin>

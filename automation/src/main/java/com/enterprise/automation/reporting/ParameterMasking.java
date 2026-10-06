@@ -1,0 +1,36 @@
+package com.enterprise.automation.reporting;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.util.Locale;
+
+/**
+ * Masks test parameters that hold secrets, by parameter name ({@code password}, {@code token},
+ * {@code secret}...). Needs the {@code -parameters} compiler flag (set in the parent POM), which
+ * keeps real parameter names in the bytecode.
+ */
+public final class ParameterMasking {
+
+    private ParameterMasking() {
+    }
+
+    public static boolean isSecret(String parameterName) {
+        String name = parameterName.toLowerCase(Locale.ROOT);
+        return name.contains("password") || name.contains("token") || name.contains("secret") || name.contains("apikey");
+    }
+
+    /** A copy of {@code values} with the secret parameters of {@code method} replaced by {@code ****}. */
+    public static Object[] mask(Method method, Object[] values) {
+        if (values == null) {
+            return new Object[0];
+        }
+        Object[] masked = values.clone();
+        Parameter[] parameters = method.getParameters();
+        for (int i = 0; i < masked.length && i < parameters.length; i++) {
+            if (isSecret(parameters[i].getName()) && masked[i] != null) {
+                masked[i] = "****";
+            }
+        }
+        return masked;
+    }
+}

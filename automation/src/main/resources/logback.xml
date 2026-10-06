@@ -27,8 +27,13 @@
         </encoder>
     </appender>
 
+    <!-- Per-test log for the report (Allure attachment "Test log"), our own code only -->
+    <appender name="TEST_LOG" class="com.enterprise.automation.reporting.TestLogAppender"/>
+
     <!-- Our own code: full detail -->
-    <logger name="com.enterprise" level="DEBUG"/>
+    <logger name="com.enterprise" level="DEBUG">
+        <appender-ref ref="TEST_LOG"/>
+    </logger>
 
     <!-- Third-party libraries are noisy at DEBUG; keep them at WARN -->
     <root level="WARN">

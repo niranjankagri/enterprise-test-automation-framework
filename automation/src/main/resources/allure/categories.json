@@ -1,0 +1,28 @@
+[
+  {
+    "name": "Infrastructure problems",
+    "description": "Browser, Grid or network failed: not a result about the application",
+    "matchedStatuses": ["broken", "failed", "skipped"],
+    "messageRegex": "(?s).*(SessionNotCreated|NoSuchSession|UnreachableBrowser|Connection refused|connection reset|chrome not reachable|Could not start a new session).*"
+  },
+  {
+    "name": "Application too slow or UI changed (wait timeouts)",
+    "description": "An explicit wait expired: the expected state never appeared",
+    "matchedStatuses": ["broken", "failed"],
+    "traceRegex": "(?s).*org\\.openqa\\.selenium\\.TimeoutException.*"
+  },
+  {
+    "name": "Product defects",
+    "description": "An assertion failed: the application did not behave as expected",
+    "matchedStatuses": ["failed"]
+  },
+  {
+    "name": "Test defects",
+    "description": "The test or framework itself threw an unexpected exception",
+    "matchedStatuses": ["broken"]
+  },
+  {
+    "name": "Skipped (no database access, retried attempts)",
+    "matchedStatuses": ["skipped"]
+  }
+]

@@ -1,5 +1,6 @@
 package com.enterprise.automation.listeners;
 
+import com.enterprise.automation.reporting.ParameterMasking;
 import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,9 +48,11 @@ public class TestLogContextListener implements ITestListener {
         return result.getTestClass().getRealClass().getSimpleName() + "." + result.getMethod().getMethodName();
     }
 
+    /** Test parameters for logs, with secret ones (e.g. a {@code password} column) masked. */
     static String parameters(ITestResult result) {
-        Object[] parameters = result.getParameters();
-        return parameters == null || parameters.length == 0 ? "" : " " + Arrays.toString(parameters);
+        Object[] parameters = ParameterMasking.mask(
+                result.getMethod().getConstructorOrMethod().getMethod(), result.getParameters());
+        return parameters.length == 0 ? "" : " " + Arrays.toString(parameters);
     }
 
     static long duration(ITestResult result) {

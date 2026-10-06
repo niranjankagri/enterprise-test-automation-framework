@@ -19,6 +19,7 @@ import java.util.Map;
 public final class ApiClient {
 
     private static final ApiLoggingFilter LOGGING = new ApiLoggingFilter();
+    private static final ReportingApiFilter REPORTING = new ReportingApiFilter();
 
     private final URI baseUri;
     private final String token;
@@ -76,6 +77,7 @@ public final class ApiClient {
                 .baseUri(baseUri.toString())
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
+                .filter(REPORTING)
                 .filter(LOGGING);
         if (token != null) {
             spec.header("Authorization", "Bearer " + token);

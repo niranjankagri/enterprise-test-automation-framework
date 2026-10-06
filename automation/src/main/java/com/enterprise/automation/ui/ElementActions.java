@@ -1,5 +1,6 @@
 package com.enterprise.automation.ui;
 
+import com.enterprise.automation.reporting.Report;
 import com.enterprise.automation.utils.WaitUtils;
 import java.util.List;
 import org.openqa.selenium.By;
@@ -30,18 +31,30 @@ public final class ElementActions {
 
     public void click(By locator) {
         LOG.debug("click {}", locator);
-        // Inside the wait: if the element re-renders between "clickable" and "click", try again
-        wait.until(d -> {
-            wait.clickable(locator).click();
-            return true;
-        }, "click " + locator);
+        Report.step("Click " + describe(locator), () -> {
+            // Inside the wait: if the element re-renders between "clickable" and "click", try again
+            wait.until(d -> {
+                wait.clickable(locator).click();
+                return true;
+            }, "click " + locator);
+        });
     }
 
     public void type(By locator, String text) {
         LOG.debug("type into {}", locator);
-        WebElement element = wait.visible(locator);
-        element.clear();
-        element.sendKeys(text);
+        String shown = describe(locator).toLowerCase(java.util.Locale.ROOT).contains("password") ? "****" : text;
+        Report.step("Type '" + shown + "' into " + describe(locator), () -> {
+            WebElement element = wait.visible(locator);
+            element.clear();
+            element.sendKeys(text);
+        });
+    }
+
+    /** "customer-search" for a test id locator, the locator itself otherwise: short step names. */
+    private static String describe(By locator) {
+        String text = locator.toString();
+        int start = text.indexOf("data-testid='");
+        return start < 0 ? text : text.substring(start + 13, text.indexOf('\'', start + 13));
     }
 
     public String text(By locator) {
@@ -54,7 +67,8 @@ public final class ElementActions {
 
     public void selectByVisibleText(By locator, String text) {
         LOG.debug("select '{}' in {}", text, locator);
-        new Select(wait.visible(locator)).selectByVisibleText(text);
+        Report.step("Select '" + text + "' in " + describe(locator),
+                () -> new Select(wait.visible(locator)).selectByVisibleText(text));
     }
 
     /** Selects the first option whose text contains {@code fragment}. */

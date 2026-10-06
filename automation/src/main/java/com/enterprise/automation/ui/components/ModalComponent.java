@@ -1,5 +1,6 @@
 package com.enterprise.automation.ui.components;
 
+import com.enterprise.automation.reporting.Report;
 import com.enterprise.automation.ui.BaseComponent;
 import com.enterprise.automation.ui.TestId;
 import org.openqa.selenium.By;
@@ -49,15 +50,17 @@ public class ModalComponent extends BaseComponent {
 
     /** Sets the field labelled {@code label}: types into inputs, picks the visible text in selects. */
     public ModalComponent fill(String label, String value) {
-        WebElement field = field(label);
-        if ("select".equals(field.getTagName())) {
-            new Select(field).selectByVisibleText(value);
-        } else {
-            field.clear();
-            if (value != null && !value.isEmpty()) {
-                field.sendKeys(value);
+        Report.step("Fill '" + label + "' with '" + value + "'", () -> {
+            WebElement field = field(label);
+            if ("select".equals(field.getTagName())) {
+                new Select(field).selectByVisibleText(value);
+            } else {
+                field.clear();
+                if (value != null && !value.isEmpty()) {
+                    field.sendKeys(value);
+                }
             }
-        }
+        });
         return this;
     }
 

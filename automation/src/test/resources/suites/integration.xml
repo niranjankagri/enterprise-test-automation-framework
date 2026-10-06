@@ -9,6 +9,7 @@
         <listener class-name="com.enterprise.automation.listeners.RetryTransformer"/>
         <listener class-name="com.enterprise.automation.listeners.TestLogContextListener"/>
         <listener class-name="com.enterprise.automation.listeners.FailureDiagnosticsListener"/>
+        <listener class-name="com.enterprise.automation.listeners.ReportEvidenceListener"/>
         <listener class-name="com.enterprise.automation.listeners.ExecutionMetadataListener"/>
         <listener class-name="com.enterprise.automation.tests.base.DemoAppLifecycle"/>
     </listeners>

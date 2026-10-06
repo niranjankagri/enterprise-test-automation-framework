@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import com.enterprise.automation.reporting.Report;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,8 +33,25 @@ public final class QueryExecutor {
         this.connection = connection;
     }
 
-    /** All rows of {@code sql}. */
+    /** All rows of {@code sql}; shown in the report as a step with the parameters and the rows. */
     public List<Map<String, Object>> queryForList(String sql, Object... params) {
+        return Report.step("SQL: " + sql, () -> {
+            List<Map<String, Object>> rows = runQuery(sql, params);
+            Report.attachText("Query result", "Parameters: " + Arrays.toString(params) + "\n"
+                    + rows.size() + " row(s)\n" + rows.stream().map(QueryExecutor::masked).map(String::valueOf)
+                    .collect(java.util.stream.Collectors.joining("\n")));
+            return rows;
+        });
+    }
+
+    /** Hashes and salts are never written to a report. */
+    private static Map<String, Object> masked(Map<String, Object> row) {
+        Map<String, Object> copy = new LinkedHashMap<>(row);
+        copy.replaceAll((column, value) -> column.contains("password") || column.equals("salt") ? "****" : value);
+        return copy;
+    }
+
+    private List<Map<String, Object>> runQuery(String sql, Object... params) {
         LOG.debug("SQL {} {}", sql, Arrays.toString(params));
         try (Connection c = connection.open(); PreparedStatement ps = prepare(c, sql, params);
              ResultSet rs = ps.executeQuery()) {

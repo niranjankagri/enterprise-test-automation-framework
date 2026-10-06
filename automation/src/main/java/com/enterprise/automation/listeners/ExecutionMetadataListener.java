@@ -1,5 +1,6 @@
 package com.enterprise.automation.listeners;
 
+import com.enterprise.automation.reporting.AllureRunFiles;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import java.io.IOException;
@@ -59,6 +60,11 @@ public class ExecutionMetadataListener implements ISuiteListener {
             new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).writeValue(OUTPUT.toFile(), metadata);
         } catch (IOException e) {
             LOG.warn("Could not write {}: {}", OUTPUT, e.getMessage());
+        }
+        try {
+            AllureRunFiles.write(ExecutionMetadata.collect());
+        } catch (RuntimeException e) {
+            LOG.warn("Could not write the Allure run files: {}", e.getMessage());
         }
         LOG.info("Suite '{}' finished in {} s: {} passed, {} failed, {} skipped", suite.getName(), duration.toSeconds(),
                 passed, failed, skipped);

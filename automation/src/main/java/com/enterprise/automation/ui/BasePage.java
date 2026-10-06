@@ -2,6 +2,7 @@ package com.enterprise.automation.ui;
 
 import com.enterprise.automation.config.ConfigManager;
 import com.enterprise.automation.driver.DriverManager;
+import com.enterprise.automation.reporting.Report;
 import com.enterprise.automation.utils.WaitUtils;
 import org.openqa.selenium.WebDriver;
 
@@ -26,7 +27,8 @@ public abstract class BasePage {
 
     /** Opens {@code path} relative to the configured base URL, e.g. {@code /login.html}. */
     protected void navigateTo(String path) {
-        driver.get(ConfigManager.config().baseUrl().resolve(path).toString());
+        String url = ConfigManager.config().baseUrl().resolve(path).toString();
+        Report.step("Open " + url, () -> driver.get(url));
     }
 
     public String title() {

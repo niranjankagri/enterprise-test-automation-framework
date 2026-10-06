@@ -6,8 +6,6 @@ import com.enterprise.automation.data.CleanupRegistry;
 import com.enterprise.automation.driver.DriverManager;
 import com.enterprise.automation.ui.pages.DashboardPage;
 import com.enterprise.automation.ui.pages.LoginPage;
-import com.enterprise.automation.utils.ScreenshotUtils;
-import org.testng.ITestResult;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 
@@ -26,16 +24,13 @@ public abstract class BaseTest {
     }
 
     /**
-     * After every test: screenshot first (the state at the moment of failure), then the test's
-     * registered clean-ups (they may still need the browser), then quit the browser.
+     * After every test: the registered clean-ups (they may still need the browser), then quit the
+     * browser. Failure evidence (screenshot, URL, page source) was already taken by
+     * {@code ReportEvidenceListener} right after the test method.
      */
     @AfterMethod(alwaysRun = true)
-    public void stopBrowser(ITestResult result) {
+    public void stopBrowser() {
         try {
-            if (result.getStatus() == ITestResult.FAILURE && DriverManager.hasDriver()) {
-                ScreenshotUtils.save(DriverManager.getDriver(),
-                        result.getTestClass().getRealClass().getSimpleName() + "." + result.getMethod().getMethodName());
-            }
             CleanupRegistry.runAll();
         } finally {
             DriverManager.quitDriver();
