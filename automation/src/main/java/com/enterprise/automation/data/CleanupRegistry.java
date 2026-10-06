@@ -16,22 +16,27 @@ import org.slf4j.LoggerFactory;
 public final class CleanupRegistry {
 
     private static final Logger LOG = LoggerFactory.getLogger(CleanupRegistry.class);
+    // A stack per thread: parallel tests never run each other's clean-ups
     private static final ThreadLocal<Deque<Action>> ACTIONS = ThreadLocal.withInitial(ArrayDeque::new);
 
+    // Static access only
     private CleanupRegistry() {
     }
 
     /** Something that undoes test data; may throw. */
     @FunctionalInterface
     public interface Cleanup {
+        // "throws Exception" lets clean-ups call JDBC/IO code without wrapping
         void run() throws Exception;
     }
 
+    // A clean-up and a description for the log
     private record Action(String description, Cleanup cleanup) {
     }
 
     /** Registers a clean-up for this thread's current test. */
     public static void register(String description, Cleanup cleanup) {
+        // push = add on top: the newest clean-up runs first
         ACTIONS.get().push(new Action(description, cleanup));
     }
 
@@ -40,6 +45,7 @@ public final class CleanupRegistry {
         Deque<Action> actions = ACTIONS.get();
         int failures = 0;
         while (!actions.isEmpty()) {
+            // Newest first: e.g. an order is removed before the customer it belongs to
             Action action = actions.pop();
             try {
                 action.cleanup().run();
@@ -50,6 +56,7 @@ public final class CleanupRegistry {
                 LOG.warn("Clean-up failed ({}): {}", action.description(), e.toString());
             }
         }
+        // Free the slot for the next test on this (pooled) thread
         ACTIONS.remove();
         return failures;
     }

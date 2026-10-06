@@ -16,6 +16,7 @@ import org.testng.SkipException;
  */
 public final class DatabaseConnection {
 
+    // URL, user and password of the environment's database
     private final DatabaseConfig config;
 
     public DatabaseConnection(DatabaseConfig config) {
@@ -28,6 +29,7 @@ public final class DatabaseConnection {
      */
     public static DatabaseConnection fromConfig() {
         Optional<DatabaseConfig> database = ConfigManager.config().database();
+        // SkipException: TestNG reports the test (or class, from @BeforeClass) as skipped with this reason
         if (database.isEmpty()) {
             throw new SkipException("No database access in environment '" + ConfigManager.config().environment()
                     + "' (set db.url or DB_URL to run database checks)");
@@ -35,10 +37,12 @@ public final class DatabaseConnection {
         return new DatabaseConnection(database.get());
     }
 
+    /** A new connection (the JDBC driver on the classpath is found by the URL prefix). */
     public Connection open() throws SQLException {
         return DriverManager.getConnection(config.url(), config.username(), config.password());
     }
 
+    /** The JDBC URL (no secrets in it). */
     public String url() {
         return config.url();
     }

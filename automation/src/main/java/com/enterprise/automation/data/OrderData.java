@@ -13,6 +13,7 @@ import java.util.Locale;
  */
 public record OrderData(CustomerData customer, List<Line> lines) {
 
+    // Immutable copy of the lines
     public OrderData {
         lines = List.copyOf(lines);
     }
@@ -20,6 +21,7 @@ public record OrderData(CustomerData customer, List<Line> lines) {
     /** One product and its quantity. */
     public record Line(ProductData product, int quantity) {
 
+        /** Price x quantity. */
         public BigDecimal total() {
             return product.price().multiply(BigDecimal.valueOf(quantity));
         }
@@ -35,6 +37,7 @@ public record OrderData(CustomerData customer, List<Line> lines) {
         return NumberFormat.getCurrencyInstance(Locale.US).format(total());
     }
 
+    /** Total number of units (the "Items" column of the order list). */
     public int itemCount() {
         return lines.stream().mapToInt(Line::quantity).sum();
     }

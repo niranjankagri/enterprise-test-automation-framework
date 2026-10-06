@@ -19,13 +19,16 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class TestDataFactory {
 
     private static final String CATALOGUE = "testdata/products.json";
+    // The categories the application's UI offers in its filter
     private static final List<String> CATEGORIES = List.of("Laptops", "Monitors", "Accessories", "Audio");
 
+    // Static factory only
     private TestDataFactory() {
     }
 
     /** A new, valid customer with a unique email. */
     public static CustomerData newCustomer() {
+        // The email is built from the same names, so the data looks consistent in reports
         String firstName = RandomDataGenerator.firstName();
         String lastName = RandomDataGenerator.lastName();
         return new CustomerData(firstName, lastName, RandomDataGenerator.email(firstName, lastName),
@@ -34,6 +37,7 @@ public final class TestDataFactory {
 
     /** A new, valid product with a unique SKU, price between 5 and 500 and some stock. */
     public static ProductData newProduct() {
+        // Two decimals, like real prices (and like the DECIMAL(10,2) column)
         BigDecimal price = BigDecimal.valueOf(ThreadLocalRandom.current().nextDouble(5, 500))
                 .setScale(2, RoundingMode.HALF_UP);
         String category = CATEGORIES.get(ThreadLocalRandom.current().nextInt(CATEGORIES.size()));
@@ -45,6 +49,7 @@ public final class TestDataFactory {
     public static UserData newUser(String role) {
         String first = RandomDataGenerator.firstName();
         String last = RandomDataGenerator.lastName();
+        // A generated password that satisfies the API's minimum length and is unique per user
         return new UserData(RandomDataGenerator.username(), "Pw-" + RandomDataGenerator.uniqueSuffix() + "!",
                 first + " " + last, role);
     }
@@ -65,6 +70,7 @@ public final class TestDataFactory {
         return new OrderData(customer, List.of(lines));
     }
 
+    /** One order line: a catalogue product (by SKU) and a quantity. */
     public static OrderData.Line line(String sku, int quantity) {
         return new OrderData.Line(catalogueProduct(sku), quantity);
     }
