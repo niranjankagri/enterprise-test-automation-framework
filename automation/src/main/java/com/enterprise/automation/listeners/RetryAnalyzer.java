@@ -1,6 +1,7 @@
 package com.enterprise.automation.listeners;
 
 import com.enterprise.automation.config.ConfigManager;
+import com.enterprise.automation.utils.TransientFailures;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

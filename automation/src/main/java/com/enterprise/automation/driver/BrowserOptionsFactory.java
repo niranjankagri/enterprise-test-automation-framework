@@ -1,6 +1,8 @@
 package com.enterprise.automation.driver;
 
 import com.enterprise.automation.config.TestConfig;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import org.openqa.selenium.MutableCapabilities;
 import org.openqa.selenium.PageLoadStrategy;
@@ -67,10 +69,15 @@ public final class BrowserOptionsFactory {
 
     /** Chrome and Edge share the Chromium engine, so they share their arguments. */
     private static String[] chromiumArguments(TestConfig config) {
-        String common = "--disable-search-engine-choice-screen";
-        String noLeakCheck = "--disable-features=PasswordLeakDetection";
-        return config.headless()
-                ? new String[] {"--headless=new", "--disable-dev-shm-usage", common, noLeakCheck}
-                : new String[] {common, noLeakCheck};
+        List<String> args = new ArrayList<>(List.of("--disable-search-engine-choice-screen",
+                "--disable-features=PasswordLeakDetection"));
+        if (config.headless()) {
+            args.addAll(List.of("--headless=new", "--disable-dev-shm-usage"));
+        }
+        // CI runners and containers often cannot start Chromium's sandbox; Edge then exits at start-up
+        if ("true".equalsIgnoreCase(System.getenv("CI"))) {
+            args.add("--no-sandbox");
+        }
+        return args.toArray(String[]::new);
     }
 }

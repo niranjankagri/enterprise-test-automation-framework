@@ -1,6 +1,7 @@
 package com.enterprise.automation.driver;
 
 import com.enterprise.automation.config.ConfigManager;
+import com.enterprise.automation.utils.TransientFailures;
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,9 +34,29 @@ public final class DriverManager {
                     Thread.currentThread().getName());
             quitDriver();
         }
-        WebDriver driver = DriverFactory.create(ConfigManager.config());
+        WebDriver driver = createWithRetry();
         DRIVER.set(driver);
         return driver;
+    }
+
+    /**
+     * Starting a browser is infrastructure: when it fails for a transient reason (the browser
+     * process exited at start-up, the Grid had no free slot), it is tried again up to
+     * {@code retry.count} times. This happens in {@code @BeforeMethod}, where TestNG's retry
+     * analyzer does not apply. Any other failure (wrong configuration) is thrown at once.
+     */
+    private static WebDriver createWithRetry() {
+        int retries = ConfigManager.config().runSettings().retryCount();
+        for (int attempt = 0; ; attempt++) {
+            try {
+                return DriverFactory.create(ConfigManager.config());
+            } catch (RuntimeException e) {
+                if (attempt >= retries || !TransientFailures.isTransient(e)) {
+                    throw e;
+                }
+                LOG.warn("Browser did not start ({}); retrying ({}/{})", e.getClass().getSimpleName(), attempt + 1, retries);
+            }
+        }
     }
 
     /** The browser of this thread. */

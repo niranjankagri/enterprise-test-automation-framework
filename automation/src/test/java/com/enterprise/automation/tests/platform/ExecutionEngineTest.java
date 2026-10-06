@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.enterprise.automation.config.ConfigLoader;
 import com.enterprise.automation.config.ExecutionSettings;
 import com.enterprise.automation.listeners.ExecutionMetadata;
-import com.enterprise.automation.listeners.TransientFailures;
+import com.enterprise.automation.utils.TransientFailures;
 import java.net.ConnectException;
 import java.util.Map;
 import org.openqa.selenium.NoSuchElementException;
