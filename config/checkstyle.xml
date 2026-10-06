@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+        "https://checkstyle.org/dtds/configuration_1_3.dtd">
+<!--
+    Code-quality gate of the automation module. Small on purpose: every rule here is one the
+    project actually cares about (see docs/coding-standards.md), so a violation is always worth
+    fixing and the gate never becomes noise.
+-->
+<module name="Checker">
+    <property name="charset" value="UTF-8"/>
+    <property name="severity" value="error"/>
+
+    <module name="TreeWalker">
+        <!-- Imports -->
+        <module name="AvoidStarImport"/>
+        <module name="UnusedImports"/>
+        <module name="RedundantImport"/>
+
+        <!-- Error handling: nothing is swallowed silently -->
+        <module name="EmptyCatchBlock"/>
+        <module name="EmptyBlock">
+            <property name="tokens" value="LITERAL_TRY, LITERAL_FINALLY, LITERAL_IF, LITERAL_ELSE"/>
+        </module>
+
+        <!-- Readability -->
+        <module name="NeedBraces"/>
+        <module name="OneStatementPerLine"/>
+        <module name="EmptyStatement"/>
+        <module name="EqualsHashCode"/>
+        <module name="MissingOverride"/>
+
+        <!-- Waiting: explicit waits only (WaitUtils), never fixed sleeps -->
+        <module name="Regexp">
+            <property name="id" value="noThreadSleep"/>
+            <property name="format" value="Thread\.sleep\("/>
+            <property name="illegalPattern" value="true"/>
+            <property name="message" value="No Thread.sleep: wait for a condition with WaitUtils"/>
+        </module>
+
+        <!-- Output goes through SLF4J (and the report), never straight to the console -->
+        <module name="Regexp">
+            <property name="id" value="noSystemOut"/>
+            <property name="format" value="System\.(out|err)\.print"/>
+            <property name="illegalPattern" value="true"/>
+            <property name="message" value="Use SLF4J logging instead of System.out/err"/>
+        </module>
+
+        <!-- Implicit waits make every timeout unpredictable -->
+        <module name="Regexp">
+            <property name="id" value="noImplicitWait"/>
+            <property name="format" value="implicitlyWait\("/>
+            <property name="illegalPattern" value="true"/>
+            <property name="message" value="No implicit waits: use explicit waits"/>
+        </module>
+    </module>
+</module>
