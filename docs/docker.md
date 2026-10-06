@@ -66,7 +66,7 @@ The test runner overrides the application URLs: inside the Docker network the br
 
 ## In CI
 
-The nightly workflow runs the regression suite this way on Firefox with 4 threads (job "Regression on Docker + Selenium Grid"), prints the `app` and `selenium-hub` logs when it fails, always runs `docker compose down`, and uploads Allure results, screenshots and logs as `results-grid-firefox`. See [ci-cd.md](ci-cd.md).
+The nightly workflow runs the regression suite this way on Firefox with 4 threads (job "Regression on Docker + Selenium Grid"), prints the `app` and `selenium-hub` logs when it fails, always runs `docker compose down`, gives the result files back to the runner user, and uploads Allure results, screenshots and logs as `results-grid-firefox`. See [ci-cd.md](ci-cd.md).
 
 ## Troubleshooting
 
@@ -78,3 +78,4 @@ The nightly workflow runs the regression suite this way on Firefox with 4 thread
 | Browser tabs crash in nodes | too little shared memory | keep `shm_size: 2gb` on the nodes |
 | Port 8081, 9093 or 4444 already in use | a local app or Grid is running | stop it, or remove the `ports:` mapping (only needed to look from the host) |
 | Database tests skipped | `DB_URL` not set | keep `DB_URL` in the `tests` service |
+| `permission denied` reading `automation/target` afterwards (Linux) | the test container runs as root and Allure 3 writes owner-only files | `sudo chown -R "$(id -u):$(id -g)" automation/target` (the nightly workflow does this before uploading) |

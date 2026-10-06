@@ -58,6 +58,11 @@ jobs:
       - name: Stop containers
         if: always()
         run: docker compose -f docker/docker-compose.yml down
+      # The test container runs as root and Allure 3 writes owner-only files: hand them back to
+      # the runner user, or the upload cannot read them
+      - name: Make results readable
+        if: always()
+        run: sudo chown -R "$(id -u):$(id -g)" automation/target || true
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v7
