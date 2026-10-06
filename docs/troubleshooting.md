@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Start with the evidence: the Allure report (failure category, steps, screenshot, request/response, test log) or `automation/target/logs/automation.log` (every line has `[thread] [Test.method]`; failures have a `FAILURE DIAGNOSTICS` block).
+Start with the evidence: the Allure report (failure category, steps, screenshot, request/response, test log) or `automation/target/logs/automation.log` (every line has `[thread] [Test.method] [component]`; failures have a `FAILURE DIAGNOSTICS` block).
 
 | Symptom | Likely cause | What to do |
 |---|---|---|

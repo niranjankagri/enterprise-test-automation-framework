@@ -34,7 +34,7 @@ The gain flattens at 4 threads because parallelism is per class and the largest 
 | Configuration | immutable `TestConfig` record, created once (holder idiom) |
 | Database | one JDBC connection per query |
 | Assertions on shared lists | check only the seeded catalogue (`ProductPage.catalogueRows()` ignores `TST-` products) or the test's own rows; never "the 5 most recent orders" |
-| Logs | every line carries the thread and the test name (`%X{test}` via `TestLogContextListener`) |
+| Logs | every line carries the thread, the test name (`%X{test}` via `TestLogContextListener`) and the component (`[API]`, `[UI]`, `[DB]`...) |
 
 ## Why `classes`, not `methods`
 

@@ -40,9 +40,9 @@ public class TestLogAppender extends AppenderBase<ILoggingEvent> {
             return;
         }
         String logger = event.getLoggerName();
-        // "14:02:11.512 INFO  ApiLoggingFilter - POST /api/customers -> 201 in 35 ms"
+        // "14:02:11.512 INFO  [API] ApiLoggingFilter - POST /api/customers -> 201 in 35 ms"
         buffer.append(TIME.format(Instant.ofEpochMilli(event.getTimeStamp()))).append(' ')
-                .append(String.format("%-5s", event.getLevel())).append(' ')
+                .append(String.format("%-5s", event.getLevel())).append(" [").append(LogComponent.of(logger)).append("] ")
                 .append(logger.substring(logger.lastIndexOf('.') + 1)).append(" - ")
                 .append(SecretMasker.mask(event.getFormattedMessage())).append('\n');
     }

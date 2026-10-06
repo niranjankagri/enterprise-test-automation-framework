@@ -2,13 +2,15 @@
 <!--
     Logging for framework and tests.
 
-    Console: INFO and above, short format, for people watching a run.
-    File:    DEBUG and above, with the thread name, for investigating a failure afterwards.
-             The thread name matters once tests run in parallel (Milestone 7).
+    Every line: time, level, thread, test, component (UI, API, DB...) and the message, secrets masked.
+    Console: INFO and above, for people watching a run.
+    File:    DEBUG and above, plus the logger name, for investigating a failure afterwards.
 -->
 <configuration>
     <!-- %maskedMsg: the message with passwords, tokens and other secrets replaced by **** -->
     <conversionRule conversionWord="maskedMsg" class="com.enterprise.automation.reporting.MaskingConverter"/>
+    <!-- %component: the framework layer that logged (UI, API, DB, DRIVER, CONFIG, DATA, TEST, APP...) -->
+    <conversionRule conversionWord="component" class="com.enterprise.automation.reporting.ComponentConverter"/>
 
     <property name="LOG_DIR" value="${log.dir:-target/logs}"/>
 
@@ -17,7 +19,7 @@
             <level>INFO</level>
         </filter>
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{0} - %maskedMsg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} %-5level [%thread] [%X{test:--}] [%component] %maskedMsg%n</pattern>
         </encoder>
     </appender>
 
@@ -26,7 +28,7 @@
         <append>false</append>
         <encoder>
             <!-- %X{test}: the test that wrote the line (set by TestLogContextListener), essential in parallel runs -->
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{test:-}] %-5level %logger{36} - %maskedMsg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [%X{test:--}] [%component] %logger{36} - %maskedMsg%n</pattern>
         </encoder>
     </appender>
 

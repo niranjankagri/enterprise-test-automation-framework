@@ -62,7 +62,7 @@ Add a named query to `ShopDatabase` (parameterized SQL only) and assert with `Da
 |---|---|---|
 | `ExecutionSettingsListener` | alter suite | parallel mode, threads from configuration |
 | `RetryTransformer` / `RetryAnalyzer` | annotation transform / after failure | retry transient infrastructure failures only |
-| `TestLogContextListener` | test start/end | test name in log lines, START/PASS/FAIL/SKIP |
+| `TestLogContextListener` | test start/end, around set-up/clean-up | test (or set-up method) name in log lines, START/PASS/FAIL/SKIP |
 | `FailureDiagnosticsListener` | test failure | diagnostic block in the log |
 | `ReportEvidenceListener` | test start / after test method | labels, per-test log, screenshot, URL, page source |
 | `ExecutionMetadataListener` | suite start/end | run metadata, Allure environment/executor/categories |

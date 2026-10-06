@@ -487,7 +487,9 @@ Only transient infrastructure failures are retried, at most `retry.count` times:
 ## 15. Logging
 
 - SLF4J API everywhere; Logback (`automation/src/main/resources/logback.xml`) writes INFO to the console and DEBUG to `automation/target/logs/automation.log`.
-- Every file line carries the thread and the running test: `[TestNG-test-Full-3] [CustomerApiTest.duplicateEmailGives409]` (MDC set by `TestLogContextListener`), so parallel logs can be filtered per test.
+- Every line (console and file) carries time, level, thread, test and component, and is masked:
+  `00:10:03.180 INFO  [TestNG-test-Full-3] [CustomerApiTest.duplicateEmailGives409] [API] POST /api/customers -> 409 in 41 ms [X-Request-Id 6f1c...]`.
+  The test name comes from the MDC (`TestLogContextListener`; set-up/clean-up methods are tagged with their own name, e.g. `CustomerApiTest.cleanUp`), the component from the logger's package (`LogComponent`: UI, API, DB, DRIVER, CONFIG, DATA, TEST, APP, LIB), so parallel logs can be filtered per test and per layer.
 - Per test: `START` (with parameters, secrets masked), `PASS` / `FAIL` / `SKIP` with duration.
 - Per failure: a `FAILURE DIAGNOSTICS` block (test, parameters, groups, thread, duration, environment, browser, retry candidate or not, cause).
 - Per API call: one line with method, path, status and duration; bodies at DEBUG with secrets masked; the application's `X-Request-Id` is logged to correlate with its own log.

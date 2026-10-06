@@ -138,7 +138,7 @@ Only transient infrastructure failures are retried: browser start-up, lost sessi
 
 ## Logging
 
-Console (INFO) and `automation/target/logs/automation.log` (DEBUG) with `[thread] [Test.method]` on every line, START/PASS/FAIL per test, a diagnostics block per failure, one line per API call. Secrets are masked.
+Console (INFO) and `automation/target/logs/automation.log` (DEBUG) with `[thread] [Test.method] [component]` (UI, API, DB...) on every line, START/PASS/FAIL per test, a diagnostics block per failure, one line per API call. Secrets are masked.
 
 ## Reporting
 
