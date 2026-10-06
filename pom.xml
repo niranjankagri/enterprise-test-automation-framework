@@ -40,7 +40,7 @@
         <jackson.version>2.22.3</jackson.version>
         <slf4j.version>2.0.17</slf4j.version>
         <logback.version>1.6.5</logback.version>
-        <allure.version>2.35.5</allure.version>
+        <allure.version>3.0.0</allure.version>
         <datafaker.version>2.7.0</datafaker.version>
 
         <!-- Application under test -->
