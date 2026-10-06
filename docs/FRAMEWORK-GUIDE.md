@@ -422,7 +422,7 @@ public class CustomerApiTest extends BaseApiTest {
 
 ## 13. The test suite: what is covered
 
-162 tests in the full suite (some data-driven methods run once per data row).
+169 tests in the full suite (some data-driven methods run once per data row).
 
 | Class | Layer | What it proves |
 |---|---|---|
@@ -458,12 +458,12 @@ Suite files (`automation/src/test/resources/suites`) select **what** runs; `-Dsu
 
 | Suite | Groups | Tests | Purpose |
 |---|---|---|---|
-| `full` | all | 162 | everything |
-| `unit` | `unit` | 26 | fast framework checks; first CI gate |
+| `full` | all | 169 | everything |
+| `unit` | `unit` | 32 | fast framework checks; first CI gate |
 | `smoke` | `smoke` | 20 | "is it up and usable"; pull-request gate |
 | `sanity` | `sanity` | 11 | key happy paths and role checks after a deployment |
-| `regression` | `regression` | 120 | complete functional coverage |
-| `api` | `api` | 56 | API only |
+| `regression` | `regression` | 121 | complete functional coverage |
+| `api` | `api` | 57 | API only |
 | `ui` | `ui` | 53 | browser tests |
 | `integration` | `integration`, `db` | 22 | database and cross-layer |
 | `e2e` | `e2e` | 5 | business journeys |

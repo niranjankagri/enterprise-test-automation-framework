@@ -142,7 +142,7 @@ Console (INFO) and `automation/target/logs/automation.log` (DEBUG) with `[thread
 
 ## Reporting
 
-Allure: every UI action, API call (request/response attached) and SQL query is a step; failed UI tests get screenshot, URL, page source and browser console; database steps name the query and show its duration; each test has its own log; Environment panel with environment, browser, Git commit and build; failures categorised as product defect, test defect, wait timeout or infrastructure. [docs/reporting.md](docs/reporting.md).
+Allure: every UI action, API call (request/response attached) and SQL query is a step; failed UI tests get screenshot, URL, page source and browser console; database steps name the query and show its duration; each test has its own log; Environment panel with environment, browser, Git commit and build; API steps show duration and the correlation id (`X-Request-Id`, also in the application log); failures categorised as configuration, infrastructure, timeout, authentication/authorization, database, UI, API, assertion or test/framework error. [docs/reporting.md](docs/reporting.md).
 
 ## Docker
 
@@ -176,7 +176,7 @@ Compilation without warnings (CI), Checkstyle (no sleeps, no implicit waits, no 
 
 ## Security
 
-No credentials in code or Git (scan of all files and history), secrets from environment/CI only, `.env` ignored and `.env.example` provided, passwords/tokens masked in logs, reports, request attachments, test parameters and `toString()`; the application stores salted password hashes, which a test verifies.
+No credentials in code or Git (scan of all files and history), secrets from environment/CI only, `.env` ignored and `.env.example` provided, one masking utility (`SecretMasker`) for passwords, tokens, client secrets, API keys, cookies and URL credentials in every log line, report attachment, failure message, test parameter, the run metadata and `toString()`; the application stores salted password hashes, which a test verifies.
 
 ## Running tests
 
@@ -194,12 +194,12 @@ npx allure-commandline serve automation/target/allure-results
 
 | Suite | Content | Tests |
 |---|---|---|
-| `full` (default) | everything | 162 |
-| `unit` | framework unit tests | 26 |
+| `full` (default) | everything | 169 |
+| `unit` | framework unit tests | 32 |
 | `smoke` | fast "is it usable" checks | 20 |
 | `sanity` | key happy paths and role checks | 11 |
-| `regression` | complete functional coverage | 120 |
-| `api` / `ui` | one layer | 56 / 53 |
+| `regression` | complete functional coverage | 121 |
+| `api` / `ui` | one layer | 57 / 53 |
 | `integration` | database and cross-layer | 22 |
 | `e2e` | business journeys | 5 |
 

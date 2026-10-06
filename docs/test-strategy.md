@@ -10,9 +10,9 @@
 
 | Level | What it checks | Suite / group | Count (approx.) | Runs |
 |---|---|---|---|---|
-| Unit (framework) | configuration rules, data generation, CSV/JSON readers, retry classification, secret masking | `unit` | 26 | every build (quality gate) |
+| Unit (framework) | configuration rules, data generation, CSV/JSON readers, retry classification, secret masking, log components | `unit` | 32 | every build (quality gate) |
 | Platform | real browsers start with the configured settings, one per thread; screenshots | `platform` | 8 | full suite |
-| API | every endpoint and method, status codes, headers, payloads, schemas, authentication, authorization, validation, business rules | `api` | 56 | main, nightly |
+| API | every endpoint and method, status codes, headers, payloads, schemas, authentication, authorization, validation, business rules, correlation id | `api` | 57 | main, nightly |
 | Database | schema, catalogue rows, parameter binding, assertions | `db` | 13 | nightly, integration |
 | Integration | API → DB (stored values, transactions, hashing); API → DB → UI and UI → API → DB | `integration` | 9 | nightly |
 | UI | sign-in, navigation, customer management, catalogue, checkout, roles | `ui` | 53 | main, nightly |
