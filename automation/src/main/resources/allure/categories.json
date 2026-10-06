@@ -1,23 +1,53 @@
 [
   {
-    "name": "Infrastructure problems",
-    "description": "Browser, Grid or network failed: not a result about the application",
+    "name": "Configuration failure",
+    "description": "The run is set up wrong (unknown environment/browser, missing secret, invalid value): fix the configuration, not the test",
     "matchedStatuses": ["broken", "failed", "skipped"],
-    "messageRegex": "(?s).*(SessionNotCreated|NoSuchSession|UnreachableBrowser|Connection refused|connection reset|chrome not reachable|Could not start a new session).*"
+    "messageRegex": "(?s).*(Unknown environment|Unknown browser|Unknown execution mode|Unknown parallel mode|Missing configuration file|Configuration '[^']*' (is not set|is not a valid|must be)|retry\\.count must be).*"
   },
   {
-    "name": "Application too slow or UI changed (wait timeouts)",
-    "description": "An explicit wait expired: the expected state never appeared",
+    "name": "Infrastructure failure",
+    "description": "Browser, Grid or network failed: not a result about the application",
+    "matchedStatuses": ["broken", "failed", "skipped"],
+    "messageRegex": "(?s).*(SessionNotCreated|NoSuchSession|UnreachableBrowser|Connection refused|connection reset|chrome not reachable|Could not start a new session|Unable to receive message from renderer).*"
+  },
+  {
+    "name": "Timeout",
+    "description": "An explicit wait expired: the expected state never appeared (slow application or changed UI)",
     "matchedStatuses": ["broken", "failed"],
     "traceRegex": "(?s).*org\\.openqa\\.selenium\\.TimeoutException.*"
   },
   {
-    "name": "Product defects",
-    "description": "An assertion failed: the application did not behave as expected",
+    "name": "Authentication / authorization failure",
+    "description": "A call was rejected with 401/403 (or accepted where it should have been): sign-in, token or role problem",
+    "matchedStatuses": ["broken", "failed"],
+    "messageRegex": "(?s).*(Expected HTTP \\d+ but got 40[13]|Expected HTTP 40[13] but got \\d+).*"
+  },
+  {
+    "name": "Database failure",
+    "description": "A database check or query failed: stored data differs from what the API/UI reported, or the query itself failed",
+    "matchedStatuses": ["broken", "failed"],
+    "traceRegex": "(?s).*(com\\.enterprise\\.automation\\.db\\.|\\.tests\\.db\\.|java\\.sql\\.SQLException).*"
+  },
+  {
+    "name": "UI failure",
+    "description": "A UI check failed or a page/component could not be used",
+    "matchedStatuses": ["broken", "failed"],
+    "traceRegex": "(?s).*(com\\.enterprise\\.automation\\.ui\\.|\\.tests\\.ui\\.|org\\.openqa\\.selenium\\.).*"
+  },
+  {
+    "name": "API failure",
+    "description": "An API check failed: status, contract (schema) or payload differs from the expectation",
+    "matchedStatuses": ["broken", "failed"],
+    "traceRegex": "(?s).*(com\\.enterprise\\.automation\\.api\\.|\\.tests\\.api\\.|io\\.restassured\\.).*"
+  },
+  {
+    "name": "Assertion failure",
+    "description": "Any other failed check: the application did not behave as expected",
     "matchedStatuses": ["failed"]
   },
   {
-    "name": "Test defects",
+    "name": "Test or framework error",
     "description": "The test or framework itself threw an unexpected exception",
     "matchedStatuses": ["broken"]
   },

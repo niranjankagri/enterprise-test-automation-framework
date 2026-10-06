@@ -14,7 +14,7 @@ Requires Node.js (for `npx`) and Java. CI publishes the generated report as a bu
 
 | Question | Where in the report |
 |---|---|
-| What failed? | test name, the failed step, the assertion message; category "Product defects" (assertion), "Test defects" (unexpected exception), "Application too slow or UI changed" (wait timeout) or "Infrastructure problems" |
+| What failed? | test name, the failed step, the assertion message, and a failure category (see below) |
 | Where? | layer (epic: API, UI, Database, Integration, End-to-end, Framework), feature (test class), tags (groups) |
 | When? | start time and duration of the test and of every step |
 | Which environment / browser? | "Environment" panel: environment, base URL, API URL, browser, headless, execution, parallelism, database |
@@ -24,6 +24,25 @@ Requires Node.js (for `npx`) and Java. CI publishes the generated report as a bu
 | Which database rows? | a step per query (`DB: customer by email`) with query name, SQL, parameters, database URL (credentials masked), duration and rows; a failed query names the query and the database |
 | Which screenshot? | "Screenshot at failure", plus "Page URL", "Page source" and "Browser console" (JavaScript errors, failed requests; Chrome/Edge, last 100 entries, masked); also saved in `automation/target/screenshots` |
 | Which log? | "Test log": only this test's log lines, even in parallel runs |
+
+## Failure categories
+
+`automation/src/main/resources/allure/categories.json` sorts every failure into one category ("Categories" tab), so a lead sees the kind of problem before opening a test. The first matching rule wins, in this order:
+
+| Category | Matches | Typical action |
+|---|---|---|
+| Configuration failure | message: unknown environment/browser/execution/parallel mode, missing configuration file or secret, invalid value | fix the run's configuration |
+| Infrastructure failure | message: session not created, unreachable browser, connection refused/reset, renderer timeout | check browser, Grid, network; not an application result |
+| Timeout | stack trace: Selenium `TimeoutException` (an explicit wait expired) | slow application or changed UI: read the wait's condition |
+| Authentication / authorization failure | message: `Expected HTTP x but got 401/403` or `Expected HTTP 401/403 but got x` | sign-in, token or role problem |
+| Database failure | stack trace: framework `db` package, `tests.db`, `SQLException` | stored data differs, or the query failed |
+| UI failure | stack trace: framework `ui` package, `tests.ui`, Selenium | page/component behaviour |
+| API failure | stack trace: framework `api` package, `tests.api`, REST Assured | status, schema or payload |
+| Assertion failure | any other failed check | product behaviour |
+| Test or framework error | any other unexpected exception ("broken") | bug in the test or framework |
+| Skipped | skipped tests (no database access, retried attempts) | none |
+
+Every rule was checked with deliberately failing probe tests (one per category).
 
 ## How it works
 

@@ -516,7 +516,7 @@ What a test shows, without any reporting code in the test:
 | Labels: epic = layer, feature = class, tags = groups | `ReportEvidenceListener` |
 | Parameters of data-driven tests, secret ones masked | Allure + `ParameterMasking` |
 | Environment panel (environment, URLs, browser, execution, parallelism, Java, OS, framework version, Git commit, build number/URL) | `ExecutionMetadata` → `AllureRunFiles` |
-| Executor (local run or CI build with a link) and failure categories (infrastructure, wait timeouts, product defects, test defects, skipped) | `AllureRunFiles` |
+| Executor (local run or CI build with a link) and failure categories (configuration, infrastructure, timeout, authentication/authorization, database, UI, API, assertion, test/framework error, skipped; rules in [reporting.md](reporting.md#failure-categories)) | `AllureRunFiles` |
 
 Steps use Allure's lambda API (`Report.step`) instead of `@Step` annotations: the AspectJ weaver that `@Step` needs does not run on JDK 27, and annotated steps would silently disappear. Details: [reporting.md](reporting.md).
 
