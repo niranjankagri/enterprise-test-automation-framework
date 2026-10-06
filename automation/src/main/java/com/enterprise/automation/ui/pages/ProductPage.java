@@ -2,6 +2,8 @@ package com.enterprise.automation.ui.pages;
 
 import com.enterprise.automation.ui.TestId;
 import com.enterprise.automation.ui.components.TableComponent;
+import java.util.List;
+import java.util.Map;
 import org.openqa.selenium.By;
 
 /** Product catalogue: search, filter by category, add to cart. */
@@ -36,6 +38,14 @@ public class ProductPage extends ShopPage<ProductPage> {
     public ProductPage filterByCategory(String category) {
         actions.selectByVisibleText(CATEGORY, category);
         return waitUntilLoaded();
+    }
+
+    /**
+     * Rows of the seeded catalogue only. Tests that create products use {@code TST-} SKUs; when
+     * tests run in parallel those can appear in any listing, so catalogue checks ignore them.
+     */
+    public List<Map<String, String>> catalogueRows() {
+        return table().rows().stream().filter(r -> !r.getOrDefault("SKU", "").startsWith("TST-")).toList();
     }
 
     public String resultCount() {

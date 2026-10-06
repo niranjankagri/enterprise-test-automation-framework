@@ -81,7 +81,8 @@ public class PurchaseJourneyTest extends BaseTest {
         details.cancel();
 
         assertThat(orders.header().cartCount()).as("cart is emptied after ordering").isZero();
-        assertThat(orders.navigation().openDashboard().recentOrders().column("Order")).contains("#" + orderId);
+        // Not "in the dashboard's 5 most recent": parallel tests place orders too, so that would be flaky
+        assertThat(orders.filterByStatus("PLACED").table().column("Order")).contains("#" + orderId);
     }
 
     public void adminCancelsAnOrder() {

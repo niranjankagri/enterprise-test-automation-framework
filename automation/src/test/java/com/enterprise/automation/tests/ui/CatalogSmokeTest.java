@@ -38,7 +38,8 @@ public class CatalogSmokeTest extends BaseTest {
         assertThat(products.table().column("Category")).isNotEmpty().containsOnly("Monitors");
 
         products.filterByCategory("All categories").search("keyboard");
-        assertThat(products.table().column("Name")).containsExactly("Wireless Keyboard");
+        assertThat(products.catalogueRows()).extracting(r -> r.get("Name")).containsExactly("Wireless Keyboard");
+        assertThat(products.table().column("Name")).allSatisfy(n -> assertThat(n).containsIgnoringCase("keyboard"));
     }
 
     public void addingProductsFillsTheCart() {

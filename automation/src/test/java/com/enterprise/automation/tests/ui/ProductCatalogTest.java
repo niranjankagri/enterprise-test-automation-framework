@@ -29,7 +29,8 @@ public class ProductCatalogTest extends BaseTest {
     public void categoryFilterShowsExactlyItsProducts(String category, List<String> expectedNames) {
         ProductPage products = loginAsAdmin().navigation().openProducts().filterByCategory(category);
 
-        assertThat(products.table().column("Name")).containsExactlyInAnyOrderElementsOf(expectedNames);
+        assertThat(products.catalogueRows()).extracting(r -> r.get("Name")).containsExactlyInAnyOrderElementsOf(expectedNames);
+        assertThat(products.table().column("Category")).as("no product of another category").containsOnly(category);
     }
 
     public void searchWithoutMatchShowsAnEmptyList() {
