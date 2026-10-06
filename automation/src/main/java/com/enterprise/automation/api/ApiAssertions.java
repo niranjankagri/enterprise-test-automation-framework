@@ -1,6 +1,7 @@
 package com.enterprise.automation.api;
 
 import com.enterprise.automation.api.models.ErrorResponse;
+import com.enterprise.automation.reporting.SecretMasker;
 import io.restassured.module.jsv.JsonSchemaValidator;
 import io.restassured.response.Response;
 

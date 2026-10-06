@@ -1,5 +1,6 @@
 package com.enterprise.automation.api;
 
+import com.enterprise.automation.reporting.SecretMasker;
 import io.restassured.filter.Filter;
 import io.restassured.filter.FilterContext;
 import io.restassured.response.Response;

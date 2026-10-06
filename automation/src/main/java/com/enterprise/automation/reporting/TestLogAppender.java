@@ -44,6 +44,6 @@ public class TestLogAppender extends AppenderBase<ILoggingEvent> {
         buffer.append(TIME.format(Instant.ofEpochMilli(event.getTimeStamp()))).append(' ')
                 .append(String.format("%-5s", event.getLevel())).append(' ')
                 .append(logger.substring(logger.lastIndexOf('.') + 1)).append(" - ")
-                .append(event.getFormattedMessage()).append('\n');
+                .append(SecretMasker.mask(event.getFormattedMessage())).append('\n');
     }
 }

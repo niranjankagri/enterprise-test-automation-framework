@@ -307,7 +307,7 @@ Test → ApiSession (account) → Service (one per resource) → ApiClient → R
 - **Models** (`api.models`) are records; requests omit `null` fields, responses ignore unknown fields (the contract is checked by schemas); records with secrets mask them in `toString()`.
 - **`JsonMapper`**: the framework's own Jackson mapper (records, `Instant`, nulls omitted), independent of what REST Assured would detect.
 - **`ApiAssertions`**: `expectStatus` (the failure message shows the masked body), `matchesSchema(response, "customer")` (strict JSON schemas in `src/test/resources/schemas`, `additionalProperties: false`), `error(response)` (checks the error schema and returns an `ErrorResponse`).
-- **Logging and reporting**: `ApiLoggingFilter` writes `POST /api/customers -> 201 in 35 ms` and, at DEBUG, the bodies; `ReportingApiFilter` makes every call a report step with Request and Response attachments. Both mask secrets through `SecretMasker`.
+- **Logging and reporting**: `ApiLoggingFilter` writes `POST /api/customers -> 201 in 35 ms` and, at DEBUG, the bodies; `ReportingApiFilter` makes every call a report step with Request and Response attachments. Both mask secrets through `reporting.SecretMasker`.
 
 ```java
 CustomerResponse created = ApiSession.admin().customers().createCustomer(TestDataFactory.newCustomer());
@@ -637,7 +637,7 @@ Each is written out (problem, options, decision, reason, trade-offs) in [archite
 | `api.ApiSession` | services per account, token cache |
 | `api.ApiAssertions` | status, schema and error checks |
 | `api.JsonMapper` | the framework's JSON mapper |
-| `api.ApiLoggingFilter`, `ReportingApiFilter`, `SecretMasker` | logging, report attachments, masking |
+| `api.ApiLoggingFilter`, `ReportingApiFilter` | logging, report attachments, masking |
 | `api.services.*` | Auth, User, Customer, Product, Order services (+ BaseService) |
 | `api.models.*` | request and response records, ErrorResponse |
 | `db.DatabaseConnection`, `QueryExecutor`, `ShopDatabase`, `DatabaseAssertions` | database access and checks |
@@ -646,7 +646,7 @@ Each is written out (problem, options, decision, reason, trade-offs) in [archite
 | `data.JsonDataReader`, `CsvDataReader` | data files |
 | `data.CleanupRegistry` | per-thread undo actions |
 | `listeners.*` | ExecutionSettings, Retry (Analyzer, Transformer), TestLogContext, FailureDiagnostics, ExecutionMetadata (+Listener), ReportEvidence |
-| `reporting.Report`, `TestLogAppender`, `AllureRunFiles`, `ParameterMasking` | report steps, per-test log, run files, masking |
+| `reporting.Report`, `TestLogAppender`, `AllureRunFiles`, `SecretMasker`, `ParameterMasking`, `MaskingConverter` | report steps, per-test log, run files, masking (one utility for logs, reports and metadata) |
 | `utils.WaitUtils`, `ScreenshotUtils`, `TransientFailures` | waits, screenshots, failure classification |
 
 ### Application under test (`demo-app/src/main/java/com/enterprise/demoapp`)

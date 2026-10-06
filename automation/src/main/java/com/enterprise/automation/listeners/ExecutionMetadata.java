@@ -3,6 +3,7 @@ package com.enterprise.automation.listeners;
 import com.enterprise.automation.FrameworkInfo;
 import com.enterprise.automation.config.ConfigManager;
 import com.enterprise.automation.config.TestConfig;
+import com.enterprise.automation.reporting.SecretMasker;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
@@ -41,6 +42,8 @@ public final class ExecutionMetadata {
         facts.put("git.commit", gitCommit());
         facts.put("build.number", firstNonBlank(System.getenv("GITHUB_RUN_NUMBER"), System.getenv("BUILD_NUMBER"), "local"));
         facts.put("build.url", buildUrl());
+        // URLs may carry credentials (user:password@host, ;PASSWORD=...): mask before anything is written
+        facts.replaceAll((key, value) -> SecretMasker.mask(value));
         return facts;
     }
 

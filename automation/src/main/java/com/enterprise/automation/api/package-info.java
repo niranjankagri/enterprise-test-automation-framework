@@ -4,6 +4,6 @@
  * Test → ApiSession (account) → Service (one per resource) → ApiClient → REST API
  * </pre>
  * {@code ApiClient} owns base URL, JSON, bearer token and logging ({@code ApiLoggingFilter}, secrets
- * masked by {@code SecretMasker}); {@code ApiAssertions} checks status and JSON schemas.
+ * masked by {@code reporting.SecretMasker}); {@code ApiAssertions} checks status and JSON schemas.
  */
 package com.enterprise.automation.api;

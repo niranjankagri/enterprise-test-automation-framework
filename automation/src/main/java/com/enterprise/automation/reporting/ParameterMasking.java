@@ -2,7 +2,6 @@ package com.enterprise.automation.reporting;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.util.Locale;
 
 /**
  * Masks test parameters that hold secrets, by parameter name ({@code password}, {@code token},
@@ -16,8 +15,8 @@ public final class ParameterMasking {
 
     /** Whether a parameter name suggests a secret (password, token, secret, apiKey). */
     public static boolean isSecret(String parameterName) {
-        String name = parameterName.toLowerCase(Locale.ROOT);
-        return name.contains("password") || name.contains("token") || name.contains("secret") || name.contains("apikey");
+        // Same rule as everywhere else: one definition of "secret" for logs, reports and parameters
+        return SecretMasker.isSecretName(parameterName);
     }
 
     /** A copy of {@code values} with the secret parameters of {@code method} replaced by {@code ****}. */

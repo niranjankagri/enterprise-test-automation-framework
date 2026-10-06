@@ -1,6 +1,7 @@
 package com.enterprise.automation.api;
 
 import com.enterprise.automation.reporting.Report;
+import com.enterprise.automation.reporting.SecretMasker;
 import io.restassured.filter.Filter;
 import io.restassured.filter.FilterContext;
 import io.restassured.http.Header;
@@ -53,10 +54,8 @@ public final class ReportingApiFilter implements Filter {
         return response.getStatusLine() + "\n" + headers + (body.isEmpty() ? "" : "\n\n" + SecretMasker.mask(body));
     }
 
-    /** "Name: value"; Authorization keeps "Bearer ****", other secret headers become "****". */
+    /** "Name: value"; Authorization keeps "Bearer ****", other secret headers (Cookie, X-Api-Key) become "****". */
     private static String header(Header header) {
-        boolean secret = header.getName().equalsIgnoreCase("Authorization") || header.getName().equalsIgnoreCase("Cookie");
-        return header.getName() + ": " + (secret ? SecretMasker.mask(header.getValue()).replaceAll("^(?!Bearer).*", "****")
-                : header.getValue());
+        return header.getName() + ": " + SecretMasker.maskHeader(header.getName(), header.getValue());
     }
 }

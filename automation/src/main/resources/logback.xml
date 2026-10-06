@@ -7,6 +7,9 @@
              The thread name matters once tests run in parallel (Milestone 7).
 -->
 <configuration>
+    <!-- %maskedMsg: the message with passwords, tokens and other secrets replaced by **** -->
+    <conversionRule conversionWord="maskedMsg" class="com.enterprise.automation.reporting.MaskingConverter"/>
+
     <property name="LOG_DIR" value="${log.dir:-target/logs}"/>
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
@@ -14,7 +17,7 @@
             <level>INFO</level>
         </filter>
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{0} - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{0} - %maskedMsg%n</pattern>
         </encoder>
     </appender>
 
@@ -23,7 +26,7 @@
         <append>false</append>
         <encoder>
             <!-- %X{test}: the test that wrote the line (set by TestLogContextListener), essential in parallel runs -->
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{test:-}] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{test:-}] %-5level %logger{36} - %maskedMsg%n</pattern>
         </encoder>
     </appender>
 

@@ -40,7 +40,18 @@ Requires Node.js (for `npx`) and Java. CI publishes the generated report as a bu
 
 ## Secrets
 
-Everything is masked before it is written: `password`, `token`, `apiKey`... fields in bodies, `Authorization` headers, password fields typed in the UI, `password*`/`salt` database columns, and every model or configuration record with a secret has a masking `toString()`. `SecretMaskingTest` covers it; a check over a whole run's results found no demo password in any attachment.
+One utility, `reporting.SecretMasker`, masks every text that leaves a test:
+
+| Where | How |
+|---|---|
+| console and file log | `%maskedMsg` in `logback.xml` (`MaskingConverter`): every line, whoever logged it |
+| per-test log in the report | `TestLogAppender` |
+| API evidence and failure messages | `ReportingApiFilter`, `ApiLoggingFilter`, `ApiAssertions` |
+| database evidence | `QueryExecutor` (plus `password*`/`salt` columns) |
+| execution metadata | `ExecutionMetadata` (URLs with credentials) |
+| test parameters | `ParameterMasking` (same name rule, `SecretMasker.isSecretName`) |
+
+What it masks: JSON fields whose name contains `password`, `token`, `secret`, `apiKey`, `authorization` or `cookie` (`clientSecret`, `refresh_token`, `newPassword`...), the same names as `key=value` / `key: value` in text, `Bearer` tokens (`Bearer ****`), the whole value of `Authorization: Basic`, `Cookie`, `Set-Cookie` and `X-Api-Key`, and passwords in URLs (`user:****@host`, `;PASSWORD=****`). Password fields typed in the UI are logged as `****`, and records holding secrets mask them in `toString()`. `SecretMaskingTest` covers the rules; a check over a whole run's results and logs finds no demo password.
 
 ## Why lambda steps, not `@Step`
 
