@@ -144,6 +144,13 @@ Console (INFO) and `automation/target/logs/automation.log` (DEBUG) with `[thread
 
 Allure: every UI action, API call (request/response attached) and SQL query is a step; failed UI tests get screenshot, URL, title, page source and browser console; database steps name the query and show its duration; each test has its own log; Environment panel with environment, browser, Git commit and build; API steps show duration and the correlation id (`X-Request-Id`, also in the application log); failures categorised as configuration, infrastructure, timeout, authentication/authorization, database, UI, API, assertion or test/framework error. [docs/reporting.md](docs/reporting.md).
 
+Report of a smoke run with one deliberately failing check (a demo test, not part of the suites): overview with environment, executor and failure category, and the failed test with every step (password typed as `****`), the assertion and the evidence attachments.
+
+<p>
+  <img src="docs/images/report-overview.png" alt="Allure overview: 21 tests, environment, categories, executor" width="62%">
+  <img src="docs/images/report-failed-test.png" alt="Failed UI test: assertion, steps, screenshot, URL, title, page source, browser console, test log" width="30%">
+</p>
+
 ## Docker
 
 ```bash
