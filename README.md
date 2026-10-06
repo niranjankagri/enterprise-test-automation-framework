@@ -10,6 +10,8 @@ A production-style QA automation platform: UI, API and database testing of one a
 
 It tests **ShopEase Admin** ([`demo-app`](demo-app/README.md)), a small shop back office kept in this repository, so the same business record can be checked through the UI, the REST API and the database.
 
+New here? Read the **[complete framework guide](docs/FRAMEWORK-GUIDE.md)**.
+
 Companion repository: [selenium-java-framework](https://github.com/niranjankagri/selenium-java-framework), an interview-focused Selenium lab. This repository is the engineering side: architecture, scale and delivery.
 
 ## Objectives
@@ -231,7 +233,9 @@ Test pyramid with the bulk at API level, UI for what only the UI shows, cross-la
 
 ## Documentation
 
-[Architecture](docs/architecture.md) · [Framework design](docs/framework-design.md) · [Test strategy](docs/test-strategy.md) · [CI/CD](docs/ci-cd.md) · [Parallel execution](docs/parallel-execution.md) · [Reporting](docs/reporting.md) · [Troubleshooting](docs/troubleshooting.md) · [Coding standards](docs/coding-standards.md) · [Contributing](CONTRIBUTING.md)
+**Start here: [the complete framework guide](docs/FRAMEWORK-GUIDE.md)**, which covers everything in one document (application under test, architecture, configuration, every layer, test data, coverage, execution, logging, reporting, Docker, CI/CD, security, extending, troubleshooting, class reference).
+
+Topic documents: [Architecture](docs/architecture.md) · [Framework design](docs/framework-design.md) · [Test strategy](docs/test-strategy.md) · [CI/CD](docs/ci-cd.md) · [Parallel execution](docs/parallel-execution.md) · [Reporting](docs/reporting.md) · [Troubleshooting](docs/troubleshooting.md) · [Coding standards](docs/coding-standards.md) · [Contributing](CONTRIBUTING.md)
 
 ## License
 
