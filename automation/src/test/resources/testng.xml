@@ -20,4 +20,9 @@
             <package name="com.enterprise.automation.tests.ui"/>
         </packages>
     </test>
+    <test name="E2E">
+        <packages>
+            <package name="com.enterprise.automation.tests.e2e"/>
+        </packages>
+    </test>
 </suite>

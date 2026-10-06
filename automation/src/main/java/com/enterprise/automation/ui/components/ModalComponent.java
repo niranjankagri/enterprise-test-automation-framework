@@ -32,6 +32,21 @@ public class ModalComponent extends BaseComponent {
         return child(MESSAGE).getText().trim();
     }
 
+    /** Text of the element with test id {@code testId} inside the dialog. */
+    public String text(String testId) {
+        return child(TestId.of(testId)).getText().trim();
+    }
+
+    /** A table inside the dialog, e.g. the items of an order. */
+    public TableComponent table(String testId) {
+        return new TableComponent(By.cssSelector("[data-testid='modal'] [data-testid='" + testId + "']"));
+    }
+
+    /** Whether the submit button is offered (e.g. "Cancel order" only for open orders). */
+    public boolean hasSubmit() {
+        return !driver.findElement(root).findElements(SUBMIT).isEmpty();
+    }
+
     /** Sets the field labelled {@code label}: types into inputs, picks the visible text in selects. */
     public ModalComponent fill(String label, String value) {
         WebElement field = field(label);

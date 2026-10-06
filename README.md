@@ -2,7 +2,7 @@
 
 A production-style QA automation framework: UI, API and database testing with Java 17, Selenium, TestNG and REST Assured.
 
-> **Status:** Milestones 1–3 of 10 (foundation, configuration and driver platform, UI automation framework) are done. The roadmap is below; this README grows with each milestone.
+> **Status:** Milestones 1–4 of 10 (foundation, configuration and driver platform, UI automation framework, test data and UI coverage) are done. The roadmap is below; this README grows with each milestone.
 
 Its companion repository, [selenium-java-framework](https://github.com/niranjankagri/selenium-java-framework), is an interview-focused Selenium + Java + TestNG lab. This repository holds the production-style work that lab leaves out.
 
@@ -101,6 +101,20 @@ CheckoutPage checkout = loginAsAdmin().navigation().openProducts()
 assertThat(checkout.total()).isEqualTo("$49.00");
 ```
 
+## Test data management
+
+| Need | Where it comes from |
+|---|---|
+| New, unique, valid data | `TestDataFactory.newCustomer()`, `newProduct()`, `newUser(role)`: Datafaker values plus a run-unique suffix |
+| A specific variant | `newCustomer().withEmail("bad")`: change only the field the test is about |
+| Reference data | `testdata/products.json` → `TestDataFactory.catalogue()` |
+| Negative cases | `testdata/invalid-customers.csv`, `testdata/login-negative.csv` → TestNG DataProviders |
+| Expected values | computed from the data, e.g. `OrderData.displayTotal()` |
+
+Isolation: every test creates its own data (unique email/SKU, safe in parallel and across runs) and registers its clean-up in `CleanupRegistry`; `BaseTest` runs the clean-ups after each test, passed or failed, newest first.
+
+Test groups so far: `smoke` (fast, read-only), `sanity` (key happy paths and role checks), `regression` (full coverage, data-driven negatives), `e2e` (business journeys), plus `ui` and `unit`/`platform`.
+
 ## Running the tests
 
 Requirements: JDK 17 or newer, Maven 3.9+, Chrome or Edge (Selenium Manager can download Firefox).
@@ -121,7 +135,7 @@ Logs go to the console (INFO) and to `automation/target/logs/automation.log` (DE
 | 1 | Foundation & architecture | ✅ done |
 | 2 | Configuration & driver platform | ✅ done |
 | 3 | UI automation framework | ✅ done |
-| 4 | Test data & UI coverage | planned |
+| 4 | Test data & UI coverage | ✅ done |
 | 5 | API automation platform | planned |
 | 6 | Database & end-to-end integration | planned |
 | 7 | Execution engine, parallelism & resilience | planned |

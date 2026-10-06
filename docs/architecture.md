@@ -80,3 +80,11 @@ Each major decision is written as Problem → Options → Decision → Reason �
 - **Decision:** the application exposes testability hooks (`data-testid`, `body[data-page]`, `body[data-ready]`, a visible loading bar), and the framework waits for them through `WaitUtils`. No `Thread.sleep`, no implicit waits.
 - **Reason:** waiting for a condition is as fast as the application allows and as long as it needs. Fixed sleeps are either too short (flaky) or too long (slow).
 - **Trade-offs:** the application must cooperate. In a real project these hooks are agreed with the developers as part of the definition of done.
+
+### ADR-009: Every test owns its data
+
+- **Problem:** tests that share data (one "test customer" for everybody) break each other, cannot run in parallel and leave the environment dirtier after each run.
+- **Options:** (a) shared fixture data; (b) reset the database before each run; (c) each test creates unique data and removes it afterwards.
+- **Decision:** (c). `TestDataFactory` generates valid data with a run-unique suffix (`RandomDataGenerator`), and each test registers an undo action in `CleanupRegistry` right after creating something. Read-only reference data (the seeded catalogue) is described in `testdata/products.json`.
+- **Reason:** works on any environment, including shared ones where a reset is not allowed; parallel-safe; a failing test still cleans up.
+- **Trade-offs:** clean-up through the UI is slow. Milestone 5 moves clean-up to the API. Data that the application itself keeps for history (a cancelled order) cannot always be removed through the UI; the end-to-end test uses a seeded customer and cancels its order for that reason.

@@ -1,5 +1,6 @@
 package com.enterprise.automation.ui.pages;
 
+import com.enterprise.automation.data.CustomerData;
 import com.enterprise.automation.ui.TestId;
 import com.enterprise.automation.ui.components.ModalComponent;
 import com.enterprise.automation.ui.components.TableComponent;
@@ -44,6 +45,11 @@ public class CustomerPage extends ShopPage<CustomerPage> {
         return actions.isDisplayed(ADD);
     }
 
+    /** Only admins get Edit and Delete buttons in the rows. */
+    public boolean canEditOrDeleteCustomers() {
+        return !driver.findElements(TestId.of("edit")).isEmpty() || !driver.findElements(TestId.of("delete")).isEmpty();
+    }
+
     public ModalComponent openAddCustomerForm() {
         actions.click(ADD);
         return new ModalComponent();
@@ -55,6 +61,17 @@ public class CustomerPage extends ShopPage<CustomerPage> {
         fillForm(form, firstName, lastName, email, phone, city);
         form.submitAndWaitUntilClosed();
         return waitUntilLoaded();
+    }
+
+    /** Adds {@code customer} through the form and waits for the list to reload. */
+    public CustomerPage addCustomer(CustomerData customer) {
+        return addCustomer(customer.firstName(), customer.lastName(), customer.email(), customer.phone(),
+                customer.city());
+    }
+
+    /** Fills the customer form from a data record. */
+    public static void fillForm(ModalComponent form, CustomerData customer) {
+        fillForm(form, customer.firstName(), customer.lastName(), customer.email(), customer.phone(), customer.city());
     }
 
     public ModalComponent openEditForm(String email) {

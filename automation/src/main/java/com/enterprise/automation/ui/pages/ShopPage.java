@@ -39,6 +39,11 @@ public abstract class ShopPage<T extends ShopPage<T>> extends BasePage {
         return waitUntilLoaded();
     }
 
+    /** Requests the page's URL without waiting for it, e.g. to check a redirect to the login page. */
+    public void visit() {
+        navigateTo(path());
+    }
+
     public T waitUntilLoaded() {
         wait.attributeIs(By.tagName("body"), "data-page", pageId());
         wait.attributeIs(By.tagName("body"), "data-ready", "true");

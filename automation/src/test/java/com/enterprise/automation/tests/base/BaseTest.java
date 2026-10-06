@@ -2,6 +2,7 @@ package com.enterprise.automation.tests.base;
 
 import com.enterprise.automation.config.ConfigManager;
 import com.enterprise.automation.config.TestConfig;
+import com.enterprise.automation.data.CleanupRegistry;
 import com.enterprise.automation.driver.DriverManager;
 import com.enterprise.automation.ui.pages.DashboardPage;
 import com.enterprise.automation.ui.pages.LoginPage;
@@ -24,6 +25,10 @@ public abstract class BaseTest {
         DriverManager.startDriver();
     }
 
+    /**
+     * After every test: screenshot first (the state at the moment of failure), then the test's
+     * registered clean-ups (they may still need the browser), then quit the browser.
+     */
     @AfterMethod(alwaysRun = true)
     public void stopBrowser(ITestResult result) {
         try {
@@ -31,6 +36,7 @@ public abstract class BaseTest {
                 ScreenshotUtils.save(DriverManager.getDriver(),
                         result.getTestClass().getRealClass().getSimpleName() + "." + result.getMethod().getMethodName());
             }
+            CleanupRegistry.runAll();
         } finally {
             DriverManager.quitDriver();
         }
