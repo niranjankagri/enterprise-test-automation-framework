@@ -10,7 +10,7 @@ public enum ExecutionMode {
     LOCAL,
     /** A browser on a Selenium Grid (or standalone server), reached through RemoteWebDriver. */
     REMOTE,
-    /** A browser in a cloud provider (BrowserStack), added in Milestone 9. */
+    /** A cloud browser provider: reserved, not implemented (fails fast with the alternatives). */
     CLOUD;
 
     /** Parses a configuration value such as {@code "local"} or {@code "remote"}. */

@@ -30,7 +30,7 @@ public final class DriverFactory {
     private DriverFactory() {
     }
 
-    /** A new browser session for {@code config}: local, on a Grid, or (Milestone 9) in the cloud. */
+    /** A new browser session for {@code config}: local or on a Selenium Grid (cloud is not implemented). */
     public static WebDriver create(TestConfig config) {
         // Same options for every execution mode
         MutableCapabilities options = BrowserOptionsFactory.create(config);
@@ -38,8 +38,9 @@ public final class DriverFactory {
         WebDriver driver = switch (config.execution()) {
             case LOCAL -> local(options);
             case REMOTE -> remote(config, options);
+            // Cloud providers are not integrated (see README, "Cloud execution"); fail fast with the alternatives
             case CLOUD -> throw new UnsupportedOperationException(
-                    "Cloud execution is added in Milestone 9; use -Dexecution=local or remote");
+                    "Cloud execution is not implemented; use -Dexecution=local or -Dexecution=remote (Selenium Grid)");
         };
         // Timeouts and window size; if that fails, close the session we just opened
         try {
