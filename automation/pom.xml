@@ -58,6 +58,16 @@
             <groupId>io.qameta.allure</groupId>
             <artifactId>allure-testng</artifactId>
         </dependency>
+
+        <!--
+            Test scope only: the suite starts the application under test in-process for the local
+            environment. The framework (src/main) never depends on it.
+        -->
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>demo-app</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
