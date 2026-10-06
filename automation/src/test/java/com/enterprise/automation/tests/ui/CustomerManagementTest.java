@@ -2,6 +2,8 @@ package com.enterprise.automation.tests.ui;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.enterprise.automation.api.ApiSession;
+import com.enterprise.automation.api.services.CustomerService;
 import com.enterprise.automation.data.CleanupRegistry;
 import com.enterprise.automation.data.CustomerData;
 import com.enterprise.automation.data.TestDataFactory;
@@ -19,12 +21,22 @@ import org.testng.annotations.Test;
 @Test(groups = {"ui", "regression"})
 public class CustomerManagementTest extends BaseTest {
 
-    /** Creates {@code customer} through the form and registers its deletion after the test. */
+    /** Creates {@code customer} through the form (that is what is tested) and registers its removal. */
     private CustomerPage createCustomer(CustomerPage page, CustomerData customer) {
+        registerRemoval(customer);
         page.addCustomer(customer);
-        CleanupRegistry.register("delete customer " + customer.email(),
-                () -> new CustomerPage().open().deleteCustomer(customer.email()));
         return page;
+    }
+
+    /**
+     * Clean-up goes through the API: fast, independent of the browser's state, and safe to run
+     * even if the UI step failed before the customer existed (then there is nothing to delete).
+     */
+    private static void registerRemoval(CustomerData customer) {
+        CleanupRegistry.register("delete customer " + customer.email(), () -> {
+            CustomerService api = ApiSession.admin().customers();
+            api.findByEmail(customer.email()).ifPresent(c -> api.deleteCustomer(c.id()));
+        });
     }
 
     @Test(groups = "sanity")
@@ -69,6 +81,7 @@ public class CustomerManagementTest extends BaseTest {
 
     public void adminDeletesACustomer() {
         CustomerData customer = TestDataFactory.newCustomer();
+        registerRemoval(customer); // safety net if the deletion under test fails
         CustomerPage customers = loginAsAdmin().navigation().openCustomers().addCustomer(customer);
 
         ModalComponent confirmation = customers.openDeleteConfirmation(customer.email());
