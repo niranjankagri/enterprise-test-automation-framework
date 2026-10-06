@@ -50,3 +50,18 @@ Each major decision is written as Problem → Options → Decision → Reason �
 
 - **Decision:** code logs only through the SLF4J API; Logback is the implementation.
 - **Reason:** SLF4J is the standard facade, so the implementation can change without touching code. Logback writes INFO to the console and DEBUG (with thread names, needed once tests run in parallel) to `target/logs/automation.log`.
+
+### ADR-005: Layered, immutable configuration
+
+- **Problem:** the same tests must run against several environments (local, qa, staging), browsers and execution modes, from a laptop, CI and Docker, without editing code.
+- **Options:** (a) one properties file edited per run; (b) system properties only; (c) layered sources: system property → environment variable → environment file → defaults.
+- **Decision:** (c), implemented by `ConfigLoader`, exposed through `ConfigManager.config()` as an immutable `TestConfig` record.
+- **Reason:** developers use `-D` options, CI and Docker use environment variables (and secrets), and the files hold the reviewed defaults. The loader takes its sources as maps, so every precedence rule is unit-tested (`ConfigLoaderTest`) without touching global state. A record cannot change mid-run, so parallel threads can share it.
+- **Trade-offs:** the configuration is fixed once per JVM; switching environment means a new run (which is what CI does anyway). Invalid values fail at start-up instead of halfway through a run, which is intended.
+
+### ADR-006: One browser per thread
+
+- **Problem:** parallel tests (Milestone 7) must never share a browser, and a failed test must never leave a browser running.
+- **Decision:** `DriverFactory` only creates a configured browser (local or Grid, same options either way); `DriverManager` holds it in a `ThreadLocal<WebDriver>`, quits a leftover before starting a new one, and always clears the `ThreadLocal`, even when `quit()` fails.
+- **Reason:** creation (which browser, where) and ownership (who uses it, when it ends) change for different reasons, so they live in different classes. A `ThreadLocal` gives each TestNG worker thread its own session without passing drivers around. `DriverManagerTest` checks it: four sessions on two threads, all unique.
+- **Trade-offs:** code running on a different thread from the test (rare) cannot see the test's browser. No implicit wait is set: only explicit waits are used, so timeouts stay predictable.

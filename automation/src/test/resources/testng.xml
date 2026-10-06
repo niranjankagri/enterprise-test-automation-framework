@@ -6,4 +6,9 @@
             <package name="com.enterprise.automation.tests.foundation"/>
         </packages>
     </test>
+    <test name="Platform">
+        <packages>
+            <package name="com.enterprise.automation.tests.platform"/>
+        </packages>
+    </test>
 </suite>
