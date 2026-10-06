@@ -58,6 +58,10 @@
             <groupId>io.qameta.allure</groupId>
             <artifactId>allure-testng</artifactId>
         </dependency>
+        <dependency>
+            <groupId>net.datafaker</groupId>
+            <artifactId>datafaker</artifactId>
+        </dependency>
 
         <!--
             Test scope only: the suite starts the application under test in-process for the local

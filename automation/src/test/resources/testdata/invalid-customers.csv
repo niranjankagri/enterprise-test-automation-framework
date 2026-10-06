@@ -1,0 +1,11 @@
+# Negative cases for the customer form: one field is changed on an otherwise valid customer.
+# field = API field name, label = form label, value = what is typed, error = expected message
+case,field,label,value,error
+first name missing,firstName,First name,,First name is required
+last name missing,lastName,Last name,,Last name is required
+email missing,email,Email,,Email is required
+email without @,email,Email,ava.example.com,Email must be a valid email address
+email without domain,email,Email,ava@,Email must be a valid email address
+phone with letters,phone,Phone,call-me-maybe,"Phone must contain 7-20 digits, spaces, +, - or ()"
+phone too short,phone,Phone,12345,"Phone must contain 7-20 digits, spaces, +, - or ()"
+first name too long,firstName,First name,ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ,First name must be at most 50 characters

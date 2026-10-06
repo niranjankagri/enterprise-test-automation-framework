@@ -42,6 +42,7 @@
         <logback.version>1.6.5</logback.version>
         <allure.version>2.35.5</allure.version>
         <aspectj.version>1.9.25</aspectj.version>
+        <datafaker.version>2.7.0</datafaker.version>
 
         <!-- Application under test -->
         <h2.version>2.5.252</h2.version>
@@ -105,6 +106,11 @@
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>${h2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.datafaker</groupId>
+                <artifactId>datafaker</artifactId>
+                <version>${datafaker.version}</version>
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>

@@ -1,0 +1,10 @@
+[
+  { "sku": "LAP-1001", "name": "Ultrabook 14",                "category": "Laptops",     "price": 1199.00, "stock": 25 },
+  { "sku": "LAP-1002", "name": "Workstation 16",              "category": "Laptops",     "price": 2199.00, "stock": 10 },
+  { "sku": "MON-2001", "name": "27-inch 4K Monitor",          "category": "Monitors",    "price": 429.00,  "stock": 40 },
+  { "sku": "MON-2002", "name": "34-inch Ultrawide Monitor",   "category": "Monitors",    "price": 649.00,  "stock": 15 },
+  { "sku": "ACC-3001", "name": "Wireless Keyboard",           "category": "Accessories", "price": 79.00,   "stock": 120 },
+  { "sku": "ACC-3002", "name": "Wireless Mouse",              "category": "Accessories", "price": 49.00,   "stock": 150 },
+  { "sku": "ACC-3003", "name": "USB-C Dock",                  "category": "Accessories", "price": 189.00,  "stock": 60 },
+  { "sku": "AUD-4001", "name": "Noise-Cancelling Headphones", "category": "Audio",       "price": 299.00,  "stock": 35 }
+]

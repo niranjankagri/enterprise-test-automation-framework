@@ -1,0 +1,7 @@
+# Negative sign-in cases. expectedField = where the message appears: "form" (banner) or a field name.
+case,username,password,expectedField,expectedMessage
+wrong password,admin,not-the-password,form,Invalid username or password
+unknown user,nobody,Admin@12345,form,Invalid username or password
+password case matters,admin,admin@12345,form,Invalid username or password
+username missing,,Admin@12345,username,Username is required
+password missing,admin,,password,Password is required
