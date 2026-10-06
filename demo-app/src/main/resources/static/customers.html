@@ -33,11 +33,14 @@
     (() => {
       const { $, api, rows, esc, statusBadge, requireAuth, isAdmin, modal, field, toast } = App;
       requireAuth('customers');
+      // Viewers see the list but no Add/Edit/Delete controls
       const admin = isAdmin();
       const addButton = $('[data-testid="add-customer"]');
       addButton.hidden = !admin;
+      // The rows currently shown (used to find a customer by id when a row button is clicked)
       let customers = [];
 
+      // (Re)loads the list with the current search term; data-ready is false while loading
       async function load() {
         document.body.dataset.ready = 'false';
         const search = $('[data-testid="customer-search"]').value.trim();
@@ -53,6 +56,7 @@
         document.body.dataset.ready = 'true';
       }
 
+      // Add (customer = null) or Edit (pre-filled) dialog; onSave receives the form values
       function form(customer, onSave) {
         const c = customer || {};
         modal({
@@ -69,20 +73,24 @@
           ].join(''),
           onSubmit: async (data) => {
             const body = Object.fromEntries(data.entries());
+            // Empty optional fields are sent as null, not as ""
             ['phone', 'city'].forEach((k) => { if (!body[k]) body[k] = null; });
             await onSave(body);
           },
         });
       }
 
+      // Search button and Enter in the search box
       $('#search-form').addEventListener('submit', (e) => { e.preventDefault(); load(); });
 
+      // Add: POST, confirmation toast, reload (the dialog closes after the reload)
       addButton.addEventListener('click', () => form(null, async (body) => {
         const created = await api('POST', '/customers', body);
         toast(`Customer ${created.firstName} ${created.lastName} created`);
         await load();
       }));
 
+      // One listener for all row buttons (rows are re-rendered on every load)
       $('[data-testid="customers-table"]').addEventListener('click', (event) => {
         const button = event.target.closest('button');
         if (!button) return;

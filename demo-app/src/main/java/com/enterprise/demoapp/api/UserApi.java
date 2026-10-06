@@ -18,10 +18,13 @@ import java.util.Set;
 /** {@code /api/users}: the back-office accounts. Everything except {@code /me} needs the ADMIN role. */
 public final class UserApi {
 
+    // The two roles the application knows
     private static final Set<String> ROLES = Set.of("ADMIN", "VIEWER");
+    // Never select password_hash/salt: users are returned without any secret
     private static final String COLUMNS = "id, username, full_name, role, created_at";
 
     private final Database database;
+    // Creates accounts with salted password hashes
     private final AuthService auth;
 
     public UserApi(Database database, AuthService auth) {
@@ -32,6 +35,7 @@ public final class UserApi {
     /** {@code GET /api/users/me}: the signed-in user. */
     public Response me(Request request) {
         return Sql.run(database, c -> {
+            // The router signed the request in, so username() is known and the row exists
             try (PreparedStatement ps = c.prepareStatement("SELECT " + COLUMNS + " FROM app_users WHERE username = ?")) {
                 ps.setString(1, request.username());
                 try (ResultSet rs = ps.executeQuery()) {
@@ -42,6 +46,7 @@ public final class UserApi {
         });
     }
 
+    /** {@code GET /api/users}: every account, oldest first. */
     public Response list(Request request) {
         return Sql.run(database, c -> {
             List<Map<String, Object>> users = new ArrayList<>();
@@ -55,6 +60,7 @@ public final class UserApi {
         });
     }
 
+    /** {@code GET /api/users/{id}}; 404 if unknown. */
     public Response get(Request request) {
         long id = request.pathId("id");
         return Sql.run(database, c -> Response.ok(find(c, id)));
@@ -67,11 +73,13 @@ public final class UserApi {
         String password = v.text("password", "Password", 100, true);
         String fullName = v.text("fullName", "Full name", 100, true);
         String role = v.oneOf("role", "Role", ROLES, true);
+        // Minimum password length
         if (password != null && password.length() < 8) {
             v.error("password", "Password must be at least 8 characters");
         }
         v.validate();
         return Sql.run(database, c -> {
+            // Usernames are unique
             try (PreparedStatement ps = c.prepareStatement("SELECT id FROM app_users WHERE username = ?")) {
                 ps.setString(1, username);
                 try (ResultSet rs = ps.executeQuery()) {
@@ -81,6 +89,7 @@ public final class UserApi {
                     }
                 }
             }
+            // AuthService salts and hashes the password
             long id = auth.createUser(c, username, password, fullName, role);
             return Response.created(find(c, id), "/api/users/" + id);
         });
@@ -94,6 +103,7 @@ public final class UserApi {
         String role = v.oneOf("role", "Role", ROLES, false);
         v.validate();
         return Sql.run(database, c -> {
+            // Fields not in the body keep their current values
             Map<String, Object> current = find(c, id);
             try (PreparedStatement ps = c.prepareStatement("UPDATE app_users SET full_name = ?, role = ? WHERE id = ?")) {
                 ps.setString(1, fullName != null ? fullName : (String) current.get("fullName"));
@@ -109,6 +119,7 @@ public final class UserApi {
     public Response delete(Request request) {
         long id = request.pathId("id");
         return Sql.run(database, c -> {
+            // Prevents locking yourself out
             if (find(c, id).get("username").equals(request.username())) {
                 throw new ApiException(409, "You cannot delete your own account");
             }
@@ -120,6 +131,7 @@ public final class UserApi {
         });
     }
 
+    /** One account; 404 if it does not exist. */
     private static Map<String, Object> find(Connection c, long id) throws SQLException {
         try (PreparedStatement ps = c.prepareStatement("SELECT " + COLUMNS + " FROM app_users WHERE id = ?")) {
             ps.setLong(1, id);
@@ -132,6 +144,7 @@ public final class UserApi {
         }
     }
 
+    /** Database row -> JSON field names (no secrets). */
     private static Map<String, Object> map(ResultSet rs) throws SQLException {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", rs.getLong("id"));

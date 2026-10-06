@@ -18,6 +18,7 @@ import java.util.Map;
 /** {@code /api/products}: list/search, get, create, replace, update, delete (soft). */
 public final class ProductApi {
 
+    // Columns read for every product response
     private static final String COLUMNS = "id, sku, name, category, price, stock, active";
 
     private final Database database;
@@ -31,12 +32,15 @@ public final class ProductApi {
         String search = request.query("search");
         String category = request.query("category");
         boolean includeInactive = "true".equalsIgnoreCase(request.query("includeInactive"));
+        // Build the WHERE clause from the filters that are present; "1 = 1" lets every filter start with AND
         StringBuilder sql = new StringBuilder("SELECT " + COLUMNS + " FROM products WHERE 1 = 1");
+        // Values for the "?" placeholders, in order
         List<String> args = new ArrayList<>();
         if (!includeInactive) {
             sql.append(" AND active");
         }
         if (search != null) {
+            // Search matches the name or the SKU, case-insensitively
             sql.append(" AND (LOWER(name) LIKE ? OR LOWER(sku) LIKE ?)");
             args.add("%" + search.toLowerCase() + "%");
             args.add("%" + search.toLowerCase() + "%");
@@ -48,6 +52,7 @@ public final class ProductApi {
         sql.append(" ORDER BY id");
         return Sql.run(database, c -> {
             try (PreparedStatement ps = c.prepareStatement(sql.toString())) {
+                // Bind every filter value (no string concatenation of user input)
                 for (int i = 0; i < args.size(); i++) {
                     ps.setString(i + 1, args.get(i));
                 }
@@ -62,11 +67,13 @@ public final class ProductApi {
         });
     }
 
+    /** {@code GET /api/products/{id}}; inactive products are still returned (with active=false). */
     public Response get(Request request) {
         long id = request.pathId("id");
         return Sql.run(database, c -> Response.ok(find(c, id)));
     }
 
+    /** {@code POST /api/products}: validates, rejects duplicate SKUs (409), returns 201. */
     public Response create(Request request) {
         Fields f = read(request, false);
         return Sql.run(database, c -> {
@@ -86,6 +93,7 @@ public final class ProductApi {
         });
     }
 
+    /** {@code PUT}: replaces every field (same rules as create). */
     public Response replace(Request request) {
         long id = request.pathId("id");
         Fields f = read(request, false);
@@ -97,10 +105,12 @@ public final class ProductApi {
         });
     }
 
+    /** {@code PATCH}: changes only the fields present in the body. */
     public Response update(Request request) {
         long id = request.pathId("id");
         Fields f = read(request, true);
         return Sql.run(database, c -> {
+            // Missing fields keep their current values
             Map<String, Object> current = find(c, id);
             if (f.sku != null) {
                 ensureSkuFree(c, f.sku, id);
@@ -120,6 +130,7 @@ public final class ProductApi {
         long id = request.pathId("id");
         return Sql.run(database, c -> {
             find(c, id);
+            // Soft delete: hidden from the catalogue, still resolvable from old orders
             try (PreparedStatement ps = c.prepareStatement("UPDATE products SET active = FALSE WHERE id = ?")) {
                 ps.setLong(1, id);
                 ps.executeUpdate();
@@ -128,6 +139,7 @@ public final class ProductApi {
         });
     }
 
+    /** One product as a response map; 404 if it does not exist. Also used by {@link OrderApi}. */
     static Map<String, Object> find(Connection c, long id) throws SQLException {
         try (PreparedStatement ps = c.prepareStatement("SELECT " + COLUMNS + " FROM products WHERE id = ?")) {
             ps.setLong(1, id);
@@ -140,6 +152,7 @@ public final class ProductApi {
         }
     }
 
+    /** Writes all editable columns of one product. */
     private static void save(Connection c, long id, String sku, String name, String category, BigDecimal price,
                              int stock) throws SQLException {
         try (PreparedStatement ps = c.prepareStatement(
@@ -154,6 +167,7 @@ public final class ProductApi {
         }
     }
 
+    /** 409 when another product (not {@code ownId}) already has this SKU. */
     private static void ensureSkuFree(Connection c, String sku, long ownId) throws SQLException {
         try (PreparedStatement ps = c.prepareStatement("SELECT id FROM products WHERE sku = ? AND id <> ?")) {
             ps.setString(1, sku);
@@ -167,6 +181,7 @@ public final class ProductApi {
         }
     }
 
+    /** Reads and validates the body; throws one 400 listing every invalid field. */
     private static Fields read(Request request, boolean partial) {
         Validator v = new Validator(request.body(), partial);
         Fields f = new Fields();
@@ -179,6 +194,7 @@ public final class ProductApi {
         return f;
     }
 
+    /** Database row -> JSON field names. */
     private static Map<String, Object> map(ResultSet rs) throws SQLException {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", rs.getLong("id"));
@@ -191,6 +207,7 @@ public final class ProductApi {
         return m;
     }
 
+    /** Validated request fields; {@code null} means "not given". */
     private static final class Fields {
         String sku;
         String name;

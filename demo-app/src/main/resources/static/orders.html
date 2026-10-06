@@ -36,6 +36,7 @@
       requireAuth('orders');
       let orders = [];
 
+      // (Re)loads the order list with the current status filter
       async function load() {
         document.body.dataset.ready = 'false';
         const status = $('[data-testid="order-status-filter"]').value;
@@ -51,6 +52,7 @@
         document.body.dataset.ready = 'true';
       }
 
+      // Order dialog with its lines; admins get "Cancel order" while the order is still PLACED
       function details(order) {
         const cancellable = order.status === 'PLACED' && isAdmin();
         modal({
@@ -80,6 +82,7 @@
         if (button) details(orders.find((o) => o.id === Number(button.dataset.id)));
       });
 
+      // After checkout the page is opened with ?placed=<id>: confirm with a toast
       load().then(() => {
         const placed = new URLSearchParams(location.search).get('placed');
         if (placed) toast(`Order #${placed} placed successfully`);

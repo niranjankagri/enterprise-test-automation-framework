@@ -36,14 +36,17 @@
       const user = requireAuth('dashboard');
       $('[data-testid="welcome-message"]').textContent = `Welcome back, ${user.fullName}.`;
 
+      // Figures and orders are loaded in parallel
       const [stats, orders] = await Promise.all([api('GET', '/stats'), api('GET', '/orders')]);
       $('[data-testid="stat-customers"]').textContent = stats.customers;
       $('[data-testid="stat-products"]').textContent = stats.products;
       $('[data-testid="stat-orders"]').textContent = stats.orders;
       $('[data-testid="stat-revenue"]').textContent = money(stats.revenue);
+      // The 5 newest orders (the API returns newest first)
       rows($('[data-testid="recent-orders-table"] tbody'), orders.slice(0, 5), (o) => `
         <tr data-id="${o.id}"><td>#${o.id}</td><td>${esc(o.customerName)}</td><td class="num">${money(o.total)}</td>
         <td>${statusBadge(o.status)}</td><td>${date(o.createdAt)}</td></tr>`, 'No orders yet');
+      // Signal for tests: the page has its data
       document.body.dataset.ready = 'true';
     })();
   </script>

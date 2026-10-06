@@ -20,10 +20,12 @@ public final class StatsApi {
     public Response get(Request request) {
         return Sql.run(database, c -> {
             Map<String, Object> stats = new LinkedHashMap<>();
+            // Four figures in one round trip, as scalar sub-queries
             try (PreparedStatement ps = c.prepareStatement("SELECT"
                     + " (SELECT COUNT(*) FROM customers),"
                     + " (SELECT COUNT(*) FROM products WHERE active),"
                     + " (SELECT COUNT(*) FROM orders),"
+                    // COALESCE: no orders yet -> revenue 0 instead of NULL
                     + " (SELECT COALESCE(SUM(total), 0) FROM orders WHERE status <> 'CANCELLED')");
                  ResultSet rs = ps.executeQuery()) {
                 rs.next();

@@ -39,6 +39,7 @@
       requireAuth('checkout');
       const error = $('[data-testid="checkout-error"]');
 
+      // Draws the cart lines and the total; "Place order" needs items and the ADMIN role
       function render() {
         const items = cart();
         rows($('[data-testid="cart-table"] tbody'), items, (i) => `
@@ -53,6 +54,7 @@
         $('[data-testid="place-order"]').disabled = items.length === 0 || !isAdmin();
       }
 
+      // Quantity edited (fires on blur/Tab): store it (minimum 1) and redraw the totals
       $('[data-testid="cart-table"]').addEventListener('change', (event) => {
         if (event.target.dataset.testid !== 'quantity') return;
         const items = cart();
@@ -62,12 +64,14 @@
         render();
       });
 
+      // Remove a line from the cart
       $('[data-testid="cart-table"]').addEventListener('click', (event) => {
         if (event.target.dataset.testid !== 'remove') return;
         saveCart(cart().filter((i) => i.productId !== Number(event.target.dataset.id)));
         render();
       });
 
+      // Place order: a customer must be chosen; success empties the cart and opens the order list
       $('[data-testid="place-order"]').addEventListener('click', async () => {
         error.textContent = '';
         const customerId = Number($('[data-testid="checkout-customer"]').value);
@@ -90,6 +94,7 @@
         }
       });
 
+      // Only active customers can order, so only they are offered
       const customers = await api('GET', '/customers');
       $('[data-testid="checkout-customer"]').insertAdjacentHTML('beforeend', customers
         .filter((c) => c.status === 'ACTIVE')

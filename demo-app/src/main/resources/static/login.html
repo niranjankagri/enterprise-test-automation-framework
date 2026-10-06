@@ -31,8 +31,10 @@
   <script>
     (() => {
       const { $, api, saveSession, token } = App;
+      // Already signed in: skip the login page
       if (token()) location.href = '/dashboard.html';
 
+      // Info banner after logout (?loggedOut=1) or when the session expired (?expired=1)
       const params = new URLSearchParams(location.search);
       if (params.has('loggedOut')) $('[data-testid="login-info"]').textContent = 'You have been logged out.';
       if (params.has('expired')) $('[data-testid="login-info"]').textContent = 'Your session has expired. Please sign in again.';
@@ -41,13 +43,16 @@
         event.preventDefault();
         const username = $('#username').value.trim();
         const password = $('#password').value;
+        // Client-side "required" checks show messages under the fields without calling the API
         $('[data-testid="login-error"]').textContent = '';
         $('[data-testid="username-error"]').textContent = username ? '' : 'Username is required';
         $('[data-testid="password-error"]').textContent = password ? '' : 'Password is required';
         if (!username || !password) return;
 
+        // Disabled while the request runs (no double submit)
         const button = $('[data-testid="login-button"]');
         button.disabled = true;
+        // Success: store the session and open the dashboard; failure: show the API's message
         try {
           saveSession(await api('POST', '/auth/login', { username, password }));
           location.href = '/dashboard.html';
