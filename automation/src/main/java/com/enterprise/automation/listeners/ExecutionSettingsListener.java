@@ -22,9 +22,12 @@ public class ExecutionSettingsListener implements IAlterSuiteListener {
     @Override
     public void alter(List<XmlSuite> suites) {
         ExecutionSettings settings = ConfigManager.config().runSettings();
+        // Called once, before any suite starts: the XML is changed in memory, not on disk
         for (XmlSuite suite : suites) {
+            // "none" / "classes" / "methods" / "tests" -> TestNG's enum
             suite.setParallel(XmlSuite.ParallelMode.getValidParallel(settings.parallel()));
             suite.setThreadCount(settings.threads());
+            // Data-provider rows of parallel data providers use the same thread budget
             suite.setDataProviderThreadCount(settings.threads());
             LOG.info("Suite '{}': parallel={}, threads={}", suite.getName(), settings.parallel(),
                     settings.isParallel() ? settings.threads() : 1);

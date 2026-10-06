@@ -23,6 +23,7 @@ public final class ExecutionMetadata {
     /** Ordered key/value pairs, ready for a properties file, a JSON file or a report. */
     public static Map<String, String> collect() {
         TestConfig config = ConfigManager.config();
+        // Ordered: the most useful facts first in every report and file
         Map<String, String> facts = new LinkedHashMap<>();
         facts.put("environment", config.environment());
         facts.put("base.url", config.baseUrl().toString());
@@ -46,10 +47,12 @@ public final class ExecutionMetadata {
     /** CI provides the commit (GITHUB_SHA, GIT_COMMIT); locally ask git, if it is installed. */
     static String gitCommit() {
         String fromCi = firstNonBlank(System.getenv("GITHUB_SHA"), System.getenv("GIT_COMMIT"), null);
+        // Short form (12 characters) like the local git command below
         if (fromCi != null) {
             return fromCi.length() > 12 ? fromCi.substring(0, 12) : fromCi;
         }
         try {
+            // Local run: ask git; at most 5 seconds, and "unknown" if git is missing
             Process git = new ProcessBuilder("git", "rev-parse", "--short=12", "HEAD").redirectErrorStream(true).start();
             if (git.waitFor(5, TimeUnit.SECONDS) && git.exitValue() == 0) {
                 return new String(git.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
@@ -58,11 +61,13 @@ public final class ExecutionMetadata {
         } catch (IOException e) {
             return "unknown";
         } catch (InterruptedException e) {
+            // Keep the interrupt flag for whoever is waiting on this thread
             Thread.currentThread().interrupt();
         }
         return "unknown";
     }
 
+    /** Link to the CI run (GitHub Actions variables, or Jenkins' BUILD_URL), "local" otherwise. */
     private static String buildUrl() {
         String server = System.getenv("GITHUB_SERVER_URL");
         String repo = System.getenv("GITHUB_REPOSITORY");
@@ -73,6 +78,7 @@ public final class ExecutionMetadata {
         return firstNonBlank(System.getenv("BUILD_URL"), "local", null);
     }
 
+    /** The first of the three values that is neither null nor blank. */
     private static String firstNonBlank(String a, String b, String c) {
         if (a != null && !a.isBlank()) {
             return a;

@@ -14,6 +14,7 @@ public final class ParameterMasking {
     private ParameterMasking() {
     }
 
+    /** Whether a parameter name suggests a secret (password, token, secret, apiKey). */
     public static boolean isSecret(String parameterName) {
         String name = parameterName.toLowerCase(Locale.ROOT);
         return name.contains("password") || name.contains("token") || name.contains("secret") || name.contains("apikey");
@@ -24,7 +25,9 @@ public final class ParameterMasking {
         if (values == null) {
             return new Object[0];
         }
+        // A copy: TestNG still passes the real values to the test method
         Object[] masked = values.clone();
+        // Names are real (e.g. "password") because of the -parameters compiler flag
         Parameter[] parameters = method.getParameters();
         for (int i = 0; i < masked.length && i < parameters.length; i++) {
             if (isSecret(parameters[i].getName()) && masked[i] != null) {

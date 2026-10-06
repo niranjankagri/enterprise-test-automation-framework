@@ -24,18 +24,22 @@ import org.testng.ITestContext;
 public class ExecutionMetadataListener implements ISuiteListener {
 
     private static final Logger LOG = LoggerFactory.getLogger(ExecutionMetadataListener.class);
+    // automation/target/execution-metadata.json (CI uploads it with the results)
     private static final Path OUTPUT = Path.of("target", "execution-metadata.json");
 
+    // Suite start, for the duration
     private Instant start;
 
     @Override
     public void onStart(ISuite suite) {
         start = Instant.now();
+        // The facts at the top of every log, before any test output
         LOG.info("Run metadata: {}", ExecutionMetadata.collect());
     }
 
     @Override
     public void onFinish(ISuite suite) {
+        // Add up the results of every <test> in the suite
         int passed = 0;
         int failed = 0;
         int skipped = 0;
@@ -47,6 +51,7 @@ public class ExecutionMetadataListener implements ISuiteListener {
         }
         Duration duration = Duration.between(start == null ? Instant.now() : start, Instant.now());
 
+        // Results first, then the run facts
         Map<String, Object> metadata = new LinkedHashMap<>();
         metadata.put("suite", suite.getName());
         metadata.put("start", String.valueOf(start));
@@ -61,6 +66,7 @@ public class ExecutionMetadataListener implements ISuiteListener {
         } catch (IOException e) {
             LOG.warn("Could not write {}: {}", OUTPUT, e.getMessage());
         }
+        // Allure's environment/executor/categories files; a failure here must not fail the run
         try {
             AllureRunFiles.write(ExecutionMetadata.collect());
         } catch (RuntimeException e) {

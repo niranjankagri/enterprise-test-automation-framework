@@ -14,7 +14,9 @@ import java.util.Properties;
  */
 public final class FrameworkInfo {
 
+    // Classpath location of the filtered properties file
     private static final String RESOURCE = "/framework.properties";
+    // Read once, when the class is first used
     private static final Properties PROPERTIES = load();
 
     private FrameworkInfo() {
@@ -30,6 +32,7 @@ public final class FrameworkInfo {
         return PROPERTIES.getProperty("framework.version");
     }
 
+    /** Loads framework.properties; a missing file means a broken build, so fail loudly. */
     private static Properties load() {
         try (InputStream in = FrameworkInfo.class.getResourceAsStream(RESOURCE)) {
             if (in == null) {

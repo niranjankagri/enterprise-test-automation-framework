@@ -14,6 +14,7 @@ public class RetryTransformer implements IAnnotationTransformer {
     @Override
     @SuppressWarnings("rawtypes")
     public void transform(ITestAnnotation annotation, Class testClass, Constructor testConstructor, Method testMethod) {
+        // Called for every @Test while TestNG reads the classes, before anything runs
         Class<?> current = annotation.getRetryAnalyzerClass();
         // TestNG's "no analyzer" default is an internal class; compare by name instead of importing it
         if (current == null || "DisabledRetryAnalyzer".equals(current.getSimpleName())) {

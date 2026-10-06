@@ -18,6 +18,7 @@ public final class Report {
 
     /** Runs {@code action} as a report step named {@code name}; a failure marks the step failed. */
     public static void step(String name, Runnable action) {
+        // Nested calls create nested steps (e.g. an API call inside a cleanup)
         Allure.step(name, action::run);
     }
 
@@ -30,6 +31,8 @@ public final class Report {
     public static void log(String name) {
         Allure.step(name);
     }
+
+    // Attachments go to the current step (or the test when no step is open); null is written as empty
 
     public static void attachText(String name, String text) {
         Allure.addAttachment(name, "text/plain", text == null ? "" : text, ".txt");
@@ -45,6 +48,7 @@ public final class Report {
     }
 
     public static void attachPng(String name, byte[] png) {
+        // No screenshot could be taken (browser gone): nothing to attach
         if (png != null) {
             Allure.addAttachment(name, "image/png", new ByteArrayInputStream(png), ".png");
         }
