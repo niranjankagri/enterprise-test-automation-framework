@@ -40,6 +40,8 @@ public final class BrowserOptionsFactory {
         options.addArguments(chromiumArguments(config));
         // Browser preferences: no password manager, no leak-detection dialog
         options.setExperimentalOption("prefs", NO_PASSWORD_MANAGER);
+        // Keep the browser console, so a failed test can attach it (ReportEvidenceListener)
+        options.setCapability("goog:loggingPrefs", CONSOLE_LOG);
         return options;
     }
 
@@ -49,8 +51,16 @@ public final class BrowserOptionsFactory {
         options.setPageLoadStrategy(PageLoadStrategy.NORMAL);
         options.addArguments(chromiumArguments(config));
         options.setExperimentalOption("prefs", NO_PASSWORD_MANAGER);
+        // Edge's name for the same logging preference
+        options.setCapability("ms:loggingPrefs", CONSOLE_LOG);
         return options;
     }
+
+    /**
+     * Chromium browsers keep console messages only when asked to. Firefox has no such log
+     * (geckodriver does not implement it); its failures attach no console.
+     */
+    private static final Map<String, String> CONSOLE_LOG = Map.of("browser", "ALL");
 
     /**
      * Test browsers must not save or check passwords. Chrome's leak detection compares a password

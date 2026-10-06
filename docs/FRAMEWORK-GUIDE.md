@@ -320,7 +320,7 @@ assertThat(error.message()).isEqualTo("This action needs the ADMIN role");
 ## 10. Database layer
 
 - **`DatabaseConnection.fromConfig()`** opens connections from `db.*`. If the environment has no `db.url` it throws TestNG's `SkipException`; called from `@BeforeClass(alwaysRun = true)`, the whole class is reported as skipped with the reason.
-- **`QueryExecutor`** runs only parameterized SQL (`?`, never string concatenation), returns rows as maps with lower-case column names, rejects several rows for a single-row query, counts, updates (for clean-up), opens one connection per query, and makes every query a report step with its rows attached (password and salt columns masked).
+- **`QueryExecutor`** runs only parameterized SQL (`?`, never string concatenation), returns rows as maps with lower-case column names, rejects several rows for a single-row query, counts, updates (for clean-up), opens one connection per query, and makes every query a report step ("DB: customer by email": `ShopDatabase` names every query with `named(...)`) with query name, SQL, parameters, database URL, duration and rows attached (password and salt columns masked). A failed query names the query and the database.
 - **`ShopDatabase`** holds the application's named queries: `customerByEmail`, `customerById`, `productBySku`, `stockOf`, `orderById`, `orderItems`, `orderCountOf`, `userByUsername`, `deleteUnusedProduct`.
 - **`DatabaseAssertions`**: `assertRow(row, "customer x").hasValue("city", "Pune").hasNonNull("created_at")` and `assertNoRow(...)`; numbers are compared by value (10.5 = 10.50); failure messages show the whole row.
 
@@ -510,8 +510,8 @@ What a test shows, without any reporting code in the test:
 |---|---|
 | A step per click, typed value (passwords `****`), selection, form fill, navigation | `ElementActions`, `ModalComponent`, `BasePage` |
 | A step per API call with Request and Response attachments (secrets masked) | `ReportingApiFilter` |
-| A step per SQL query with parameters and rows (hash/salt masked) | `QueryExecutor` |
-| Screenshot, page URL and page source of a failed UI test (also saved under `target/screenshots`) | `ReportEvidenceListener` (right after the test method, before the browser is quit) |
+| A step per database query: name, SQL, parameters, database, duration, rows (hash/salt masked) | `QueryExecutor` |
+| Screenshot, page URL, page source and browser console (Chrome/Edge) of a failed UI test (screenshot also saved under `target/screenshots`) | `ReportEvidenceListener` (right after the test method, before the browser is quit) |
 | The test's own log lines | `TestLogAppender` + `ReportEvidenceListener` |
 | Labels: epic = layer, feature = class, tags = groups | `ReportEvidenceListener` |
 | Parameters of data-driven tests, secret ones masked | Allure + `ParameterMasking` |

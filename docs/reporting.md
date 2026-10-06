@@ -21,8 +21,8 @@ Requires Node.js (for `npx`) and Java. CI publishes the generated report as a bu
 | Which build? | "Environment": framework version, Git commit, build number, build URL; "Executor": local run or CI build with a link |
 | Which test data? | parameters of data-driven tests; typed values in UI steps (passwords as `****`); request bodies |
 | Which API request and response? | a step per call (`POST /api/customers`) with "Request" and "Response 201" attachments: method, URL, headers, body, status, duration and the correlation id (`X-Request-Id`, the same id the application logs) |
-| Which database rows? | a step per query (`SQL: SELECT ...`) with parameters and rows |
-| Which screenshot? | "Screenshot at failure", plus "Page URL" and "Page source"; also saved in `automation/target/screenshots` |
+| Which database rows? | a step per query (`DB: customer by email`) with query name, SQL, parameters, database URL (credentials masked), duration and rows; a failed query names the query and the database |
+| Which screenshot? | "Screenshot at failure", plus "Page URL", "Page source" and "Browser console" (JavaScript errors, failed requests; Chrome/Edge, last 100 entries, masked); also saved in `automation/target/screenshots` |
 | Which log? | "Test log": only this test's log lines, even in parallel runs |
 
 ## How it works
@@ -33,7 +33,7 @@ Requires Node.js (for `npx`) and Java. CI publishes the generated report as a bu
 | `ElementActions`, `BasePage`, `ModalComponent` | every click, typed value, selection and navigation is a step |
 | `ReportingApiFilter` | every API call is a step with request/response attachments |
 | `QueryExecutor` | every SQL query is a step with its rows |
-| `ReportEvidenceListener` | labels (epic/feature/tags), per-test log, screenshot/URL/page source right after a failed test method |
+| `ReportEvidenceListener` + `BrowserConsole` | labels (epic/feature/tags), per-test log, screenshot/URL/page source/browser console right after a failed test method |
 | `TestLogAppender` | Logback appender collecting each thread's lines for the running test |
 | `ExecutionMetadataListener` + `AllureRunFiles` | `environment.properties`, `executor.json`, `categories.json` |
 | `FailureDiagnosticsListener` | the same facts as a block in the log, for people reading logs instead of the report |

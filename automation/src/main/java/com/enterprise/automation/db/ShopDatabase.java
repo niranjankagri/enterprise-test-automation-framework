@@ -7,7 +7,8 @@ import java.util.Optional;
 /**
  * The application's database as tests need it: named queries for customers, products, orders and
  * users. It plays the role page objects play for the UI: SQL lives here, once, and tests ask
- * business questions ({@code customerByEmail}, {@code stockOf}).
+ * business questions ({@code customerByEmail}, {@code stockOf}). Every query is named, so the
+ * report and the log say "DB: customer by email" with its duration and result.
  */
 public final class ShopDatabase {
 
@@ -30,43 +31,43 @@ public final class ShopDatabase {
 
     /** The customer row with this email (case-insensitive, like the application's uniqueness rule). */
     public Optional<Map<String, Object>> customerByEmail(String email) {
-        return sql.queryForOne("SELECT * FROM customers WHERE LOWER(email) = LOWER(?)", email);
+        return sql.named("customer by email").queryForOne("SELECT * FROM customers WHERE LOWER(email) = LOWER(?)", email);
     }
 
     /** The customer row with this id. */
     public Optional<Map<String, Object>> customerById(long id) {
-        return sql.queryForOne("SELECT * FROM customers WHERE id = ?", id);
+        return sql.named("customer by id").queryForOne("SELECT * FROM customers WHERE id = ?", id);
     }
 
     /** The product row with this SKU. */
     public Optional<Map<String, Object>> productBySku(String sku) {
-        return sql.queryForOne("SELECT * FROM products WHERE sku = ?", sku);
+        return sql.named("product by SKU").queryForOne("SELECT * FROM products WHERE sku = ?", sku);
     }
 
     /** Units in stock right now, as stored (not as the UI shows them). */
     public int stockOf(String sku) {
-        return ((Number) sql.queryForValue("SELECT stock FROM products WHERE sku = ?", sku)).intValue();
+        return ((Number) sql.named("stock of product").queryForValue("SELECT stock FROM products WHERE sku = ?", sku)).intValue();
     }
 
     /** The order header row (status, total, customer). */
     public Optional<Map<String, Object>> orderById(long id) {
-        return sql.queryForOne("SELECT * FROM orders WHERE id = ?", id);
+        return sql.named("order by id").queryForOne("SELECT * FROM orders WHERE id = ?", id);
     }
 
     /** Lines of an order with the product SKU, in insertion order. */
     public List<Map<String, Object>> orderItems(long orderId) {
-        return sql.queryForList("SELECT i.*, p.sku FROM order_items i JOIN products p ON p.id = i.product_id"
+        return sql.named("items of order").queryForList("SELECT i.*, p.sku FROM order_items i JOIN products p ON p.id = i.product_id"
                 + " WHERE i.order_id = ? ORDER BY i.id", orderId);
     }
 
     /** How many orders a customer has (0 proves a rejected order left nothing behind). */
     public long orderCountOf(long customerId) {
-        return sql.count("SELECT COUNT(*) FROM orders WHERE customer_id = ?", customerId);
+        return sql.named("order count of customer").count("SELECT COUNT(*) FROM orders WHERE customer_id = ?", customerId);
     }
 
     /** The account row, including password hash and salt (masked in the report). */
     public Optional<Map<String, Object>> userByUsername(String username) {
-        return sql.queryForOne("SELECT * FROM app_users WHERE username = ?", username);
+        return sql.named("user by username").queryForOne("SELECT * FROM app_users WHERE username = ?", username);
     }
 
     /**
@@ -75,7 +76,7 @@ public final class ShopDatabase {
      */
     public int deleteUnusedProduct(long id) {
         // NOT EXISTS guard: a product still referenced by an order line is never removed
-        return sql.update("DELETE FROM products WHERE id = ? AND NOT EXISTS"
+        return sql.named("delete unused product").update("DELETE FROM products WHERE id = ? AND NOT EXISTS"
                 + " (SELECT 1 FROM order_items WHERE product_id = ?)", id, id);
     }
 }

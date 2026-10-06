@@ -12,7 +12,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import com.enterprise.automation.reporting.Report;
+import com.enterprise.automation.reporting.SecretMasker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +24,9 @@ import org.slf4j.LoggerFactory;
  * <p>Only parameterized statements: values are always bound with {@code ?}, never concatenated
  * into SQL, so test data can contain any character and SQL injection is impossible. Column
  * names in the returned maps are lower-case, whatever the database returns.
+ *
+ * <p>Queries can carry a business name ({@link #named(String)}, used by {@link ShopDatabase}):
+ * the report step, the evidence and the log then say "customer by email" instead of only SQL.
  */
 public final class QueryExecutor {
 
@@ -29,21 +34,51 @@ public final class QueryExecutor {
 
     // Opens a fresh JDBC connection per query
     private final DatabaseConnection connection;
+    // Business name of the queries ("customer by email"), or null for ad-hoc SQL
+    private final String queryName;
 
     public QueryExecutor(DatabaseConnection connection) {
-        this.connection = connection;
+        this(connection, null);
     }
 
-    /** All rows of {@code sql}; shown in the report as a step with the parameters and the rows. */
+    private QueryExecutor(DatabaseConnection connection, String queryName) {
+        this.connection = connection;
+        this.queryName = queryName;
+    }
+
+    /** The same executor with a business name for its queries (report step, evidence, log, errors). */
+    public QueryExecutor named(String name) {
+        return new QueryExecutor(connection, name);
+    }
+
+    /**
+     * All rows of {@code sql}; shown in the report as a step ("DB: customer by email") with the
+     * query name, SQL, parameters, database, duration and the rows (secret columns masked).
+     */
     public List<Map<String, Object>> queryForList(String sql, Object... params) {
-        return Report.step("SQL: " + sql, () -> {
+        return Report.step(queryName != null ? "DB: " + queryName : "SQL: " + sql, () -> {
+            // nanoTime: a monotonic clock, right for durations
+            long start = System.nanoTime();
             List<Map<String, Object>> rows = runQuery(sql, params);
-            // The report shows what was asked and what came back (secret columns masked)
-            Report.attachText("Query result", "Parameters: " + Arrays.toString(params) + "\n"
-                    + rows.size() + " row(s)\n" + rows.stream().map(QueryExecutor::masked).map(String::valueOf)
-                    .collect(java.util.stream.Collectors.joining("\n")));
+            long millis = (System.nanoTime() - start) / 1_000_000;
+            LOG.debug("{} -> {} row(s) in {} ms", label(sql), rows.size(), millis);
+            // The report shows what was asked, where, how long it took and what came back
+            Report.attachText("Query result", describe(sql, params) + "Duration: " + millis + " ms\n"
+                    + "Result: " + rows.size() + " row(s)\n" + rows.stream().map(QueryExecutor::masked)
+                    .map(String::valueOf).collect(Collectors.joining("\n")));
             return rows;
         });
+    }
+
+    /** Query name, SQL, parameters and database as the first lines of the evidence (URL credentials masked). */
+    private String describe(String sql, Object... params) {
+        return (queryName != null ? "Query: " + queryName + "\n" : "") + "SQL: " + sql + "\nParameters: "
+                + Arrays.toString(params) + "\nDatabase: " + SecretMasker.mask(connection.url()) + "\n";
+    }
+
+    /** The query's name, or its SQL when it has none: what log lines and errors call it. */
+    private String label(String sql) {
+        return queryName != null ? queryName : sql;
     }
 
     /** Hashes and salts are never written to a report. */
@@ -72,7 +107,7 @@ public final class QueryExecutor {
             }
             return rows;
         } catch (SQLException e) {
-            throw new IllegalStateException("Query failed: " + sql + " " + Arrays.toString(params), e);
+            throw failure("Query", sql, params, e);
         }
     }
 
@@ -81,7 +116,7 @@ public final class QueryExecutor {
         List<Map<String, Object>> rows = queryForList(sql, params);
         // Several rows where one was expected means a wrong query: fail instead of picking one
         if (rows.size() > 1) {
-            throw new IllegalStateException("Expected at most one row but got " + rows.size() + ": " + sql);
+            throw new IllegalStateException("Expected at most one row but got " + rows.size() + ": " + label(sql));
         }
         return rows.stream().findFirst();
     }
@@ -89,7 +124,7 @@ public final class QueryExecutor {
     /** The first column of the single row, e.g. a {@code COUNT(*)}. */
     public Object queryForValue(String sql, Object... params) {
         return queryForOne(sql, params).map(row -> row.values().iterator().next())
-                .orElseThrow(() -> new IllegalStateException("No row for " + sql));
+                .orElseThrow(() -> new IllegalStateException("No row for " + label(sql)));
     }
 
     /** A {@code SELECT COUNT(*) ...} as a long (drivers return different Number types). */
@@ -100,11 +135,20 @@ public final class QueryExecutor {
     /** INSERT/UPDATE/DELETE, e.g. for clean-up the API cannot do; returns the affected row count. */
     public int update(String sql, Object... params) {
         LOG.debug("SQL {} {}", sql, Arrays.toString(params));
+        long start = System.nanoTime();
         try (Connection c = connection.open(); PreparedStatement ps = prepare(c, sql, params)) {
-            return ps.executeUpdate();
+            int affected = ps.executeUpdate();
+            LOG.debug("{} -> {} row(s) affected in {} ms", label(sql), affected, (System.nanoTime() - start) / 1_000_000);
+            return affected;
         } catch (SQLException e) {
-            throw new IllegalStateException("Update failed: " + sql + " " + Arrays.toString(params), e);
+            throw failure("Update", sql, params, e);
         }
+    }
+
+    /** A failure that names the query, the database (credentials masked), the SQL and the parameters. */
+    private IllegalStateException failure(String kind, String sql, Object[] params, SQLException cause) {
+        return new IllegalStateException(kind + " '" + label(sql) + "' failed on " + SecretMasker.mask(connection.url())
+                + ": " + sql + " " + Arrays.toString(params), cause);
     }
 
     /** Prepares {@code sql} and binds each parameter to its {@code ?} placeholder. */

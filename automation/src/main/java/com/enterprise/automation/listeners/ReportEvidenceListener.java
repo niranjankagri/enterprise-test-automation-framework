@@ -4,6 +4,7 @@ import com.enterprise.automation.driver.DriverManager;
 import com.enterprise.automation.reporting.ParameterMasking;
 import com.enterprise.automation.reporting.Report;
 import com.enterprise.automation.reporting.TestLogAppender;
+import com.enterprise.automation.utils.BrowserConsole;
 import com.enterprise.automation.utils.ScreenshotUtils;
 import io.qameta.allure.Allure;
 import java.util.Map;
@@ -18,7 +19,8 @@ import org.testng.ITestResult;
  * <ul>
  *   <li>labels: layer (epic) from the package, feature from the class, groups as tags;</li>
  *   <li>the test's own log lines;</li>
- *   <li>on failure: screenshot (also saved under {@code target/screenshots}), URL and page source.</li>
+ *   <li>on failure: screenshot (also saved under {@code target/screenshots}), URL, page source and
+ *       the browser console (Chrome/Edge).</li>
  * </ul>
  *
  * <p>The failure evidence is taken in {@link #afterInvocation}, which TestNG calls right after the
@@ -69,7 +71,7 @@ public class ReportEvidenceListener implements IInvokedMethodListener, ITestList
         }
     }
 
-    /** Screenshot (file + report), URL and page source of this thread's browser. */
+    /** Screenshot (file + report), URL, page source and console of this thread's browser. */
     private static void attachBrowserEvidence(ITestResult result) {
         WebDriver driver = DriverManager.getDriver();
         String name = result.getTestClass().getRealClass().getSimpleName() + "." + result.getMethod().getMethodName();
@@ -80,6 +82,8 @@ public class ReportEvidenceListener implements IInvokedMethodListener, ITestList
         try {
             Report.attachText("Page URL", driver.getCurrentUrl());
             Report.attachHtml("Page source", driver.getPageSource());
+            // JavaScript errors and failed requests often explain a UI failure (Chrome/Edge only)
+            BrowserConsole.read(driver).ifPresent(console -> Report.attachText("Browser console", console));
         } catch (RuntimeException e) {
             Report.attachText("Browser evidence unavailable", e.toString());
         }

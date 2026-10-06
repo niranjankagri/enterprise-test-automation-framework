@@ -142,7 +142,7 @@ Console (INFO) and `automation/target/logs/automation.log` (DEBUG) with `[thread
 
 ## Reporting
 
-Allure: every UI action, API call (request/response attached) and SQL query is a step; failed UI tests get screenshot, URL and page source; each test has its own log; Environment panel with environment, browser, Git commit and build; failures categorised as product defect, test defect, wait timeout or infrastructure. [docs/reporting.md](docs/reporting.md).
+Allure: every UI action, API call (request/response attached) and SQL query is a step; failed UI tests get screenshot, URL, page source and browser console; database steps name the query and show its duration; each test has its own log; Environment panel with environment, browser, Git commit and build; failures categorised as product defect, test defect, wait timeout or infrastructure. [docs/reporting.md](docs/reporting.md).
 
 ## Docker
 
