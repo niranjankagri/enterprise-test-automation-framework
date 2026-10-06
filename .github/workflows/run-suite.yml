@@ -1,0 +1,59 @@
+# Reusable workflow: run one test suite and upload its results.
+# Called by ci.yml (pull requests), regression.yml (main) and nightly.yml.
+name: Run suite
+
+on:
+  workflow_call:
+    inputs:
+      name:
+        description: Unique name of this run, used for the artifact
+        type: string
+        required: true
+      suite:
+        description: Suite in automation/src/test/resources/suites (smoke, api, ui, regression, full...)
+        type: string
+        required: true
+      browser:
+        type: string
+        default: chrome
+      threads:
+        type: string
+        default: "2"
+
+jobs:
+  run:
+    name: ${{ inputs.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Run ${{ inputs.suite }} on ${{ inputs.browser }}
+        run: >
+          mvn -B -ntp clean test
+          -Dsuite=${{ inputs.suite }}
+          -Dbrowser=${{ inputs.browser }}
+          -Dheadless=true
+          -Dthreads=${{ inputs.threads }}
+
+      # Always: a failed run is exactly when the evidence is needed
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-${{ inputs.name }}
+          path: |
+            automation/target/allure-results
+            automation/target/screenshots
+            automation/target/logs
+            automation/target/execution-metadata.json
+            automation/target/surefire-reports
+          if-no-files-found: warn
+          retention-days: 14

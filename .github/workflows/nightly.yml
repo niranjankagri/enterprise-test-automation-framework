@@ -1,0 +1,71 @@
+# Nightly regression: everything, in parallel, on every browser, plus the containerised Grid.
+# full suite (API, UI, database, integration, E2E) on Chrome; regression on Firefox and Edge;
+# regression through docker compose + Selenium Grid; one combined Allure report.
+name: Nightly regression
+
+on:
+  schedule:
+    - cron: "0 2 * * *"   # 02:00 UTC every day
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  full:
+    name: Full suite (Chrome)
+    uses: ./.github/workflows/run-suite.yml
+    with:
+      name: full-chrome
+      suite: full
+      threads: "4"
+
+  browsers:
+    name: Regression
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [firefox, edge]
+    uses: ./.github/workflows/run-suite.yml
+    with:
+      name: regression-${{ matrix.browser }}
+      suite: regression
+      browser: ${{ matrix.browser }}
+      threads: "4"
+
+  grid:
+    name: Regression on Docker + Selenium Grid
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run the platform with docker compose
+        env:
+          SUITE: regression
+          BROWSER: firefox
+          THREADS: "4"
+        run: >
+          docker compose -f docker/docker-compose.yml up --build
+          --abort-on-container-exit --exit-code-from tests
+      - name: Container logs
+        if: failure()
+        run: docker compose -f docker/docker-compose.yml logs --tail=200 app selenium-hub
+      - name: Stop containers
+        if: always()
+        run: docker compose -f docker/docker-compose.yml down
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-grid-firefox
+          path: |
+            automation/target/allure-results
+            automation/target/screenshots
+            automation/target/logs
+          if-no-files-found: warn
+
+  report:
+    name: Report
+    needs: [full, browsers, grid]
+    if: always()
+    uses: ./.github/workflows/allure-report.yml

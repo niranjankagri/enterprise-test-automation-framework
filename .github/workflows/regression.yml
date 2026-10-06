@@ -1,0 +1,76 @@
+# Main-branch pipeline: every push to main.
+# build (quality gate) -> API -> UI -> smoke -> Allure report
+name: Main
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: main-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - name: Compile with warnings as errors, unit tests, package the application
+        run: mvn -B -ntp clean package -Dsuite=unit -Dmaven.compiler.failOnWarning=true
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-unit
+          path: automation/target/allure-results
+          if-no-files-found: warn
+      - name: Upload application jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-app-jar
+          path: demo-app/target/demo-app.jar
+          retention-days: 7
+
+  api:
+    name: API
+    needs: build
+    uses: ./.github/workflows/run-suite.yml
+    with:
+      name: api
+      suite: api
+      threads: "4"
+
+  ui:
+    name: UI
+    needs: api
+    uses: ./.github/workflows/run-suite.yml
+    with:
+      name: ui-chrome
+      suite: ui
+      threads: "4"
+
+  smoke:
+    name: Smoke (Edge)
+    needs: ui
+    uses: ./.github/workflows/run-suite.yml
+    with:
+      name: smoke-edge
+      suite: smoke
+      browser: edge
+
+  report:
+    name: Report
+    needs: [build, api, ui, smoke]
+    if: always()
+    uses: ./.github/workflows/allure-report.yml

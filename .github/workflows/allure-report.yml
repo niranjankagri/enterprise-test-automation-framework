@@ -1,0 +1,43 @@
+# Reusable workflow: merge the results of all suite runs into one Allure report artifact.
+name: Allure report
+
+on:
+  workflow_call:
+
+jobs:
+  report:
+    name: Allure report
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: results-*
+          path: downloaded
+
+      - name: Merge Allure results
+        run: |
+          mkdir -p allure-results
+          for dir in downloaded/*/allure-results; do
+            [ -d "$dir" ] && cp -r "$dir"/. allure-results/
+          done
+          ls allure-results | wc -l
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Generate report
+        run: npx -y allure-commandline generate allure-results -o allure-report --clean
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: allure-report
+          retention-days: 30
