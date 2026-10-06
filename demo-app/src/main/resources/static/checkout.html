@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Checkout · ShopEase Admin</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="loader" data-testid="loader" hidden></div>
+  <div class="app">
+    <header class="header" id="header" data-testid="header"></header>
+    <nav class="nav" id="nav" data-testid="navigation"></nav>
+    <main class="main">
+      <h1 data-testid="page-title">Checkout</h1>
+      <div class="alert" data-testid="checkout-error" role="alert"></div>
+      <section class="card">
+        <h2>Cart</h2>
+        <table data-testid="cart-table">
+          <thead><tr><th>SKU</th><th>Product</th><th class="num">Price</th><th class="num">Quantity</th><th class="num">Line total</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <p style="text-align:right;font-size:16px">Total: <strong data-testid="order-total">$0.00</strong></p>
+      </section>
+      <section class="card">
+        <h2>Customer</h2>
+        <div class="toolbar">
+          <select aria-label="Customer" data-testid="checkout-customer"><option value="">Select a customer…</option></select>
+          <span class="spacer"></span>
+          <button type="button" class="primary" data-testid="place-order">Place order</button>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="/js/app.js"></script>
+  <script>
+    (async () => {
+      const { $, api, rows, esc, money, requireAuth, cart, saveCart, isAdmin, toast } = App;
+      requireAuth('checkout');
+      const error = $('[data-testid="checkout-error"]');
+
+      function render() {
+        const items = cart();
+        rows($('[data-testid="cart-table"] tbody'), items, (i) => `
+          <tr data-id="${i.productId}">
+            <td>${esc(i.sku)}</td><td>${esc(i.name)}</td><td class="num">${money(i.price)}</td>
+            <td class="num"><input type="number" min="1" value="${i.quantity}" style="width:80px"
+                 aria-label="Quantity of ${esc(i.name)}" data-testid="quantity" data-id="${i.productId}"></td>
+            <td class="num">${money(i.price * i.quantity)}</td>
+            <td><button class="small danger" data-testid="remove" data-id="${i.productId}">Remove</button></td>
+          </tr>`, 'Your cart is empty');
+        $('[data-testid="order-total"]').textContent = money(items.reduce((s, i) => s + i.price * i.quantity, 0));
+        $('[data-testid="place-order"]').disabled = items.length === 0 || !isAdmin();
+      }
+
+      $('[data-testid="cart-table"]').addEventListener('change', (event) => {
+        if (event.target.dataset.testid !== 'quantity') return;
+        const items = cart();
+        const line = items.find((i) => i.productId === Number(event.target.dataset.id));
+        line.quantity = Math.max(1, parseInt(event.target.value, 10) || 1);
+        saveCart(items);
+        render();
+      });
+
+      $('[data-testid="cart-table"]').addEventListener('click', (event) => {
+        if (event.target.dataset.testid !== 'remove') return;
+        saveCart(cart().filter((i) => i.productId !== Number(event.target.dataset.id)));
+        render();
+      });
+
+      $('[data-testid="place-order"]').addEventListener('click', async () => {
+        error.textContent = '';
+        const customerId = Number($('[data-testid="checkout-customer"]').value);
+        if (!customerId) {
+          error.textContent = 'Please select a customer';
+          return;
+        }
+        const button = $('[data-testid="place-order"]');
+        button.disabled = true;
+        try {
+          const order = await api('POST', '/orders', {
+            customerId, items: cart().map((i) => ({ productId: i.productId, quantity: i.quantity })),
+          });
+          saveCart([]);
+          location.href = '/orders.html?placed=' + order.id;
+        } catch (e) {
+          error.textContent = e.message;
+          toast(e.message, 'error');
+          button.disabled = false;
+        }
+      });
+
+      const customers = await api('GET', '/customers');
+      $('[data-testid="checkout-customer"]').insertAdjacentHTML('beforeend', customers
+        .filter((c) => c.status === 'ACTIVE')
+        .map((c) => `<option value="${c.id}">${esc(c.firstName)} ${esc(c.lastName)} (${esc(c.email)})</option>`).join(''));
+      render();
+      document.body.dataset.ready = 'true';
+    })();
+  </script>
+</body>
+</html>

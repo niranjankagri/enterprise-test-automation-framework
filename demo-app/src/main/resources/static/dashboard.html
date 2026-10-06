@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard · ShopEase Admin</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="loader" data-testid="loader" hidden></div>
+  <div class="app">
+    <header class="header" id="header" data-testid="header"></header>
+    <nav class="nav" id="nav" data-testid="navigation"></nav>
+    <main class="main">
+      <h1 data-testid="page-title">Dashboard</h1>
+      <p data-testid="welcome-message"></p>
+      <section class="stats">
+        <div class="card stat"><div class="label">Customers</div><div class="value" data-testid="stat-customers">–</div></div>
+        <div class="card stat"><div class="label">Products</div><div class="value" data-testid="stat-products">–</div></div>
+        <div class="card stat"><div class="label">Orders</div><div class="value" data-testid="stat-orders">–</div></div>
+        <div class="card stat"><div class="label">Revenue</div><div class="value" data-testid="stat-revenue">–</div></div>
+      </section>
+      <section class="card">
+        <h2>Recent orders</h2>
+        <table data-testid="recent-orders-table">
+          <thead><tr><th>Order</th><th>Customer</th><th class="num">Total</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+  <script src="/js/app.js"></script>
+  <script>
+    (async () => {
+      const { $, api, rows, esc, money, date, statusBadge, requireAuth } = App;
+      const user = requireAuth('dashboard');
+      $('[data-testid="welcome-message"]').textContent = `Welcome back, ${user.fullName}.`;
+
+      const [stats, orders] = await Promise.all([api('GET', '/stats'), api('GET', '/orders')]);
+      $('[data-testid="stat-customers"]').textContent = stats.customers;
+      $('[data-testid="stat-products"]').textContent = stats.products;
+      $('[data-testid="stat-orders"]').textContent = stats.orders;
+      $('[data-testid="stat-revenue"]').textContent = money(stats.revenue);
+      rows($('[data-testid="recent-orders-table"] tbody'), orders.slice(0, 5), (o) => `
+        <tr data-id="${o.id}"><td>#${o.id}</td><td>${esc(o.customerName)}</td><td class="num">${money(o.total)}</td>
+        <td>${statusBadge(o.status)}</td><td>${date(o.createdAt)}</td></tr>`, 'No orders yet');
+      document.body.dataset.ready = 'true';
+    })();
+  </script>
+</body>
+</html>

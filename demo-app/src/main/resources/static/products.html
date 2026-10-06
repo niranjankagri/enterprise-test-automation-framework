@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Products · ShopEase Admin</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="loader" data-testid="loader" hidden></div>
+  <div class="app">
+    <header class="header" id="header" data-testid="header"></header>
+    <nav class="nav" id="nav" data-testid="navigation"></nav>
+    <main class="main">
+      <h1 data-testid="page-title">Products</h1>
+      <form class="toolbar" id="search-form">
+        <input type="search" placeholder="Search name or SKU" aria-label="Search products" data-testid="product-search">
+        <select aria-label="Category" data-testid="category-filter">
+          <option value="">All categories</option>
+          <option>Laptops</option><option>Monitors</option><option>Accessories</option><option>Audio</option>
+        </select>
+        <button type="submit" data-testid="product-search-button">Search</button>
+        <span class="spacer"></span>
+        <span data-testid="result-count"></span>
+      </form>
+      <section class="card">
+        <table data-testid="products-table">
+          <thead><tr><th>SKU</th><th>Name</th><th>Category</th><th class="num">Price</th><th class="num">Stock</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+  <script src="/js/app.js"></script>
+  <script>
+    (() => {
+      const { $, api, rows, esc, money, requireAuth, addToCart, toast } = App;
+      requireAuth('products');
+      let products = [];
+
+      async function load() {
+        document.body.dataset.ready = 'false';
+        const params = new URLSearchParams();
+        const search = $('[data-testid="product-search"]').value.trim();
+        const category = $('[data-testid="category-filter"]').value;
+        if (search) params.set('search', search);
+        if (category) params.set('category', category);
+        products = await api('GET', '/products' + (params.toString() ? '?' + params : ''));
+        rows($('[data-testid="products-table"] tbody'), products, (p) => `
+          <tr data-id="${p.id}">
+            <td>${esc(p.sku)}</td><td>${esc(p.name)}</td><td>${esc(p.category)}</td>
+            <td class="num">${money(p.price)}</td><td class="num">${p.stock}</td>
+            <td><button class="small" data-testid="add-to-cart" data-id="${p.id}" ${p.stock === 0 ? 'disabled' : ''}>
+              ${p.stock === 0 ? 'Out of stock' : 'Add to cart'}</button></td>
+          </tr>`, 'No products found');
+        $('[data-testid="result-count"]').textContent = `${products.length} product${products.length === 1 ? '' : 's'}`;
+        document.body.dataset.ready = 'true';
+      }
+
+      $('#search-form').addEventListener('submit', (e) => { e.preventDefault(); load(); });
+      $('[data-testid="category-filter"]').addEventListener('change', load);
+
+      $('[data-testid="products-table"]').addEventListener('click', (event) => {
+        const button = event.target.closest('[data-testid="add-to-cart"]');
+        if (!button) return;
+        const product = products.find((p) => p.id === Number(button.dataset.id));
+        addToCart(product);
+        toast(`${product.name} added to cart`);
+      });
+
+      load();
+    })();
+  </script>
+</body>
+</html>

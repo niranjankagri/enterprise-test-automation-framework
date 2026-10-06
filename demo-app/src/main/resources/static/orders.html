@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orders · ShopEase Admin</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="loader" data-testid="loader" hidden></div>
+  <div class="app">
+    <header class="header" id="header" data-testid="header"></header>
+    <nav class="nav" id="nav" data-testid="navigation"></nav>
+    <main class="main">
+      <h1 data-testid="page-title">Orders</h1>
+      <div class="toolbar">
+        <select aria-label="Status" data-testid="order-status-filter">
+          <option value="">All statuses</option>
+          <option>PLACED</option><option>SHIPPED</option><option>DELIVERED</option><option>CANCELLED</option>
+        </select>
+        <span class="spacer"></span>
+        <span data-testid="result-count"></span>
+      </div>
+      <section class="card">
+        <table data-testid="orders-table">
+          <thead><tr><th>Order</th><th>Customer</th><th class="num">Items</th><th class="num">Total</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+  <script src="/js/app.js"></script>
+  <script>
+    (() => {
+      const { $, api, rows, esc, money, date, statusBadge, requireAuth, isAdmin, modal, toast } = App;
+      requireAuth('orders');
+      let orders = [];
+
+      async function load() {
+        document.body.dataset.ready = 'false';
+        const status = $('[data-testid="order-status-filter"]').value;
+        orders = await api('GET', '/orders' + (status ? '?status=' + status : ''));
+        rows($('[data-testid="orders-table"] tbody'), orders, (o) => `
+          <tr data-id="${o.id}">
+            <td>#${o.id}</td><td>${esc(o.customerName)}</td>
+            <td class="num">${o.items.reduce((s, i) => s + i.quantity, 0)}</td>
+            <td class="num">${money(o.total)}</td><td>${statusBadge(o.status)}</td><td>${date(o.createdAt)}</td>
+            <td><button class="small" data-testid="view" data-id="${o.id}">View</button></td>
+          </tr>`, 'No orders found');
+        $('[data-testid="result-count"]').textContent = `${orders.length} order${orders.length === 1 ? '' : 's'}`;
+        document.body.dataset.ready = 'true';
+      }
+
+      function details(order) {
+        const cancellable = order.status === 'PLACED' && isAdmin();
+        modal({
+          title: `Order #${order.id}`,
+          cancelLabel: 'Close',
+          submitLabel: cancellable ? 'Cancel order' : null,
+          bodyHtml: `
+            <p>Customer: <strong data-testid="order-customer">${esc(order.customerName)}</strong><br>
+               Status: ${statusBadge(order.status)}</p>
+            <table data-testid="order-items-table">
+              <thead><tr><th>Product</th><th class="num">Qty</th><th class="num">Line total</th></tr></thead>
+              <tbody>${order.items.map((i) => `<tr><td>${esc(i.name)}</td><td class="num">${i.quantity}</td>
+                <td class="num">${money(i.lineTotal)}</td></tr>`).join('')}</tbody>
+            </table>
+            <p style="text-align:right">Total: <strong data-testid="order-detail-total">${money(order.total)}</strong></p>`,
+          onSubmit: async () => {
+            await api('PATCH', '/orders/' + order.id, { status: 'CANCELLED' });
+            toast(`Order #${order.id} cancelled`);
+            await load();
+          },
+        });
+      }
+
+      $('[data-testid="order-status-filter"]').addEventListener('change', load);
+      $('[data-testid="orders-table"]').addEventListener('click', (event) => {
+        const button = event.target.closest('[data-testid="view"]');
+        if (button) details(orders.find((o) => o.id === Number(button.dataset.id)));
+      });
+
+      load().then(() => {
+        const placed = new URLSearchParams(location.search).get('placed');
+        if (placed) toast(`Order #${placed} placed successfully`);
+      });
+    })();
+  </script>
+</body>
+</html>

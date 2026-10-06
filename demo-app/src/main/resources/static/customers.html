@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Customers · ShopEase Admin</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="loader" data-testid="loader" hidden></div>
+  <div class="app">
+    <header class="header" id="header" data-testid="header"></header>
+    <nav class="nav" id="nav" data-testid="navigation"></nav>
+    <main class="main">
+      <h1 data-testid="page-title">Customers</h1>
+      <form class="toolbar" id="search-form">
+        <input type="search" placeholder="Search name, email or city" aria-label="Search customers" data-testid="customer-search">
+        <button type="submit" data-testid="customer-search-button">Search</button>
+        <span class="spacer"></span>
+        <span data-testid="result-count"></span>
+        <button type="button" class="primary" data-testid="add-customer">Add customer</button>
+      </form>
+      <section class="card">
+        <table data-testid="customers-table">
+          <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>City</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+  <script src="/js/app.js"></script>
+  <script>
+    (() => {
+      const { $, api, rows, esc, statusBadge, requireAuth, isAdmin, modal, field, toast } = App;
+      requireAuth('customers');
+      const admin = isAdmin();
+      const addButton = $('[data-testid="add-customer"]');
+      addButton.hidden = !admin;
+      let customers = [];
+
+      async function load() {
+        document.body.dataset.ready = 'false';
+        const search = $('[data-testid="customer-search"]').value.trim();
+        customers = await api('GET', '/customers' + (search ? '?search=' + encodeURIComponent(search) : ''));
+        rows($('[data-testid="customers-table"] tbody'), customers, (c) => `
+          <tr data-id="${c.id}">
+            <td>${esc(c.firstName)} ${esc(c.lastName)}</td><td>${esc(c.email)}</td><td>${esc(c.phone)}</td>
+            <td>${esc(c.city)}</td><td>${statusBadge(c.status)}</td>
+            <td>${admin ? `<button class="small" data-testid="edit" data-id="${c.id}">Edit</button>
+                <button class="small danger" data-testid="delete" data-id="${c.id}">Delete</button>` : ''}</td>
+          </tr>`, 'No customers found');
+        $('[data-testid="result-count"]').textContent = `${customers.length} customer${customers.length === 1 ? '' : 's'}`;
+        document.body.dataset.ready = 'true';
+      }
+
+      function form(customer, onSave) {
+        const c = customer || {};
+        modal({
+          title: customer ? 'Edit customer' : 'Add customer',
+          submitLabel: 'Save',
+          bodyHtml: [
+            field({ name: 'firstName', label: 'First name', value: c.firstName }),
+            field({ name: 'lastName', label: 'Last name', value: c.lastName }),
+            field({ name: 'email', label: 'Email', type: 'email', value: c.email }),
+            field({ name: 'phone', label: 'Phone', value: c.phone }),
+            field({ name: 'city', label: 'City', value: c.city }),
+            field({ name: 'status', label: 'Status', value: c.status || 'ACTIVE',
+              options: [{ value: 'ACTIVE', label: 'Active' }, { value: 'INACTIVE', label: 'Inactive' }] }),
+          ].join(''),
+          onSubmit: async (data) => {
+            const body = Object.fromEntries(data.entries());
+            ['phone', 'city'].forEach((k) => { if (!body[k]) body[k] = null; });
+            await onSave(body);
+          },
+        });
+      }
+
+      $('#search-form').addEventListener('submit', (e) => { e.preventDefault(); load(); });
+
+      addButton.addEventListener('click', () => form(null, async (body) => {
+        const created = await api('POST', '/customers', body);
+        toast(`Customer ${created.firstName} ${created.lastName} created`);
+        await load();
+      }));
+
+      $('[data-testid="customers-table"]').addEventListener('click', (event) => {
+        const button = event.target.closest('button');
+        if (!button) return;
+        const customer = customers.find((c) => c.id === Number(button.dataset.id));
+        if (button.dataset.testid === 'edit') {
+          form(customer, async (body) => {
+            await api('PUT', '/customers/' + customer.id, body);
+            toast(`Customer ${body.firstName} ${body.lastName} updated`);
+            await load();
+          });
+        } else if (button.dataset.testid === 'delete') {
+          modal({
+            title: 'Delete customer',
+            bodyHtml: `<p data-testid="modal-message">Delete ${esc(customer.firstName)} ${esc(customer.lastName)}? This cannot be undone.</p>`,
+            submitLabel: 'Delete', submitClass: 'primary',
+            onSubmit: async () => {
+              await api('DELETE', '/customers/' + customer.id);
+              toast(`Customer ${customer.firstName} ${customer.lastName} deleted`);
+              await load();
+            },
+          });
+        }
+      });
+
+      load();
+    })();
+  </script>
+</body>
+</html>

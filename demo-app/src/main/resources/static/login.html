@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in · ShopEase Admin</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="login-page" data-page="login">
+  <div class="loader" data-testid="loader" hidden></div>
+  <main class="card login-card">
+    <h1>ShopEase Admin</h1>
+    <div class="alert info" data-testid="login-info"></div>
+    <div class="alert" data-testid="login-error" role="alert"></div>
+    <form id="login-form" novalidate>
+      <div class="field">
+        <label for="username">Username</label>
+        <input id="username" name="username" autocomplete="username" data-testid="username">
+        <div class="field-error" data-testid="username-error"></div>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" data-testid="password">
+        <div class="field-error" data-testid="password-error"></div>
+      </div>
+      <button type="submit" class="primary" style="width:100%" data-testid="login-button">Sign in</button>
+    </form>
+    <p class="hint">Demo application under test</p>
+  </main>
+  <script src="/js/app.js"></script>
+  <script>
+    (() => {
+      const { $, api, saveSession, token } = App;
+      if (token()) location.href = '/dashboard.html';
+
+      const params = new URLSearchParams(location.search);
+      if (params.has('loggedOut')) $('[data-testid="login-info"]').textContent = 'You have been logged out.';
+      if (params.has('expired')) $('[data-testid="login-info"]').textContent = 'Your session has expired. Please sign in again.';
+
+      $('#login-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const username = $('#username').value.trim();
+        const password = $('#password').value;
+        $('[data-testid="login-error"]').textContent = '';
+        $('[data-testid="username-error"]').textContent = username ? '' : 'Username is required';
+        $('[data-testid="password-error"]').textContent = password ? '' : 'Password is required';
+        if (!username || !password) return;
+
+        const button = $('[data-testid="login-button"]');
+        button.disabled = true;
+        try {
+          saveSession(await api('POST', '/auth/login', { username, password }));
+          location.href = '/dashboard.html';
+        } catch (error) {
+          $('[data-testid="login-error"]').textContent = error.message;
+          button.disabled = false;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
