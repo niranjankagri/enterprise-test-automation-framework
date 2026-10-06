@@ -25,13 +25,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: [firefox, edge]
+        include:
+          - browser: firefox
+            threads: "4"
+          # Edge is the heaviest browser on the 4-vCPU runner: 4 parallel instances stalled at start-up
+          - browser: edge
+            threads: "2"
     uses: ./.github/workflows/run-suite.yml
     with:
       name: regression-${{ matrix.browser }}
       suite: regression
       browser: ${{ matrix.browser }}
-      threads: "4"
+      threads: ${{ matrix.threads }}
 
   grid:
     name: Regression on Docker + Selenium Grid

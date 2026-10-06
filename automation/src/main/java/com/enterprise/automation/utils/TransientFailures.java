@@ -34,7 +34,9 @@ public final class TransientFailures {
             "browser has disconnected",
             "connection refused",
             "connection reset",
-            "could not start a new session");
+            "could not start a new session",
+            // Chromium under load at start-up (seen with Edge on CI runners); not a wait timeout
+            "timed out receiving message from renderer");
 
     private TransientFailures() {
     }
