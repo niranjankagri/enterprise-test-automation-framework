@@ -48,7 +48,8 @@
 
         <!-- Plugins -->
         <maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
-        <maven-surefire-plugin.version>3.6.0</maven-surefire-plugin.version>
+        <!-- Held on 3.5.x: 3.6 drops suiteXmlFiles (TestNG suite files run the listeners) -->
+        <maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
         <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
         <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
         <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
