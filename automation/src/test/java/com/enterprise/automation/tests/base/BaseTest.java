@@ -18,6 +18,7 @@ import org.testng.annotations.BeforeMethod;
  */
 public abstract class BaseTest {
 
+    // alwaysRun: also runs when a suite selects tests by group (otherwise TestNG would skip it)
     @BeforeMethod(alwaysRun = true)
     public void startBrowser() {
         DriverManager.startDriver();
@@ -33,22 +34,27 @@ public abstract class BaseTest {
         try {
             CleanupRegistry.runAll();
         } finally {
+            // finally: the browser is quit even if a clean-up throws something unexpected
             DriverManager.quitDriver();
         }
     }
 
+    /** The run configuration (environment, accounts, ...). */
     protected TestConfig config() {
         return ConfigManager.config();
     }
 
+    /** Opens the login page in this test's browser. */
     protected LoginPage openLoginPage() {
         return new LoginPage().open();
     }
 
+    /** Signs in as the configured admin; returns the loaded dashboard. */
     protected DashboardPage loginAsAdmin() {
         return openLoginPage().loginAs(config().admin());
     }
 
+    /** Signs in as the configured read-only viewer. */
     protected DashboardPage loginAsViewer() {
         return openLoginPage().loginAs(config().viewer());
     }
