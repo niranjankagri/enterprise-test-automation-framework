@@ -1,6 +1,7 @@
 package com.enterprise.automation.driver;
 
 import com.enterprise.automation.config.TestConfig;
+import java.util.Map;
 import org.openqa.selenium.MutableCapabilities;
 import org.openqa.selenium.PageLoadStrategy;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -32,6 +33,7 @@ public final class BrowserOptionsFactory {
         ChromeOptions options = new ChromeOptions();
         options.setPageLoadStrategy(PageLoadStrategy.NORMAL);
         options.addArguments(chromiumArguments(config));
+        options.setExperimentalOption("prefs", NO_PASSWORD_MANAGER);
         return options;
     }
 
@@ -39,8 +41,20 @@ public final class BrowserOptionsFactory {
         EdgeOptions options = new EdgeOptions();
         options.setPageLoadStrategy(PageLoadStrategy.NORMAL);
         options.addArguments(chromiumArguments(config));
+        options.setExperimentalOption("prefs", NO_PASSWORD_MANAGER);
         return options;
     }
+
+    /**
+     * Test browsers must not save or check passwords. Chrome's leak detection compares a password
+     * typed into a login form with known breaches and then opens a native "change your password"
+     * dialog. That dialog is not part of the page (screenshots do not show it) but swallows every
+     * click until it is closed. It made viewer tests fail on Chrome only.
+     */
+    private static final Map<String, Object> NO_PASSWORD_MANAGER = Map.of(
+            "credentials_enable_service", false,
+            "profile.password_manager_enabled", false,
+            "profile.password_manager_leak_detection", false);
 
     private static FirefoxOptions firefox(TestConfig config) {
         FirefoxOptions options = new FirefoxOptions();
@@ -53,8 +67,10 @@ public final class BrowserOptionsFactory {
 
     /** Chrome and Edge share the Chromium engine, so they share their arguments. */
     private static String[] chromiumArguments(TestConfig config) {
+        String common = "--disable-search-engine-choice-screen";
+        String noLeakCheck = "--disable-features=PasswordLeakDetection";
         return config.headless()
-                ? new String[] {"--headless=new", "--disable-dev-shm-usage", "--disable-search-engine-choice-screen"}
-                : new String[] {"--disable-search-engine-choice-screen"};
+                ? new String[] {"--headless=new", "--disable-dev-shm-usage", common, noLeakCheck}
+                : new String[] {common, noLeakCheck};
     }
 }
