@@ -38,18 +38,18 @@
         <rest-assured.version>6.0.1</rest-assured.version>
         <assertj.version>3.27.7</assertj.version>
         <jackson.version>2.22.3</jackson.version>
-        <slf4j.version>2.0.17</slf4j.version>
+        <slf4j.version>2.0.20</slf4j.version>
         <logback.version>1.6.5</logback.version>
-        <allure.version>2.35.5</allure.version>
+        <allure.version>3.0.0</allure.version>
         <datafaker.version>2.7.0</datafaker.version>
 
         <!-- Application under test -->
         <h2.version>2.5.252</h2.version>
 
         <!-- Plugins -->
-        <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
-        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
-        <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
+        <maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>3.6.0</maven-surefire-plugin.version>
+        <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
         <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
     </properties>
 
