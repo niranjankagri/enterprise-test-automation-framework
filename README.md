@@ -157,11 +157,11 @@ Report of a smoke run with one deliberately failing check (a demo test, not part
 docker compose -f docker/docker-compose.yml up --build --abort-on-container-exit --exit-code-from tests
 ```
 
-Application, Selenium hub, Chrome/Firefox/Edge nodes and the test runner; `SUITE`, `BROWSER`, `THREADS` variables. [docker/README.md](docker/README.md).
+Application, Selenium hub, Chrome/Firefox/Edge nodes and the test runner; `SUITE`, `BROWSER`, `THREADS` variables. [docs/docker.md](docs/docker.md).
 
 ## Selenium Grid
 
-`mvn test -Dexecution=remote -Dgrid.url=http://<grid>:4444 -Dbrowser=firefox`: the same browser options as local runs. Verified with the Docker Grid (nightly) and a local Selenium standalone server.
+`mvn test -Dexecution=remote -Dgrid.url=http://<grid>:4444 -Dbrowser=firefox`: the same browser options as local runs. Verified with the Docker Grid (nightly) and a local Selenium standalone server. [docs/grid.md](docs/grid.md).
 
 ## Cloud execution
 
@@ -242,7 +242,7 @@ Test pyramid with the bulk at API level, UI for what only the UI shows, cross-la
 
 **Start here: [the complete framework guide](docs/FRAMEWORK-GUIDE.md)**, which covers everything in one document (application under test, architecture, configuration, every layer, test data, coverage, execution, logging, reporting, Docker, CI/CD, security, extending, troubleshooting, class reference).
 
-Topic documents: [Architecture](docs/architecture.md) · [Framework design](docs/framework-design.md) · [Test strategy](docs/test-strategy.md) · [CI/CD](docs/ci-cd.md) · [Parallel execution](docs/parallel-execution.md) · [Reporting](docs/reporting.md) · [Troubleshooting](docs/troubleshooting.md) · [Coding standards](docs/coding-standards.md) · [Contributing](CONTRIBUTING.md)
+Topic documents: [Architecture](docs/architecture.md) · [Framework design](docs/framework-design.md) · [Test strategy](docs/test-strategy.md) · [CI/CD](docs/ci-cd.md) · [Docker](docs/docker.md) · [Selenium Grid](docs/grid.md) · [Parallel execution](docs/parallel-execution.md) · [Reporting](docs/reporting.md) · [Troubleshooting](docs/troubleshooting.md) · [Coding standards](docs/coding-standards.md) · [Contributing](CONTRIBUTING.md)
 
 ## License
 

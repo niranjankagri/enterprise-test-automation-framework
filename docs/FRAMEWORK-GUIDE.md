@@ -530,6 +530,7 @@ SUITE=regression BROWSER=firefox THREADS=4 docker compose -f docker/docker-compo
 - `docker/Dockerfile` has three stages from one build: `build` (compiles once; POMs and `config/` copied before sources for layer caching), `app` (the demo app on a JRE image; port 8081, database port 9093 open to other containers) and `tests` (`mvn test`, `ENV=qa`, `EXECUTION=remote`, suite via the command).
 - `docker/docker-compose.yml` runs the app (health-checked), a Selenium hub (healthy only when a node can start sessions), Chrome, Firefox and Edge nodes (2 sessions each), and the tests, which wait for both health checks. Inside the network browsers reach the app as `http://app:8081`, so `BASE_URL`, `API_BASE_URL` and `DB_URL` are overridden there. `--exit-code-from tests` makes failed tests fail the command; results land in `automation/target` on the host.
 - Without Docker, any Grid works: `java -jar selenium-server-<version>.jar standalone`, then `mvn test -Dexecution=remote -Dgrid.url=http://localhost:4444 -Dbrowser=firefox`.
+- Details: [docker.md](docker.md) (variables, stages, services, troubleshooting) and [grid.md](grid.md) (driver selection, configuration, capacity and queueing, troubleshooting).
 
 ## 18. CI/CD
 
