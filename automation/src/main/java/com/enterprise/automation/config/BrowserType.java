@@ -18,12 +18,15 @@ public enum BrowserType {
      */
     public static BrowserType from(String value) {
         try {
+            // Case-insensitive: "chrome", "Chrome" and "CHROME" all work; Locale.ROOT avoids locale surprises
             return valueOf(value.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException | NullPointerException e) {
+            // Unknown or missing value: say which values are valid
             throw new IllegalArgumentException("Unknown browser '" + value + "'. Valid values: " + validValues(), e);
         }
     }
 
+    /** "chrome, firefox, edge": the constants in lower case, for error messages. */
     private static String validValues() {
         return Arrays.stream(values()).map(b -> b.name().toLowerCase(Locale.ROOT)).collect(Collectors.joining(", "));
     }

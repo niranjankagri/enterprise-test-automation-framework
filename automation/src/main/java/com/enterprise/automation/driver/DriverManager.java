@@ -19,8 +19,10 @@ import org.slf4j.LoggerFactory;
 public final class DriverManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(DriverManager.class);
+    // One slot per thread: each parallel test thread sees only its own browser
     private static final ThreadLocal<WebDriver> DRIVER = new ThreadLocal<>();
 
+    // Static access only
     private DriverManager() {
     }
 
@@ -29,12 +31,14 @@ public final class DriverManager {
      * earlier test on the same thread is quit first, so nothing leaks.
      */
     public static WebDriver startDriver() {
+        // Normally the previous test's @AfterMethod quit it; this is the safety net
         if (hasDriver()) {
             LOG.warn("A browser was still open on thread {}; quitting it before starting a new one",
                     Thread.currentThread().getName());
             quitDriver();
         }
         WebDriver driver = createWithRetry();
+        // From now on getDriver() on this thread returns this browser
         DRIVER.set(driver);
         return driver;
     }
@@ -46,11 +50,14 @@ public final class DriverManager {
      * analyzer does not apply. Any other failure (wrong configuration) is thrown at once.
      */
     private static WebDriver createWithRetry() {
+        // Same budget as the test retry policy (retry.count)
         int retries = ConfigManager.config().runSettings().retryCount();
+        // No loop condition: the loop ends by returning a driver or by throwing
         for (int attempt = 0; ; attempt++) {
             try {
                 return DriverFactory.create(ConfigManager.config());
             } catch (RuntimeException e) {
+                // Out of attempts, or a failure that another attempt would not fix
                 if (attempt >= retries || !TransientFailures.isTransient(e)) {
                     throw e;
                 }
@@ -62,6 +69,7 @@ public final class DriverManager {
     /** The browser of this thread. */
     public static WebDriver getDriver() {
         WebDriver driver = DRIVER.get();
+        // A page object used outside a UI test: explain how to fix it
         if (driver == null) {
             throw new IllegalStateException("No browser on thread " + Thread.currentThread().getName()
                     + ". Call DriverManager.startDriver() first (BaseTest does this for UI tests).");
@@ -80,14 +88,18 @@ public final class DriverManager {
      */
     public static void quitDriver() {
         WebDriver driver = DRIVER.get();
+        // Nothing to do for API/unit tests or when already quit
         if (driver == null) {
             return;
         }
         try {
+            // Ends the session and closes all windows of the browser
             driver.quit();
         } catch (RuntimeException e) {
+            // Browser already gone (crash, Grid timeout): log, do not fail the test for it
             LOG.warn("Browser did not quit cleanly: {}", e.getMessage());
         } finally {
+            // remove(), not set(null): frees the slot completely for pooled threads
             DRIVER.remove();
         }
     }

@@ -48,6 +48,7 @@ public record TestConfig(
 
     /** One line for logs and reports: what this run is pointed at. */
     public String summary() {
+        // Deliberately no credentials and no database password
         return "env=" + environment + ", baseUrl=" + baseUrl + ", browser=" + browser.name().toLowerCase(Locale.ROOT)
                 + (headless ? " (headless)" : "") + ", execution=" + execution.name().toLowerCase(Locale.ROOT)
                 + ", parallel=" + runSettings.parallel() + (runSettings.isParallel() ? " x" + runSettings.threads() : "")

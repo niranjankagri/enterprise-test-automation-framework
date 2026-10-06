@@ -12,8 +12,10 @@ import java.util.Set;
  */
 public record ExecutionSettings(String parallel, int threads, int retryCount) {
 
+    // TestNG's parallel modes ("none" = serial)
     private static final Set<String> MODES = Set.of("none", "classes", "methods", "tests");
 
+    // Compact constructor: normalises and validates before the fields are set
     public ExecutionSettings {
         parallel = parallel.trim().toLowerCase(Locale.ROOT);
         if (!MODES.contains(parallel)) {
@@ -24,6 +26,7 @@ public record ExecutionSettings(String parallel, int threads, int retryCount) {
         }
     }
 
+    /** False only for {@code none}. */
     public boolean isParallel() {
         return !"none".equals(parallel);
     }

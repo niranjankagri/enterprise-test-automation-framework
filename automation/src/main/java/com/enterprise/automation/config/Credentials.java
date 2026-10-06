@@ -13,6 +13,7 @@ public record Credentials(String username, String password) {
 
     @Override
     public String toString() {
+        // Overrides the record's generated toString, which would print the password
         return "Credentials[username=" + username + ", password=****]";
     }
 }
