@@ -68,4 +68,12 @@ public final class CustomerService extends BaseService {
     public void deleteCustomer(long id) {
         ApiAssertions.expectStatus(delete(id), 204);
     }
+
+    /** Idempotent delete for clean-ups: "already gone" (404) is fine too. */
+    public void deleteCustomerIfExists(long id) {
+        Response response = delete(id);
+        if (response.getStatusCode() != 404) {
+            ApiAssertions.expectStatus(response, 204);
+        }
+    }
 }

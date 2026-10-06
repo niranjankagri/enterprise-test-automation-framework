@@ -1,8 +1,11 @@
 package com.enterprise.automation.tests.base;
 
 import com.enterprise.automation.config.ConfigManager;
+import com.enterprise.automation.config.DatabaseConfig;
 import com.enterprise.automation.config.TestConfig;
 import com.enterprise.demoapp.DemoApp;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.ISuite;
@@ -31,8 +34,16 @@ public class DemoAppLifecycle implements ISuiteListener {
             return;
         }
         int port = config.baseUrl().getPort();
-        LOG.info("Starting the application under test on port {}", port);
-        app = DemoApp.start(DemoApp.Options.fromEnvironment().withPort(port));
+        DemoApp.Options options = DemoApp.Options.fromEnvironment().withPort(port);
+        // The database port comes from db.url, so the application and the tests always agree on it
+        Matcher tcp = TCP_PORT.matcher(config.database().map(DatabaseConfig::url).orElse(""));
+        if (tcp.find()) {
+            options = options.withDbTcpPort(Integer.parseInt(tcp.group(1)));
+        }
+        LOG.info("Starting the application under test on port {} (database port {})", port, options.dbTcpPort());
+        app = DemoApp.start(options);
         Runtime.getRuntime().addShutdownHook(new Thread(app::close, "demo-app-shutdown"));
     }
+
+    private static final Pattern TCP_PORT = Pattern.compile("tcp://[^:/]+:(\\d+)/");
 }

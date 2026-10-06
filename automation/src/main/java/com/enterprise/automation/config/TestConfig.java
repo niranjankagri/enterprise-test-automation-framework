@@ -3,6 +3,7 @@ package com.enterprise.automation.config;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Locale;
+import java.util.Optional;
 
 /**
  * The fully resolved, immutable configuration of one test run.
@@ -24,6 +25,7 @@ import java.util.Locale;
  * @param appAutostart    start the demo application in-process before the suite ({@code local} only)
  * @param admin           account with full rights
  * @param viewer          read-only account
+ * @param database        direct database access, or empty where the environment does not allow it
  */
 public record TestConfig(
         String environment,
@@ -39,7 +41,8 @@ public record TestConfig(
         Duration pageLoadTimeout,
         boolean appAutostart,
         Credentials admin,
-        Credentials viewer) {
+        Credentials viewer,
+        Optional<DatabaseConfig> database) {
 
     /** One line for logs and reports: what this run is pointed at. */
     public String summary() {

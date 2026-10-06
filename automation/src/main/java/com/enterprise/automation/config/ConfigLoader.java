@@ -6,6 +6,7 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 /**
@@ -64,7 +65,10 @@ public final class ConfigLoader {
                 Duration.ofSeconds(resolver.positiveInt(ConfigKey.TIMEOUT_PAGE_LOAD_SECONDS)),
                 Boolean.parseBoolean(resolver.required(ConfigKey.APP_AUTOSTART)),
                 new Credentials(resolver.required(ConfigKey.ADMIN_USERNAME), resolver.required(ConfigKey.ADMIN_PASSWORD)),
-                new Credentials(resolver.required(ConfigKey.VIEWER_USERNAME), resolver.required(ConfigKey.VIEWER_PASSWORD)));
+                new Credentials(resolver.required(ConfigKey.VIEWER_USERNAME), resolver.required(ConfigKey.VIEWER_PASSWORD)),
+                resolver.optional(ConfigKey.DB_URL).map(url -> new DatabaseConfig(url,
+                        resolver.optional(ConfigKey.DB_USERNAME).orElse(""),
+                        resolver.optional(ConfigKey.DB_PASSWORD).orElse(""))));
     }
 
     private static Properties read(String fileName, boolean mandatory) {
@@ -104,17 +108,22 @@ public final class ConfigLoader {
             this.files = files;
         }
 
-        String required(ConfigKey key) {
-            String value = firstNonBlank(
+        /** The value if any layer sets it; for settings an environment may legitimately lack. */
+        Optional<String> optional(ConfigKey key) {
+            return Optional.ofNullable(firstNonBlank(
                     systemProperties.get(key.property()),
                     environmentVariables.get(key.environmentVariable()),
-                    files.getProperty(key.property()));
+                    files.getProperty(key.property()))).map(String::trim);
+        }
+
+        String required(ConfigKey key) {
+            String value = optional(key).orElse(null);
             if (value == null) {
                 throw new IllegalStateException("Configuration '" + key.property() + "' is not set for environment '"
                         + environment + "' (set it in config/" + environment + ".properties, -D"
                         + key.property() + "=... or " + key.environmentVariable() + ")");
             }
-            return value.trim();
+            return value;
         }
 
         URI uri(ConfigKey key) {

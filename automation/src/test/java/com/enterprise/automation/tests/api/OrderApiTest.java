@@ -48,7 +48,7 @@ public class OrderApiTest extends BaseApiTest {
         long customerId = customer.id();
         long productId = product.id();
         long otherId = otherProduct.id();
-        CleanupRegistry.register("delete customer " + customerId, () -> admin().customers().deleteCustomer(customerId));
+        CleanupRegistry.register("delete customer " + customerId, () -> admin().customers().deleteCustomerIfExists(customerId));
         CleanupRegistry.register("deactivate product " + productId, () -> admin().products().deleteProduct(productId));
         CleanupRegistry.register("deactivate product " + otherId, () -> admin().products().deleteProduct(otherId));
     }

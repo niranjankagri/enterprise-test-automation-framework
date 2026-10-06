@@ -32,7 +32,7 @@ public class CustomerApiTest extends BaseApiTest {
     /** Creates a customer through the API and registers its deletion. */
     private CustomerResponse givenCustomer(CustomerData data) {
         CustomerResponse created = customers().createCustomer(data);
-        CleanupRegistry.register("delete customer " + created.id(), () -> customers().deleteCustomer(created.id()));
+        CleanupRegistry.register("delete customer " + created.id(), () -> customers().deleteCustomerIfExists(created.id()));
         return created;
     }
 
@@ -45,7 +45,7 @@ public class CustomerApiTest extends BaseApiTest {
         expectStatus(response, 201);
         matchesSchema(response, "customer");
         CustomerResponse created = JsonMapper.fromJson(response.asString(), CustomerResponse.class);
-        CleanupRegistry.register("delete customer " + created.id(), () -> customers().deleteCustomer(created.id()));
+        CleanupRegistry.register("delete customer " + created.id(), () -> customers().deleteCustomerIfExists(created.id()));
         assertThat(response.getHeader("Location")).isEqualTo("/api/customers/" + created.id());
         assertThat(response.getHeader("X-Request-Id")).as("traceable request").isNotBlank();
         assertThat(created).returns(data.firstName(), CustomerResponse::firstName)

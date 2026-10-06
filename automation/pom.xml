@@ -70,6 +70,12 @@
             <groupId>net.datafaker</groupId>
             <artifactId>datafaker</artifactId>
         </dependency>
+        <!-- JDBC driver at runtime only: the db package uses plain java.sql and stays database-neutral -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
         <!--
             Test scope only: the suite starts the application under test in-process for the local

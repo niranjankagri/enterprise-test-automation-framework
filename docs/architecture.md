@@ -89,6 +89,21 @@ Each major decision is written as Problem → Options → Decision → Reason �
 - **Reason:** tests read as intent in both cases, and no test re-implements HTTP plumbing. Owning the mapper keeps (de)serialization stable regardless of which JSON library REST Assured detects.
 - **Trade-offs:** two methods per operation. Response models ignore unknown fields, so contract drift is caught by the strict JSON schemas rather than by the models.
 
+### ADR-011: Database checks through plain JDBC, optional per environment
+
+- **Problem:** the database is the final truth for "was it really stored?", but production-like environments rarely allow test runners to connect to it.
+- **Options:** (a) an ORM/JPA layer in the tests; (b) a query library; (c) plain JDBC with parameterized statements and named queries; and, separately, whether database access is mandatory.
+- **Decision:** (c), with `db.url` optional: `DatabaseConnection.fromConfig()` throws TestNG's `SkipException` when it is missing, from a `@BeforeClass`, so the tests are reported as skipped with the reason.
+- **Reason:** tests must see the raw stored values (an ORM would map them the same way the application does, hiding mapping bugs). JDBC needs no extra dependency; the driver is a runtime dependency only, so the layer stays database-neutral. A connection per query is simple and thread-safe at test volumes.
+- **Trade-offs:** SQL is tied to the schema; keeping it in `ShopDatabase` limits a schema change to one class. No connection pool: fine for tests, not for load.
+
+### ADR-012: Clean-ups are idempotent and never fail a test
+
+- **Problem:** a test that deletes its own data, or fails halfway, leaves its registered clean-up with nothing (or something different) to remove.
+- **Decision:** clean-ups tolerate "already gone" (`deleteCustomerIfExists`, find-then-delete by email), and `CleanupRegistry` logs any failure (exceptions and assertion errors) instead of throwing.
+- **Reason:** the result of a test must reflect the behaviour under test, never the bookkeeping after it.
+- **Trade-offs:** a clean-up that keeps failing is only visible in the log. Milestone 8 surfaces it in the report.
+
 ### ADR-009: Every test owns its data
 
 - **Problem:** tests that share data (one "test customer" for everybody) break each other, cannot run in parallel and leave the environment dirtier after each run.

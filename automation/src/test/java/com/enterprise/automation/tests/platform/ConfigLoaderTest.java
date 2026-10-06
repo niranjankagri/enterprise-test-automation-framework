@@ -31,6 +31,10 @@ public class ConfigLoaderTest {
         assertThat(config.execution()).isEqualTo(ExecutionMode.LOCAL);
         assertThat(config.explicitWait()).isEqualTo(Duration.ofSeconds(10));
         assertThat(config.appAutostart()).as("local starts the demo app").isTrue();
+        assertThat(config.database()).hasValueSatisfying(db -> {
+            assertThat(db.url()).isEqualTo("jdbc:h2:tcp://localhost:9092/mem:shop");
+            assertThat(db.password()).as("H2 demo database has an empty password").isEmpty();
+        });
     }
 
     public void envSystemPropertySwitchesTheEnvironmentFile() {
@@ -50,6 +54,7 @@ public class ConfigLoaderTest {
         assertThat(staging.environment()).isEqualTo("staging");
         assertThat(staging.execution()).isEqualTo(ExecutionMode.REMOTE);
         assertThat(staging.admin().password()).isEqualTo("from-ci-secret");
+        assertThat(staging.database()).as("no database access unless a pipeline provides DB_URL").isEmpty();
     }
 
     public void secretsMissingFromAnEnvironmentFailFast() {

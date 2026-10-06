@@ -2,7 +2,7 @@
 
 A production-style QA automation framework: UI, API and database testing with Java 17, Selenium, TestNG and REST Assured.
 
-> **Status:** Milestones 1–5 of 10 (foundation, configuration and driver platform, UI automation framework, test data and UI coverage, API automation) are done. The roadmap is below; this README grows with each milestone.
+> **Status:** Milestones 1–6 of 10 (foundation, configuration and driver platform, UI automation framework, test data and UI coverage, API automation, database and integration) are done. The roadmap is below; this README grows with each milestone.
 
 Its companion repository, [selenium-java-framework](https://github.com/niranjankagri/selenium-java-framework), is an interview-focused Selenium + Java + TestNG lab. This repository holds the production-style work that lab leaves out.
 
@@ -123,6 +123,29 @@ ErrorResponse error = ApiAssertions.error(ApiAssertions.expectStatus(response, 4
 
 Coverage: GET/POST/PUT/PATCH/DELETE on every resource; status codes 200/201/204/400/401/403/404/405/409; `Location` and `X-Request-Id` headers; payloads and computed values (order totals, stock reservation and release, status flow); authentication (login, invalid/expired/logged-out tokens) and authorization (viewer read-only, admin-only users API); validation messages per field (the same CSV drives UI and API negatives); malformed JSON and ids.
 
+## Database validation
+
+```java
+ShopDatabase db = ShopDatabase.fromConfig();
+assertRow(db.customerByEmail(email), "customer " + email)
+        .hasValue("city", "Pune")
+        .hasValue("status", "ACTIVE");
+assertThat(db.stockOf("ACC-3002")).isEqualTo(148);
+```
+
+- `DatabaseConnection` reads `db.url` / `db.username` / `db.password` (or `DB_URL`...) from the configuration. Environments without database access (`staging`) **skip** database tests with a reason instead of failing them.
+- `QueryExecutor` runs only parameterized SQL (`?` placeholders, never string concatenation) and returns rows as maps.
+- `ShopDatabase` holds the application's named queries (customer by email, order lines, stock...), like page objects hold locators.
+- `DatabaseAssertions` gives readable checks whose failure messages show the whole row.
+
+Integration coverage:
+
+| Flow | Test |
+|---|---|
+| API → DB | created/updated/deleted customers stored exactly as sent; order rows, lines, totals and stock; cancellation and deletion give stock back; a rejected order leaves no trace (transaction rollback); passwords stored salted and hashed |
+| API → DB → UI | customer created through the API, verified in the database, then found in the UI |
+| UI → API → DB | customer edited in the UI, verified through the API and in the database; order placed in the UI, checked through the API, its lines and the stock change checked in the database |
+
 ## Test data management
 
 | Need | Where it comes from |
@@ -159,7 +182,7 @@ Logs go to the console (INFO) and to `automation/target/logs/automation.log` (DE
 | 3 | UI automation framework | ✅ done |
 | 4 | Test data & UI coverage | ✅ done |
 | 5 | API automation platform | ✅ done |
-| 6 | Database & end-to-end integration | planned |
+| 6 | Database & end-to-end integration | ✅ done |
 | 7 | Execution engine, parallelism & resilience | planned |
 | 8 | Observability & reporting | planned |
 | 9 | Docker, Selenium Grid, cloud & CI/CD | planned |

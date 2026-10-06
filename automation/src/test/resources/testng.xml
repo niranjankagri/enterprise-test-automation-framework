@@ -25,6 +25,16 @@
             <package name="com.enterprise.automation.tests.ui"/>
         </packages>
     </test>
+    <test name="Database">
+        <packages>
+            <package name="com.enterprise.automation.tests.db"/>
+        </packages>
+    </test>
+    <test name="Integration">
+        <packages>
+            <package name="com.enterprise.automation.tests.integration"/>
+        </packages>
+    </test>
     <test name="E2E">
         <packages>
             <package name="com.enterprise.automation.tests.e2e"/>
