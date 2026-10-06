@@ -36,9 +36,11 @@ public class ProductApiTest extends BaseApiTest {
 
     @Test(dataProvider = "catalogue", dataProviderClass = TestDataProviders.class, groups = "smoke")
     public void catalogueMatchesTheReferenceData(String sku, ProductData expected) {
+        // Look the product up by SKU, then fetch it by id to check the single-product contract
         ProductResponse product = products().getBySku(sku);
 
         matchesSchema(expectStatus(products().get(product.id()), 200), "product");
+        // Values from testdata/products.json; prices compared by value (1199 == 1199.00)
         assertThat(product.name()).isEqualTo(expected.name());
         assertThat(product.category()).isEqualTo(expected.category());
         assertThat(product.price()).isEqualByComparingTo(expected.price());
@@ -50,6 +52,7 @@ public class ProductApiTest extends BaseApiTest {
 
         ProductResponse created = givenProduct(data);
 
+        // Stored as sent, and found through the category filter
         assertThat(created.sku()).isEqualTo(data.sku());
         assertThat(created.price()).isEqualByComparingTo(data.price());
         assertThat(products().findProducts(Map.of("category", data.category())))
@@ -59,9 +62,11 @@ public class ProductApiTest extends BaseApiTest {
     public void patchUpdatesPriceAndStock() {
         ProductResponse created = givenProduct(TestDataFactory.newProduct());
 
+        // Change two fields; stock 0 is valid (sold out), not "missing"
         ProductResponse updated = JsonMapper.fromJson(expectStatus(
                 products().update(created.id(), Map.of("price", 19.99, "stock", 0)), 200).asString(), ProductResponse.class);
 
+        // The two fields changed, the name did not
         assertThat(updated.price()).isEqualByComparingTo("19.99");
         assertThat(updated.stock()).isZero();
         assertThat(updated.name()).isEqualTo(created.name());
@@ -73,6 +78,7 @@ public class ProductApiTest extends BaseApiTest {
 
         expectStatus(products().replace(created.id(), ProductRequest.from(replacement)), 200);
 
+        // A fresh GET shows the replacement (the clean-up still deactivates the same id)
         ProductResponse current = products().getProduct(created.id());
         assertThat(current.sku()).isEqualTo(replacement.sku());
         assertThat(current.name()).isEqualTo(replacement.name());
@@ -83,11 +89,13 @@ public class ProductApiTest extends BaseApiTest {
 
         expectStatus(products().delete(created.id()), 204);
 
+        // Still readable by id (old orders need it), but no longer in the catalogue
         assertThat(products().getProduct(created.id()).active()).as("kept for order history").isFalse();
         assertThat(products().findProducts(Map.of("search", created.sku()))).as("hidden from the catalogue").isEmpty();
     }
 
     public void invalidValuesGive400PerField() {
+        // Empty SKU, no name, negative price and negative stock in one request
         ErrorResponse error = error(expectStatus(products().create(
                 new ProductRequest("", null, "Audio", new BigDecimal("-1"), -5)), 400));
 
@@ -99,6 +107,7 @@ public class ProductApiTest extends BaseApiTest {
     }
 
     public void duplicateSkuGives409() {
+        // A valid new product that reuses a seeded SKU
         ProductData duplicate = TestDataFactory.newProduct();
         ProductRequest request = new ProductRequest("ACC-3002", duplicate.name(), duplicate.category(),
                 duplicate.price(), duplicate.stock());

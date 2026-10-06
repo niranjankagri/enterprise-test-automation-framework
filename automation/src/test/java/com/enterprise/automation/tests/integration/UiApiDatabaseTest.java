@@ -31,11 +31,16 @@ public class UiApiDatabaseTest extends BaseTest {
 
     private ShopDatabase db;
 
+    // No database access in this environment -> the class is skipped with the reason
     @BeforeClass(alwaysRun = true)
     public void connect() {
         db = ShopDatabase.fromConfig();
     }
 
+    /**
+     * Clean-up by email, registered before the customer exists: it removes whatever the test
+     * managed to create (the customer's orders first, then the customer), or nothing.
+     */
     private static void registerRemoval(String email) {
         CleanupRegistry.register("delete customer " + email + " and their orders", () -> {
             ApiSession admin = ApiSession.admin();
@@ -79,10 +84,12 @@ public class UiApiDatabaseTest extends BaseTest {
         registerRemoval(customer.email());
         CustomerPage customers = loginAsAdmin().navigation().openCustomers().addCustomer(customer);
 
+        // UI: change city and status through the edit form
         ModalComponent form = customers.openEditForm(customer.email());
         form.fill("City", "Kyoto").fill("Status", "Inactive");
         form.submitAndWaitUntilClosed();
 
+        // API: the change is visible through the REST API ... Database: ... and stored
         CustomerResponse viaApi = ApiSession.admin().customers().findByEmail(customer.email()).orElseThrow();
         assertThat(viaApi.city()).isEqualTo("Kyoto");
         assertThat(viaApi.status()).isEqualTo("INACTIVE");
@@ -98,14 +105,17 @@ public class UiApiDatabaseTest extends BaseTest {
         ApiSession.admin().customers().createCustomer(customer);
         OrderData order = TestDataFactory.order(customer, TestDataFactory.line("MON-2002", 2));
         String sku = order.lines().get(0).product().sku();
+        // Stock before ordering, read straight from the database
         int stockBefore = db.stockOf(sku);
 
         ProductPage products = loginAsAdmin().navigation().openProducts().search(sku)
                 .addToCart(order.lines().get(0).product().name());
         OrderPage orders = products.header().openCart().setQuantity(order.lines().get(0).product().name(), 2)
                 .selectCustomer(customer.email()).placeOrder();
+        // UI: the id of the order the checkout created
         long orderId = orders.placedOrderId();
 
+        // API: same total and line; Database: header, line and stock decrease
         OrderResponse viaApi = ApiSession.admin().orders().getOrder(orderId);
         assertThat(viaApi.total()).isEqualByComparingTo(order.total());
         assertThat(viaApi.items()).extracting(OrderResponse.Item::sku).containsExactly(sku);

@@ -28,6 +28,7 @@ public class DatabaseLayerTest {
 
     @Test(groups = "smoke")
     public void connectsAndReadsTheSchema() {
+        // The standard information_schema lists the application's tables (H2 keeps them in PUBLIC)
         List<Map<String, Object>> tables = db.sql().queryForList(
                 "SELECT LOWER(table_name) AS name FROM information_schema.tables WHERE table_schema = 'PUBLIC'"
                         + " ORDER BY name");
@@ -38,6 +39,7 @@ public class DatabaseLayerTest {
 
     @Test(dataProvider = "catalogue", dataProviderClass = TestDataProviders.class)
     public void catalogueRowsMatchTheReferenceData(String sku, ProductData expected) {
+        // The stored row of each reference product, column by column
         assertRow(db.productBySku(sku), "product " + sku)
                 .hasValue("name", expected.name())
                 .hasValue("category", expected.category())
@@ -46,24 +48,29 @@ public class DatabaseLayerTest {
     }
 
     public void parametersAreBoundNotConcatenated() {
+        // Classic SQL injection text: concatenated into SQL it would match every row
         String hostile = "x' OR '1'='1";
 
+        // Bound as a parameter it is just an email that does not exist
         assertNoRow(db.customerByEmail(hostile), "customer with a quote in the email");
         assertThat(db.sql().count("SELECT COUNT(*) FROM customers WHERE email = ?", hostile)).isZero();
     }
 
     public void queryForOneRejectsSeveralRows() {
+        // All products for a "single row" query: a mistake that must not pass silently
         assertThatThrownBy(() -> db.sql().queryForOne("SELECT * FROM products"))
                 .hasMessageContaining("at most one row");
     }
 
     public void assertionFailuresShowTheRow() {
+        // A deliberately wrong expectation: the message must name the column and show the real row
         assertThatThrownBy(() -> assertRow(db.productBySku("ACC-3002"), "product ACC-3002").hasValue("name", "Wrong"))
                 .hasMessageContaining("product ACC-3002.name")
                 .hasMessageContaining("Wireless Mouse");
     }
 
     public void catalogueSizeMatches() {
+        // Seeded products only (TST- products come and go with other tests)
         long seeded = db.sql().count("SELECT COUNT(*) FROM products WHERE sku NOT LIKE 'TST-%'");
 
         assertThat(seeded).isEqualTo(TestDataFactory.catalogue().size());
