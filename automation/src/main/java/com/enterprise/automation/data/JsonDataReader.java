@@ -18,7 +18,9 @@ public final class JsonDataReader {
     private JsonDataReader() {
     }
 
+    /** A JSON array file -> list of records. */
     public static <T> List<T> readList(String resource, Class<T> type) {
+        // Tells Jackson the element type of the list (erased at runtime otherwise)
         CollectionType listType = MAPPER.getTypeFactory().constructCollectionType(List.class, type);
         try (InputStream in = open(resource)) {
             return MAPPER.readValue(in, listType);
@@ -27,6 +29,7 @@ public final class JsonDataReader {
         }
     }
 
+    /** A JSON object file -> one record. */
     public static <T> T read(String resource, Class<T> type) {
         try (InputStream in = open(resource)) {
             return MAPPER.readValue(in, type);
@@ -35,6 +38,7 @@ public final class JsonDataReader {
         }
     }
 
+    /** Opens a classpath resource; a clear error names the missing file. */
     private static InputStream open(String resource) {
         InputStream in = JsonDataReader.class.getClassLoader().getResourceAsStream(resource);
         if (in == null) {

@@ -21,6 +21,7 @@ import org.testng.ISuiteListener;
 public class DemoAppLifecycle implements ISuiteListener {
 
     private static final Logger LOG = LoggerFactory.getLogger(DemoAppLifecycle.class);
+    // One application per JVM, shared by all suites of the run
     private static DemoApp app;
 
     @Override
@@ -28,11 +29,14 @@ public class DemoAppLifecycle implements ISuiteListener {
         startIfNeeded();
     }
 
+    // synchronized + null check: started exactly once, even with several suites
     private static synchronized void startIfNeeded() {
         TestConfig config = ConfigManager.config();
+        // qa/staging: the application is already running elsewhere
         if (!config.appAutostart() || app != null) {
             return;
         }
+        // The HTTP port comes from base.url (8080 for local)
         int port = config.baseUrl().getPort();
         DemoApp.Options options = DemoApp.Options.fromEnvironment().withPort(port);
         // The database port comes from db.url, so the application and the tests always agree on it
@@ -42,8 +46,10 @@ public class DemoAppLifecycle implements ISuiteListener {
         }
         LOG.info("Starting the application under test on port {} (database port {})", port, options.dbTcpPort());
         app = DemoApp.start(options);
+        // Stopped when the test JVM exits, after all suites and their clean-ups
         Runtime.getRuntime().addShutdownHook(new Thread(app::close, "demo-app-shutdown"));
     }
 
+    // The port in "jdbc:h2:tcp://localhost:9092/mem:shop"
     private static final Pattern TCP_PORT = Pattern.compile("tcp://[^:/]+:(\\d+)/");
 }

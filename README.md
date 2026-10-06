@@ -1,98 +1,85 @@
 # Enterprise Test Automation Framework
 
-A production-style QA automation framework: UI, API and database testing with Java 17, Selenium, TestNG and REST Assured.
+[![Main](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/workflows/regression.yml/badge.svg)](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/workflows/regression.yml)
+[![Nightly regression](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/workflows/nightly.yml/badge.svg)](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/workflows/nightly.yml)
+![Java 17](https://img.shields.io/badge/Java-17-blue) ![Selenium 4](https://img.shields.io/badge/Selenium-4.50-green) ![TestNG](https://img.shields.io/badge/TestNG-7.12-orange) ![REST Assured](https://img.shields.io/badge/REST%20Assured-6.0-brightgreen)
 
-> **Status:** Milestones 1–7 of 10 (foundation, configuration and driver platform, UI automation, test data, API automation, database and integration, parallel execution and resilience, reporting) are done. The roadmap is below; this README grows with each milestone.
+## Overview
 
-Its companion repository, [selenium-java-framework](https://github.com/niranjankagri/selenium-java-framework), is an interview-focused Selenium + Java + TestNG lab. This repository holds the production-style work that lab leaves out.
+A production-style QA automation platform: UI, API and database testing of one application, with parallel execution, a resilience policy, an evidence-rich Allure report, Docker + Selenium Grid and GitHub Actions pipelines.
 
-## Application under test
+It tests **ShopEase Admin** ([`demo-app`](demo-app/README.md)), a small shop back office kept in this repository, so the same business record can be checked through the UI, the REST API and the database.
 
-[`demo-app/`](demo-app/README.md) holds **ShopEase Admin**, a small shop back office (login, dashboard, customers, products, checkout, orders) with a REST API (bearer tokens, ADMIN and read-only VIEWER roles) and an H2 database. It lives in this repository so the same data can be checked through the UI, the API and the database. For `-Denv=local` the suite starts it automatically; for `qa` it runs separately (`java -jar demo-app/target/demo-app.jar --port 8081`).
+New here? Read the **[complete framework guide](docs/FRAMEWORK-GUIDE.md)**.
+
+Companion repository: [selenium-java-framework](https://github.com/niranjankagri/selenium-java-framework), an interview-focused Selenium lab. This repository is the engineering side: architecture, scale and delivery.
+
+## Objectives
+
+- Validate behaviour at the cheapest level (API), and consistency across UI, API and database.
+- Independent, data-owning, parallel-safe tests: no order dependencies, no shared fixtures, no sleeps.
+- Every failure explains itself: steps, request/response, rows, screenshot, log, environment, build.
+- Same tests everywhere: laptop, Docker, Selenium Grid, CI, configured, never edited.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    T[Tests] --> P[Pages · API services · DB queries] --> B[Components · ApiClient · QueryExecutor · Waits] --> D[Driver · Config]
+    D -- WebDriver --> BR[Browsers local / Grid]
+    BR --> UI[ShopEase UI]
+    B -- REST --> API[ShopEase API]
+    B -- JDBC --> DB[(Database)]
+    T -. evidence .-> R[Allure report]
+```
+
+Layers depend downwards only; tests contain no Selenium, HTTP or SQL. Full description, diagrams and 15 architecture decision records: [docs/architecture.md](docs/architecture.md).
 
 ## Technology stack
 
-| Area | Tool |
+| Area | Tools |
 |---|---|
 | Language / build | Java 17, Maven (multi-module) |
-| Test runner | TestNG |
-| UI | Selenium 4 |
-| API | REST Assured, Jackson |
+| Test runner | TestNG 7.12 (groups, suites, listeners, data providers) |
+| UI | Selenium 4.50 (local, Selenium Grid) |
+| API | REST Assured 6, Jackson, JSON Schema validation |
+| Database | JDBC (H2), parameterized queries |
 | Assertions | AssertJ |
-| Logging | SLF4J + Logback |
-| Reporting | Allure |
+| Test data | Datafaker, JSON and CSV files |
+| Logging | SLF4J + Logback (per-thread, per-test context) |
+| Reporting | Allure 2 |
+| Containers | Docker, docker compose, Selenium Grid (hub + Chrome/Firefox/Edge nodes) |
+| CI/CD | GitHub Actions, Dependabot, dependency review, Checkstyle |
 
 ## Project structure
 
 ```text
 enterprise-test-automation-framework/
-├── pom.xml              parent POM: every dependency and plugin version
-├── demo-app/            the application under test (UI + REST API + H2)
-├── automation/          the framework (src/main/java) and the tests (src/test/java)
-├── docs/                architecture and design documentation
-├── docker/              container setup (Milestone 9)
-└── .github/             CI workflows (Milestone 9)
+├── pom.xml                         parent POM: all versions, compiler settings
+├── demo-app/                       application under test: UI + REST API + H2 (JDK HTTP server)
+├── automation/
+│   ├── src/main/java/.../automation
+│   │   ├── config                  layered immutable configuration
+│   │   ├── driver                  browser options, factory, one browser per thread
+│   │   ├── ui (+ components, pages) waits, actions, component and page objects
+│   │   ├── api (+ models, services) client, records, one service per resource
+│   │   ├── db                      connection, queries, assertions
+│   │   ├── data                    records, generators, factory, readers, clean-up
+│   │   ├── listeners               settings, retry, diagnostics, metadata, evidence
+│   │   ├── reporting               report steps, log capture, Allure run files
+│   │   └── utils                   waits, screenshots, failure classification
+│   └── src/test
+│       ├── java/.../tests          api, ui, db, integration, e2e, platform, base
+│       └── resources               suites/*.xml, testdata/*, schemas/*, allure.properties
+├── config/checkstyle.xml           code-quality gate
+├── docker/                         Dockerfile, docker-compose.yml
+├── docs/                           architecture, design, strategy, CI/CD, ...
+└── .github/                        workflows, Dependabot
 ```
-
-Framework packages (`automation/src/main/java/com/enterprise/automation`):
-
-| Package | Responsibility |
-|---|---|
-| `config` | environment, browser and execution settings |
-| `driver` | WebDriver lifecycle, one browser per thread |
-| `ui.pages` / `ui.components` | Page Objects and reusable Component Objects |
-| `api` | HTTP client, services, request/response models |
-| `db` | JDBC access and database assertions |
-| `data` | test data factories and readers |
-| `listeners` | retry, failure diagnostics, execution metadata |
-| `utils` | small stateless helpers |
-
-See [docs/architecture.md](docs/architecture.md) for the design and the reasons behind it.
-
-## Configuration
-
-Every setting is resolved in this order (first match wins):
-
-1. JVM system property: `-Dbrowser=edge`
-2. Environment variable: `BROWSER=edge` (used by CI and Docker)
-3. Environment file: `automation/src/main/resources/config/<env>.properties`
-4. `config/default.properties`
-
-| Environment | Selected with | Application URL | Notes |
-|---|---|---|---|
-| `local` (default) | nothing, or `-Denv=local` | `http://localhost:8080` | developer machine, visible browser |
-| `qa` | `-Denv=qa` | `http://localhost:8081` | separately started application, headless |
-| `staging` | `-Denv=staging` | placeholder host | real URLs and credentials come from CI secrets; remote browsers |
-
-| Setting | Property / variable | Values (default) |
-|---|---|---|
-| Browser | `browser` / `BROWSER` | `chrome`, `firefox`, `edge` (`chrome`) |
-| Headless | `headless` / `HEADLESS` | `true`, `false` (`false`) |
-| Execution | `execution` / `EXECUTION` | `local`, `remote` (Grid), `cloud` (Milestone 9) (`local`) |
-| Grid URL | `grid.url` / `GRID_URL` | (`http://localhost:4444`) |
-| Window size | `window.width`, `window.height` | (`1440` × `900`) |
-| Timeouts | `timeout.explicit.seconds`, `timeout.page.load.seconds` | (`10`, `30`) |
-
-A wrong value fails the run immediately with a message that lists the valid values.
-
-## Browsers
-
-`DriverFactory` creates the browser and `DriverManager` holds it, one per thread (`ThreadLocal<WebDriver>`), so tests can run in parallel safely. Selenium Manager downloads the matching driver, and the browser itself if it is not installed. The framework uses explicit waits only (no implicit wait).
 
 ## UI automation
 
-```text
-Test (tests.ui)            business steps and assertions only
-  └─ Page (ui.pages)       LoginPage, DashboardPage, CustomerPage, ProductPage, CheckoutPage, OrderPage
-       └─ Component        HeaderComponent, NavigationComponent, TableComponent, ModalComponent, ToastComponent
-            └─ ElementActions + WaitUtils     every action waits for the right condition first
-                 └─ DriverManager             this thread's browser
-```
-
-- Locators are `data-testid` attributes (`TestId.of("customer-search")`), each defined once in its page or component.
-- No `Thread.sleep` and no implicit wait. Pages wait for the application's "ready" signal (`body[data-ready]`, loading bar hidden); toasts and tables are read inside waits.
-- Tables are read by column name: `table.row("Email", email).get("City")`.
-- `BaseTest` gives every test a fresh browser, saves a screenshot to `automation/target/screenshots/` when a test fails, and always quits the browser.
+Page Objects composed of Component Objects (`TableComponent`, `ModalComponent`, `ToastComponent`, `HeaderComponent`, `NavigationComponent`); `data-testid` locators defined once; explicit waits only, on the application's real state (`body[data-ready]`, loader); one fresh browser per test.
 
 ```java
 CheckoutPage checkout = loginAsAdmin().navigation().openProducts()
@@ -103,121 +90,152 @@ assertThat(checkout.total()).isEqualTo("$49.00");
 
 ## API automation
 
-```text
-Test → ApiSession (account) → Service (one per resource) → ApiClient → REST API
-```
+`Test → ApiSession → Service → ApiClient → REST API`. Raw responses for status/header/error checks, typed records for happy paths, strict JSON schemas, bearer tokens per account.
 
 ```java
 CustomerResponse created = ApiSession.admin().customers().createCustomer(TestDataFactory.newCustomer());
-
-Response response = ApiSession.viewer().customers().create(CustomerRequest.from(customer));
-ErrorResponse error = ApiAssertions.error(ApiAssertions.expectStatus(response, 403));
+ErrorResponse error = ApiAssertions.error(expectStatus(ApiSession.viewer().customers().create(body), 403));
 ```
 
-- **ApiClient**: base URL from configuration, JSON, bearer token, logging. Immutable, with no REST Assured global state, so it's parallel-safe.
-- **Services** (`AuthService`, `UserService`, `CustomerService`, `ProductService`, `OrderService`): raw methods return the `Response` for status/header/error checks; typed methods (`createCustomer`, `placeOrder`...) check the expected status and return a model.
-- **Models**: request/response records; secrets masked in `toString()`.
-- **Authentication**: `ApiSession.admin()`, `viewer()`, `as(credentials)`, `withToken(...)`, `anonymous()`; tokens cached per account for the run.
-- **Contract checks**: JSON schemas in `src/test/resources/schemas` (strict: no unexpected fields) via `ApiAssertions.matchesSchema(response, "customer")`.
-- **Logging**: one line per call (`POST /api/customers -> 201 in 35 ms`); bodies at DEBUG with passwords and tokens masked.
-
-Coverage: GET/POST/PUT/PATCH/DELETE on every resource; status codes 200/201/204/400/401/403/404/405/409; `Location` and `X-Request-Id` headers; payloads and computed values (order totals, stock reservation and release, status flow); authentication (login, invalid/expired/logged-out tokens) and authorization (viewer read-only, admin-only users API); validation messages per field (the same CSV drives UI and API negatives); malformed JSON and ids.
+Covers GET/POST/PUT/PATCH/DELETE, 200/201/204/400/401/403/404/405/409, headers, payloads, authentication, authorization, validation and business rules (stock, order status flow).
 
 ## Database validation
 
 ```java
-ShopDatabase db = ShopDatabase.fromConfig();
-assertRow(db.customerByEmail(email), "customer " + email)
-        .hasValue("city", "Pune")
-        .hasValue("status", "ACTIVE");
-assertThat(db.stockOf("ACC-3002")).isEqualTo(148);
+assertRow(db.customerByEmail(email), "customer " + email).hasValue("city", "Pune").hasValue("status", "ACTIVE");
 ```
 
-- `DatabaseConnection` reads `db.url` / `db.username` / `db.password` (or `DB_URL`...) from the configuration. Environments without database access (`staging`) **skip** database tests with a reason instead of failing them.
-- `QueryExecutor` runs only parameterized SQL (`?` placeholders, never string concatenation) and returns rows as maps.
-- `ShopDatabase` holds the application's named queries (customer by email, order lines, stock...), like page objects hold locators.
-- `DatabaseAssertions` gives readable checks whose failure messages show the whole row.
-
-Integration coverage:
-
-| Flow | Test |
-|---|---|
-| API → DB | created/updated/deleted customers stored exactly as sent; order rows, lines, totals and stock; cancellation and deletion give stock back; a rejected order leaves no trace (transaction rollback); passwords stored salted and hashed |
-| API → DB → UI | customer created through the API, verified in the database, then found in the UI |
-| UI → API → DB | customer edited in the UI, verified through the API and in the database; order placed in the UI, checked through the API, its lines and the stock change checked in the database |
+API → DB (stored exactly as sent, transactions, password hashing) and UI → API → DB consistency. Environments without database access skip these tests with a reason.
 
 ## Test data management
 
-| Need | Where it comes from |
+`TestDataFactory.newCustomer()` (unique and valid, Datafaker + run-unique suffix), variants with `withEmail(...)`, reference data from `testdata/products.json`, negative cases from CSV shared by UI and API tests. Every test registers the removal of what it creates (`CleanupRegistry`); setup and clean-up of UI tests go through the API.
+
+## Configuration
+
+System property → environment variable → `config/<env>.properties` → `config/default.properties`.
+
+| Setting | Values (default) |
 |---|---|
-| New, unique, valid data | `TestDataFactory.newCustomer()`, `newProduct()`, `newUser(role)`: Datafaker values plus a run-unique suffix |
-| A specific variant | `newCustomer().withEmail("bad")`: change only the field the test is about |
-| Reference data | `testdata/products.json` → `TestDataFactory.catalogue()` |
-| Negative cases | `testdata/invalid-customers.csv`, `testdata/login-negative.csv` → TestNG DataProviders |
-| Expected values | computed from the data, e.g. `OrderData.displayTotal()` |
+| `env` / `ENV` | `local` (starts the app), `qa`, `staging` |
+| `browser` | `chrome`, `firefox`, `edge` |
+| `headless` | `true` / `false` |
+| `execution` | `local`, `remote` (Selenium Grid at `grid.url`) |
+| `parallel`, `threads` | `classes`, `2` |
+| `retry.count` | `1` (infrastructure failures only) |
+| `base.url`, `api.base.url`, `db.url` | per environment |
+| `ADMIN_PASSWORD`, `VIEWER_PASSWORD`, `DB_*` | secrets: environment variables only (see `.env.example`) |
 
-Isolation: every test creates its own data (unique email/SKU, safe in parallel and across runs) and registers its clean-up in `CleanupRegistry`; `BaseTest` runs the clean-ups after each test, passed or failed, newest first.
+Invalid values stop the run at start-up with the list of valid ones.
 
-Test groups so far: `smoke` (fast, read-only), `sanity` (key happy paths and role checks), `regression` (full coverage, data-driven negatives), `e2e` (business journeys), plus `ui` and `unit`/`platform`.
+## Parallel execution
 
-## Test suites
+`mvn test -Dthreads=4`. One browser per thread, unique data, per-thread clean-up and logs. Full suite: ~186 s serial, ~132 s with 2 threads, ~118 s with 4. Details: [docs/parallel-execution.md](docs/parallel-execution.md).
 
-| Suite (`-Dsuite=`) | Groups | Purpose |
-|---|---|---|
-| `full` (default) | all | everything, including unit and platform tests |
-| `smoke` | `smoke` | fast, read-only "is it up and usable" checks: pull-request gate |
-| `sanity` | `sanity` | key happy paths and role checks after a deployment |
-| `regression` | `regression` | full functional coverage |
-| `api` | `api` | API only, no browser |
-| `ui` | `ui` | browser tests |
-| `integration` | `integration`, `db` | database and cross-layer tests |
-| `e2e` | `e2e` | business journeys |
+## Retry strategy
 
-## Parallel execution and resilience
+Only transient infrastructure failures are retried: browser start-up, lost sessions, refused connections; both for test methods and for browser start-up in `@BeforeMethod`. Assertion failures and wait timeouts are never retried. Retries are logged and visible in the report.
 
-- `mvn clean test -Dthreads=4`: parallel mode and threads come from configuration (`parallel=classes`, `threads=2` by default) and apply to every suite. Details and measurements: [docs/parallel-execution.md](docs/parallel-execution.md).
-- **Retry**: only transient infrastructure failures (browser session lost, connection refused...) are retried, at most `retry.count` times (default 1). Assertion failures and wait timeouts are never retried.
-- **Failure diagnostics**: each failure logs a block with test, parameters, groups, thread, duration, environment, browser and cause; UI failures also save a screenshot.
-- **Logs**: every line carries thread and test name (`automation/target/logs/automation.log`).
-- **Execution metadata**: `automation/target/execution-metadata.json` records environment, URLs, browser, parallelism, Java, OS, framework version, Git commit, build number and the result counts.
+## Logging
+
+Console (INFO) and `automation/target/logs/automation.log` (DEBUG) with `[thread] [Test.method]` on every line, START/PASS/FAIL per test, a diagnostics block per failure, one line per API call. Secrets are masked.
 
 ## Reporting
 
-Allure report with no reporting code in the tests: every UI action, API call (request/response attached) and SQL query is a step; failed UI tests get a screenshot, the page URL and the page source; every test gets its own log; the Environment panel shows environment, browser, Git commit and build number; failures are sorted into product defects, test defects, wait timeouts and infrastructure problems. Secrets are masked everywhere.
+Allure: every UI action, API call (request/response attached) and SQL query is a step; failed UI tests get screenshot, URL and page source; each test has its own log; Environment panel with environment, browser, Git commit and build; failures categorised as product defect, test defect, wait timeout or infrastructure. [docs/reporting.md](docs/reporting.md).
+
+## Docker
 
 ```bash
+docker compose -f docker/docker-compose.yml up --build --abort-on-container-exit --exit-code-from tests
+```
+
+Application, Selenium hub, Chrome/Firefox/Edge nodes and the test runner; `SUITE`, `BROWSER`, `THREADS` variables. [docker/README.md](docker/README.md).
+
+## Selenium Grid
+
+`mvn test -Dexecution=remote -Dgrid.url=http://<grid>:4444 -Dbrowser=firefox`: the same browser options as local runs. Verified with the Docker Grid (nightly) and a local Selenium standalone server.
+
+## Cloud execution
+
+Not implemented by decision: `-Dexecution=cloud` fails fast with a clear message. Remote browsers are covered by Selenium Grid; a cloud provider (BrowserStack, LambdaTest) would be added as another `RemoteWebDriver` target in `DriverFactory` with credentials from CI secrets.
+
+## CI/CD
+
+| Pipeline | Trigger | Runs |
+|---|---|---|
+| CI | pull request | compile (warnings = errors), Checkstyle, unit tests → smoke; dependency review; report |
+| Main | push to main | build → API → UI → smoke on Edge → report |
+| Nightly | daily + manual | full suite (Chrome), regression (Firefox, Edge), regression on Docker + Grid → report |
+
+[docs/ci-cd.md](docs/ci-cd.md).
+
+## Quality gates
+
+Compilation without warnings (CI), Checkstyle (no sleeps, no implicit waits, no empty catch, no unused imports...), all tests green, no new high-severity vulnerable dependency, grouped Dependabot updates.
+
+## Security
+
+No credentials in code or Git (scan of all files and history), secrets from environment/CI only, `.env` ignored and `.env.example` provided, passwords/tokens masked in logs, reports, request attachments, test parameters and `toString()`; the application stores salted password hashes, which a test verifies.
+
+## Running tests
+
+Requirements: JDK 17+, Maven 3.9+, Chrome/Edge (Selenium Manager can download Firefox); Node.js for the Allure CLI.
+
+```bash
+mvn clean test                                   # full suite, local app, Chrome
+mvn clean test -Dsuite=smoke -Dheadless=true     # a suite
+mvn clean test -Dbrowser=firefox -Dthreads=4     # another browser, more threads
+mvn clean test -Denv=qa                          # app started separately on 8081
 npx allure-commandline serve automation/target/allure-results
 ```
 
-Details: [docs/reporting.md](docs/reporting.md).
+## Test suites
 
-## Running the tests
-
-Requirements: JDK 17 or newer, Maven 3.9+, Chrome or Edge (Selenium Manager can download Firefox).
-
-```bash
-mvn clean test                                  # local: starts the demo app, Chrome
-mvn clean test -Denv=qa                         # qa: app already running on 8081, headless
-mvn clean test -Denv=qa -Dbrowser=edge          # qa on Edge
-mvn clean test -Dbrowser=firefox -Dheadless=true
-```
-
-Logs go to the console (INFO) and to `automation/target/logs/automation.log` (DEBUG, with thread names).
-
-## Roadmap
-
-| # | Milestone | Status |
+| Suite | Content | Tests |
 |---|---|---|
-| 1 | Foundation & architecture | ✅ done |
-| 2 | Configuration & driver platform | ✅ done |
-| 3 | UI automation framework | ✅ done |
-| 4 | Test data & UI coverage | ✅ done |
-| 5 | API automation platform | ✅ done |
-| 6 | Database & end-to-end integration | ✅ done |
-| 7 | Execution engine, parallelism & resilience | ✅ done |
-| 8 | Observability & reporting | ✅ done |
-| 9 | Docker, Selenium Grid, cloud & CI/CD | planned |
-| 10 | Quality engineering, documentation & portfolio polish | planned |
+| `full` (default) | everything | 162 |
+| `unit` | framework unit tests | 26 |
+| `smoke` | fast "is it usable" checks | 20 |
+| `sanity` | key happy paths and role checks | 11 |
+| `regression` | complete functional coverage | 120 |
+| `api` / `ui` | one layer | 56 / 53 |
+| `integration` | database and cross-layer | 22 |
+| `e2e` | business journeys | 5 |
+
+## Reports
+
+`automation/target/allure-results` (Allure), `automation/target/screenshots`, `automation/target/logs/automation.log`, `automation/target/execution-metadata.json`, `automation/target/surefire-reports`. CI uploads all of them plus the generated report.
+
+## Test strategy
+
+Test pyramid with the bulk at API level, UI for what only the UI shows, cross-layer checks for consistency; equivalence classes, state transitions, role checks, negative and data-driven tests. [docs/test-strategy.md](docs/test-strategy.md).
+
+## Architecture decisions
+
+15 ADRs (Problem → Options → Decision → Reason → Trade-offs) in [docs/architecture.md](docs/architecture.md), e.g. self-hosted application under test, layered configuration, components over inheritance, waiting for real state, tests owning their data, retrying infrastructure only, report evidence collected by the framework.
+
+## Known limitations
+
+- Cloud device farms are not integrated (see Cloud execution).
+- `parallel=methods` needs `ThreadLocal` fields in a few test classes; `classes` is the supported mode.
+- The application under test uses an in-memory H2 database and demo-grade security (salted SHA-256, in-memory tokens); it exists to be tested, not to be deployed.
+- Allure steps are user-action level; there are no business-level step names on page methods yet.
+- Dependency review needs the repository's Dependency graph setting enabled.
+
+## Future enhancements
+
+- BrowserStack/LambdaTest execution target.
+- Publishing the Allure report with history to GitHub Pages.
+- Contract tests (OpenAPI) and performance smoke tests (k6/Gatling) in the nightly run.
+- Visual and accessibility checks (axe) on key pages.
+- PostgreSQL for the application in Docker, to validate against a production-like database.
+
+## Documentation
+
+**Start here: [the complete framework guide](docs/FRAMEWORK-GUIDE.md)**, which covers everything in one document (application under test, architecture, configuration, every layer, test data, coverage, execution, logging, reporting, Docker, CI/CD, security, extending, troubleshooting, class reference).
+
+Topic documents: [Architecture](docs/architecture.md) · [Framework design](docs/framework-design.md) · [Test strategy](docs/test-strategy.md) · [CI/CD](docs/ci-cd.md) · [Parallel execution](docs/parallel-execution.md) · [Reporting](docs/reporting.md) · [Troubleshooting](docs/troubleshooting.md) · [Coding standards](docs/coding-standards.md) · [Contributing](CONTRIBUTING.md)
 
 ## License
 

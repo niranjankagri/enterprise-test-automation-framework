@@ -14,10 +14,12 @@ import org.testng.annotations.Test;
 @Test(groups = {"ui", "regression"})
 public class ProductCatalogTest extends BaseTest {
 
+    // One run per product of testdata/products.json
     @Test(dataProvider = "catalogue", dataProviderClass = TestDataProviders.class)
     public void productIsListedWithItsDetails(String sku, ProductData expected) {
         ProductPage products = loginAsAdmin().navigation().openProducts().search(sku);
 
+        // The row of exactly this SKU (a search can match more than one) shows the reference values
         Map<String, String> row = products.table().rows().stream().filter(r -> sku.equals(r.get("SKU")))
                 .findFirst().orElseThrow(() -> new AssertionError(sku + " not found"));
         assertThat(row).containsEntry("Name", expected.name())
@@ -29,6 +31,7 @@ public class ProductCatalogTest extends BaseTest {
     public void categoryFilterShowsExactlyItsProducts(String category, List<String> expectedNames) {
         ProductPage products = loginAsAdmin().navigation().openProducts().filterByCategory(category);
 
+        // Seeded products of the category: exactly the expected ones; any listed row: that category only
         assertThat(products.catalogueRows()).extracting(r -> r.get("Name")).containsExactlyInAnyOrderElementsOf(expectedNames);
         assertThat(products.table().column("Category")).as("no product of another category").containsOnly(category);
     }
@@ -36,6 +39,7 @@ public class ProductCatalogTest extends BaseTest {
     public void searchWithoutMatchShowsAnEmptyList() {
         ProductPage products = loginAsAdmin().navigation().openProducts().search("no-such-product-xyz");
 
+        // The "no products" placeholder row and a zero count
         assertThat(products.table().isEmpty()).isTrue();
         assertThat(products.resultCount()).isEqualTo("0 products");
     }

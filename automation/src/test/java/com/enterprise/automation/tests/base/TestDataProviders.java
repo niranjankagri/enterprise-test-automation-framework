@@ -46,11 +46,13 @@ public final class TestDataProviders {
     /** Each catalogue category with the product names the JSON assigns to it. */
     @DataProvider(name = "categories")
     public static Object[][] categories() {
+        // TreeMap: categories in alphabetical order, so the cases always run in the same order
         Map<String, List<String>> byCategory = TestDataFactory.catalogue().stream()
                 .collect(groupingBy(ProductData::category, TreeMap::new, mapping(ProductData::name, toList())));
         return byCategory.entrySet().stream().map(e -> new Object[] {e.getKey(), e.getValue()}).toArray(Object[][]::new);
     }
 
+    /** CSV rows as TestNG parameter arrays, with the columns in the given order (= method parameter order). */
     private static Object[][] rows(String resource, String... columns) {
         return CsvDataReader.read(resource).stream()
                 .map(row -> Arrays.stream(columns).map(row::get).toArray())

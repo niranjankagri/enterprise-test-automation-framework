@@ -1,4 +1,4 @@
 /**
- * Configuration: which environment, browser and execution mode a run uses (filled in Milestone 2).
+ * Configuration: which environment, browser and execution mode a run uses.
  */
 package com.enterprise.automation.config;

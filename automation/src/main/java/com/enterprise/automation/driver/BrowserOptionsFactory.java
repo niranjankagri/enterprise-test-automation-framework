@@ -19,11 +19,13 @@ import org.openqa.selenium.firefox.FirefoxOptions;
  */
 public final class BrowserOptionsFactory {
 
+    // Static factory only
     private BrowserOptionsFactory() {
     }
 
     /** Options for {@code config.browser()}, with headless mode and page-load strategy applied. */
     public static MutableCapabilities create(TestConfig config) {
+        // Exhaustive switch over the enum: a new browser type will not compile until it is handled here
         return switch (config.browser()) {
             case CHROME -> chrome(config);
             case FIREFOX -> firefox(config);
@@ -33,13 +35,16 @@ public final class BrowserOptionsFactory {
 
     private static ChromeOptions chrome(TestConfig config) {
         ChromeOptions options = new ChromeOptions();
+        // NORMAL: navigation returns when the page has fully loaded (document "complete")
         options.setPageLoadStrategy(PageLoadStrategy.NORMAL);
         options.addArguments(chromiumArguments(config));
+        // Browser preferences: no password manager, no leak-detection dialog
         options.setExperimentalOption("prefs", NO_PASSWORD_MANAGER);
         return options;
     }
 
     private static EdgeOptions edge(TestConfig config) {
+        // Same settings as Chrome: Edge is Chromium too
         EdgeOptions options = new EdgeOptions();
         options.setPageLoadStrategy(PageLoadStrategy.NORMAL);
         options.addArguments(chromiumArguments(config));
@@ -61,6 +66,7 @@ public final class BrowserOptionsFactory {
     private static FirefoxOptions firefox(TestConfig config) {
         FirefoxOptions options = new FirefoxOptions();
         options.setPageLoadStrategy(PageLoadStrategy.NORMAL);
+        // Firefox's own headless flag (single dash)
         if (config.headless()) {
             options.addArguments("-headless");
         }
@@ -69,9 +75,11 @@ public final class BrowserOptionsFactory {
 
     /** Chrome and Edge share the Chromium engine, so they share their arguments. */
     private static String[] chromiumArguments(TestConfig config) {
+        // Always: no first-run "choose your search engine" screen, no password leak check
         List<String> args = new ArrayList<>(List.of("--disable-search-engine-choice-screen",
                 "--disable-features=PasswordLeakDetection"));
         if (config.headless()) {
+            // New headless mode (same engine as headed); /dev/shm is tiny in containers, use /tmp instead
             args.addAll(List.of("--headless=new", "--disable-dev-shm-usage"));
         }
         // CI runners and containers often cannot start Chromium's sandbox; Edge then exits at start-up

@@ -18,6 +18,7 @@ import org.testng.annotations.Test;
 @Test(groups = "unit")
 public class ConfigLoaderTest {
 
+    /** Loads a configuration from the given "system properties" and "environment variables" only. */
     private static TestConfig load(Map<String, String> systemProperties, Map<String, String> environmentVariables) {
         return new ConfigLoader(systemProperties, environmentVariables).load();
     }
@@ -58,6 +59,7 @@ public class ConfigLoaderTest {
     }
 
     public void secretsMissingFromAnEnvironmentFailFast() {
+        // Staging commits no passwords: without the secrets the run stops and says which variable to set
         assertThatThrownBy(() -> load(Map.of("env", "staging"), Map.of()))
                 .hasMessageContaining("admin.password")
                 .hasMessageContaining("ADMIN_PASSWORD");
@@ -71,6 +73,7 @@ public class ConfigLoaderTest {
     }
 
     public void systemPropertyBeatsEnvironmentVariableBeatsFile() {
+        // Environment variable over the file, then system property over the environment variable
         TestConfig fromVariable = load(Map.of(), Map.of("BROWSER", "edge"));
         TestConfig fromProperty = load(Map.of("browser", "firefox"), Map.of("BROWSER", "edge"));
 
@@ -88,6 +91,7 @@ public class ConfigLoaderTest {
     }
 
     public void unknownEnvironmentFailsWithAHint() {
+        // "prod" has no file: a typo must stop the run, not silently use defaults
         assertThatThrownBy(() -> load(Map.of("env", "prod"), Map.of()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Unknown environment")

@@ -27,17 +27,22 @@ import org.testng.ITestResult;
  */
 public class ReportEvidenceListener implements IInvokedMethodListener, ITestListener {
 
+    // Last package segment of a test class -> report epic (the layer it tests)
     private static final Map<String, String> LAYERS = Map.of(
             "api", "API", "ui", "UI", "db", "Database", "integration", "Integration",
             "e2e", "End-to-end", "platform", "Framework", "foundation", "Framework");
 
     @Override
     public void onTestStart(ITestResult result) {
+        // Collect this thread's log lines from now on
         TestLogAppender.startCapture();
+        // e.g. com.enterprise.automation.tests.api -> "api" -> epic "API"
         String pkg = result.getTestClass().getRealClass().getPackageName();
         String layer = pkg.substring(pkg.lastIndexOf('.') + 1);
         Allure.epic(LAYERS.getOrDefault(layer, layer));
+        // CustomerApiTest -> feature "CustomerApi"
         Allure.feature(result.getTestClass().getRealClass().getSimpleName().replaceAll("Test$", ""));
+        // Groups (smoke, regression, ...) become tags, filterable in the report
         for (String group : result.getMethod().getGroups()) {
             Allure.label("tag", group);
         }
@@ -45,6 +50,7 @@ public class ReportEvidenceListener implements IInvokedMethodListener, ITestList
 
     @Override
     public void afterInvocation(IInvokedMethod method, ITestResult result) {
+        // Also called after @Before/@After methods: only test methods are of interest here
         if (!method.isTestMethod()) {
             return;
         }
@@ -52,20 +58,25 @@ public class ReportEvidenceListener implements IInvokedMethodListener, ITestList
         Allure.getLifecycle().updateTestCase(testCase -> testCase.getParameters().stream()
                 .filter(p -> ParameterMasking.isSecret(p.getName()))
                 .forEach(p -> p.setValue("****")));
+        // Browser evidence only for failed UI tests (API/unit tests have no browser)
         if (result.getStatus() == ITestResult.FAILURE && DriverManager.hasDriver()) {
             attachBrowserEvidence(result);
         }
+        // Every test, passed or failed, gets its own log
         String log = TestLogAppender.drainCapture();
         if (!log.isEmpty()) {
             Report.attachText("Test log", log);
         }
     }
 
+    /** Screenshot (file + report), URL and page source of this thread's browser. */
     private static void attachBrowserEvidence(ITestResult result) {
         WebDriver driver = DriverManager.getDriver();
         String name = result.getTestClass().getRealClass().getSimpleName() + "." + result.getMethod().getMethodName();
+        // As a file for people without the report, and attached to the report
         ScreenshotUtils.save(driver, name);
         Report.attachPng("Screenshot at failure", ScreenshotUtils.capture(driver));
+        // A crashed browser cannot answer: note it instead of failing again
         try {
             Report.attachText("Page URL", driver.getCurrentUrl());
             Report.attachHtml("Page source", driver.getPageSource());

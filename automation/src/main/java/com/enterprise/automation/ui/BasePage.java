@@ -15,11 +15,15 @@ import org.openqa.selenium.WebDriver;
  */
 public abstract class BasePage {
 
+    // This thread's browser
     protected final WebDriver driver;
+    // Explicit waits with the configured timeout
     protected final WaitUtils wait;
+    // Clicks, typing, reading: each waits first and becomes a report step
     protected final ElementActions actions;
 
     protected BasePage() {
+        // Pages are created freely in tests (new CustomerPage()); they find the browser themselves
         this.driver = DriverManager.getDriver();
         this.wait = new WaitUtils(driver, ConfigManager.config().explicitWait());
         this.actions = new ElementActions(driver, wait);
@@ -27,14 +31,17 @@ public abstract class BasePage {
 
     /** Opens {@code path} relative to the configured base URL, e.g. {@code /login.html}. */
     protected void navigateTo(String path) {
+        // The base URL comes from the environment, so the same page works on local, qa and staging
         String url = ConfigManager.config().baseUrl().resolve(path).toString();
         Report.step("Open " + url, () -> driver.get(url));
     }
 
+    /** The browser tab's title. */
     public String title() {
         return driver.getTitle();
     }
 
+    /** The URL the browser is on now (e.g. to check a redirect). */
     public String currentUrl() {
         return driver.getCurrentUrl();
     }

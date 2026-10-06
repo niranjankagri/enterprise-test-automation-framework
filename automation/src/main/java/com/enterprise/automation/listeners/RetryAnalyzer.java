@@ -20,16 +20,19 @@ public class RetryAnalyzer implements IRetryAnalyzer {
 
     private static final Logger LOG = LoggerFactory.getLogger(RetryAnalyzer.class);
 
+    // Retries used by this test so far (atomic: safe if TestNG calls from another thread)
     private final AtomicInteger attempts = new AtomicInteger();
 
     @Override
     public boolean retry(ITestResult result) {
         Throwable failure = result.getThrowable();
+        // Real failures (assertions, wait timeouts...) are results: never retried
         if (failure == null || !TransientFailures.isTransient(failure)) {
             return false;
         }
         int max = ConfigManager.config().runSettings().retryCount();
         int attempt = attempts.incrementAndGet();
+        // Budget used up: the failure stands
         if (attempt > max) {
             LOG.warn("Not retrying {} again: {} retries used", name(result), max);
             return false;
@@ -39,6 +42,7 @@ public class RetryAnalyzer implements IRetryAnalyzer {
         return true;
     }
 
+    /** "Class.method" for log lines. */
     private static String name(ITestResult result) {
         return result.getTestClass().getRealClass().getSimpleName() + "." + result.getMethod().getMethodName();
     }

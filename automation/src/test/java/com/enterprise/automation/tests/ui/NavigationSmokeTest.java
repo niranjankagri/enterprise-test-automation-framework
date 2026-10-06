@@ -13,8 +13,10 @@ public class NavigationSmokeTest extends BaseTest {
 
     public void everySectionOpensFromTheMenu() {
         DashboardPage dashboard = loginAsAdmin();
+        // The same menu component is used for every hop (it re-finds its elements on each page)
         NavigationComponent menu = dashboard.navigation();
 
+        // Each open...() waits until the page has loaded its data; then heading and highlight are checked
         assertThat(menu.openCustomers().heading()).isEqualTo("Customers");
         assertThat(menu.activeItem()).isEqualTo("Customers");
 
@@ -27,12 +29,14 @@ public class NavigationSmokeTest extends BaseTest {
         assertThat(menu.openCheckout().heading()).isEqualTo("Checkout");
         assertThat(menu.activeItem()).isEqualTo("Checkout");
 
+        // And back to where we started
         assertThat(menu.openDashboard().heading()).isEqualTo("Dashboard");
     }
 
     public void dashboardShowsTheKeyFigures() {
         DashboardPage dashboard = loginAsAdmin();
 
+        // Figures are checked loosely (other tests change them in parallel); the shape is checked exactly
         assertThat(Integer.parseInt(dashboard.stat("products"))).isPositive();
         assertThat(Integer.parseInt(dashboard.stat("customers"))).isPositive();
         assertThat(dashboard.stat("revenue")).startsWith("$");

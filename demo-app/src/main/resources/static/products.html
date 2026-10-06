@@ -38,6 +38,7 @@
       requireAuth('products');
       let products = [];
 
+      // (Re)loads the catalogue with the current search term and category
       async function load() {
         document.body.dataset.ready = 'false';
         const params = new URLSearchParams();
@@ -57,9 +58,11 @@
         document.body.dataset.ready = 'true';
       }
 
+      // Search on submit; the category filter applies immediately
       $('#search-form').addEventListener('submit', (e) => { e.preventDefault(); load(); });
       $('[data-testid="category-filter"]').addEventListener('change', load);
 
+      // "Add to cart" in any row: the cart lives in the browser session, so no API call is needed
       $('[data-testid="products-table"]').addEventListener('click', (event) => {
         const button = event.target.closest('[data-testid="add-to-cart"]');
         if (!button) return;

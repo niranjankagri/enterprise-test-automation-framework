@@ -1,4 +1,4 @@
 /**
- * TestNG listeners: retry, failure diagnostics and execution metadata (filled in Milestones 7 and 8).
+ * TestNG listeners: retry, failure diagnostics and execution metadata.
  */
 package com.enterprise.automation.listeners;

@@ -21,6 +21,7 @@ public class FailureDiagnosticsListener implements ITestListener {
     public void onTestFailure(ITestResult result) {
         TestConfig config = ConfigManager.config();
         Throwable failure = result.getThrowable();
+        // One multi-line block (Java text block), so the facts stay together even in a parallel log
         LOG.error("""
                 ---- FAILURE DIAGNOSTICS ----
                 Test:        {}

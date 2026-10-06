@@ -25,6 +25,7 @@ import java.util.Set;
  */
 public final class OrderApi {
 
+    // For each status, the statuses an order may move to next
     private static final Map<String, Set<String>> TRANSITIONS = Map.of(
             "PLACED", Set.of("SHIPPED", "CANCELLED"),
             "SHIPPED", Set.of("DELIVERED"),
@@ -41,6 +42,7 @@ public final class OrderApi {
     public Response list(Request request) {
         String customerId = request.query("customerId");
         String status = request.query("status");
+        // Build the filter: "1 = 1" lets every condition start with AND
         StringBuilder sql = new StringBuilder("SELECT id FROM orders WHERE 1 = 1");
         List<Object> args = new ArrayList<>();
         if (customerId != null) {
@@ -57,6 +59,7 @@ public final class OrderApi {
         }
         sql.append(" ORDER BY id DESC");
         return Sql.run(database, c -> {
+            // First the matching ids...
             List<Long> ids = new ArrayList<>();
             try (PreparedStatement ps = c.prepareStatement(sql.toString())) {
                 for (int i = 0; i < args.size(); i++) {
@@ -68,6 +71,7 @@ public final class OrderApi {
                     }
                 }
             }
+            // ...then each full order with its lines (same shape as GET /orders/{id})
             List<Map<String, Object>> orders = new ArrayList<>();
             for (long id : ids) {
                 orders.add(find(c, id));
@@ -76,6 +80,7 @@ public final class OrderApi {
         });
     }
 
+    /** {@code GET /api/orders/{id}}; 404 if unknown. */
     public Response get(Request request) {
         long id = request.pathId("id");
         return Sql.run(database, c -> Response.ok(find(c, id)));
@@ -84,6 +89,7 @@ public final class OrderApi {
     /** {@code POST {customerId, items: [{productId, quantity}]}}. */
     public Response create(Request request) {
         JsonNode body = request.body();
+        // Shape checks first (400), business checks later (404/409)
         Validator v = new Validator(body, false);
         JsonNode customerNode = body.get("customerId");
         if (customerNode == null || !customerNode.canConvertToLong() || !customerNode.isIntegralNumber()) {
@@ -93,6 +99,7 @@ public final class OrderApi {
         if (items == null || !items.isArray() || items.isEmpty()) {
             v.error("items", "At least one item is required");
         } else {
+            // Each line needs a product id and a quantity of at least 1; errors name the line index
             for (int i = 0; i < items.size(); i++) {
                 JsonNode item = items.get(i);
                 if (item.get("productId") == null || !item.get("productId").isIntegralNumber()) {
@@ -107,21 +114,27 @@ public final class OrderApi {
         v.validate();
 
         long customerId = customerNode.longValue();
+        // One transaction: either the whole order is stored and all stock reserved, or nothing changes
         return Sql.transaction(database, c -> {
+            // 404 for an unknown customer; 409 for an inactive one
             Map<String, Object> customer = CustomerApi.find(c, customerId);
             if (!"ACTIVE".equals(customer.get("status"))) {
                 throw new ApiException(409, "Customer " + customerId + " is inactive");
             }
             BigDecimal total = BigDecimal.ZERO;
+            // [productId, quantity] per line, and the unit price at the time of ordering
             List<long[]> lines = new ArrayList<>();
             List<BigDecimal> prices = new ArrayList<>();
             for (JsonNode item : items) {
                 long productId = item.get("productId").longValue();
                 int quantity = item.get("quantity").intValue();
+                // 404 for an unknown product
                 Map<String, Object> product = ProductApi.find(c, productId);
+                // Deactivated products cannot be sold anymore
                 if (!(Boolean) product.get("active")) {
                     throw new ApiException(409, "Product " + product.get("sku") + " is no longer sold");
                 }
+                // Not enough stock: 409 and the transaction rolls back any stock already reserved
                 if ((Integer) product.get("stock") < quantity) {
                     throw new ApiException(409, "Insufficient stock for " + product.get("sku") + ": "
                             + product.get("stock") + " left, " + quantity + " requested");
@@ -130,8 +143,10 @@ public final class OrderApi {
                 total = total.add(price.multiply(BigDecimal.valueOf(quantity)));
                 lines.add(new long[] {productId, quantity});
                 prices.add(price);
+                // Reserve the stock now
                 adjustStock(c, productId, -quantity);
             }
+            // The order header with the computed total
             long orderId;
             try (PreparedStatement ps = c.prepareStatement(
                     "INSERT INTO orders (customer_id, status, total) VALUES (?, 'PLACED', ?)",
@@ -141,6 +156,7 @@ public final class OrderApi {
                 ps.executeUpdate();
                 orderId = Sql.generatedId(ps);
             }
+            // One row per line, keeping the price that applied when ordering
             for (int i = 0; i < lines.size(); i++) {
                 try (PreparedStatement ps = c.prepareStatement(
                         "INSERT INTO order_items (order_id, product_id, quantity, unit_price) VALUES (?, ?, ?, ?)")) {
@@ -159,13 +175,16 @@ public final class OrderApi {
     public Response updateStatus(Request request) {
         long id = request.pathId("id");
         Validator v = new Validator(request.body(), false);
+        // Must be one of the known statuses
         String status = v.oneOf("status", "Status", TRANSITIONS.keySet(), true);
         v.validate();
         return Sql.transaction(database, c -> {
             String current = (String) find(c, id).get("status");
+            // e.g. DELIVERED -> CANCELLED is not allowed
             if (!TRANSITIONS.get(current).contains(status)) {
                 throw new ApiException(409, "Order " + id + " cannot go from " + current + " to " + status);
             }
+            // A cancelled order no longer needs its reserved stock
             if ("CANCELLED".equals(status)) {
                 restoreStock(c, id);
             }
@@ -182,9 +201,11 @@ public final class OrderApi {
     public Response delete(Request request) {
         long id = request.pathId("id");
         return Sql.transaction(database, c -> {
+            // Only PLACED orders still hold reserved stock (shipped/delivered stock is gone, cancelled already returned)
             if ("PLACED".equals(find(c, id).get("status"))) {
                 restoreStock(c, id);
             }
+            // Order lines are deleted with the order (ON DELETE CASCADE)
             try (PreparedStatement ps = c.prepareStatement("DELETE FROM orders WHERE id = ?")) {
                 ps.setLong(1, id);
                 ps.executeUpdate();
@@ -193,6 +214,7 @@ public final class OrderApi {
         });
     }
 
+    /** Gives every line's quantity back to its product. */
     private static void restoreStock(Connection c, long orderId) throws SQLException {
         try (PreparedStatement ps = c.prepareStatement(
                 "SELECT product_id, quantity FROM order_items WHERE order_id = ?")) {
@@ -205,6 +227,7 @@ public final class OrderApi {
         }
     }
 
+    /** Adds {@code delta} (negative to reserve) to a product's stock. */
     private static void adjustStock(Connection c, long productId, int delta) throws SQLException {
         try (PreparedStatement ps = c.prepareStatement("UPDATE products SET stock = stock + ? WHERE id = ?")) {
             ps.setInt(1, delta);
@@ -213,8 +236,10 @@ public final class OrderApi {
         }
     }
 
+    /** One order with customer name and lines; 404 if it does not exist. */
     static Map<String, Object> find(Connection c, long id) throws SQLException {
         Map<String, Object> order = new LinkedHashMap<>();
+        // Header joined with the customer for the display name
         try (PreparedStatement ps = c.prepareStatement("SELECT o.id, o.customer_id, c.first_name, c.last_name,"
                 + " o.status, o.total, o.created_at FROM orders o JOIN customers c ON c.id = o.customer_id"
                 + " WHERE o.id = ?")) {
@@ -231,6 +256,7 @@ public final class OrderApi {
                 order.put("createdAt", rs.getTimestamp("created_at").toInstant());
             }
         }
+        // Lines joined with the product for SKU and name, in the order they were added
         List<Map<String, Object>> items = new ArrayList<>();
         try (PreparedStatement ps = c.prepareStatement("SELECT i.product_id, p.sku, p.name, i.quantity, i.unit_price"
                 + " FROM order_items i JOIN products p ON p.id = i.product_id WHERE i.order_id = ? ORDER BY i.id")) {
@@ -243,6 +269,7 @@ public final class OrderApi {
                     item.put("name", rs.getString("name"));
                     item.put("quantity", rs.getInt("quantity"));
                     item.put("unitPrice", rs.getBigDecimal("unit_price"));
+                    // Line total = unit price x quantity
                     item.put("lineTotal", rs.getBigDecimal("unit_price").multiply(BigDecimal.valueOf(rs.getInt("quantity"))));
                     items.add(item);
                 }

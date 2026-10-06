@@ -15,6 +15,7 @@ public final class TestId {
 
     /** {@code [data-testid='value']} */
     public static By of(String value) {
+        // A CSS attribute selector; fast and readable in failure messages
         return By.cssSelector("[data-testid='" + value + "']");
     }
 }

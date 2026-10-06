@@ -16,14 +16,18 @@ import org.testng.ITestResult;
  */
 public class TestLogContextListener implements ITestListener {
 
+    // Key of the test name in the MDC; logback.xml prints it with %X{test}
     public static final String MDC_KEY = "test";
     private static final Logger LOG = LoggerFactory.getLogger(TestLogContextListener.class);
 
     @Override
     public void onTestStart(ITestResult result) {
+        // MDC is per thread: from here on, every log line of this thread carries the test name
         MDC.put(MDC_KEY, name(result));
         LOG.info("START {}{}", name(result), parameters(result));
     }
+
+    // Each outcome logs one line and removes the name, so lines between tests are not mislabelled
 
     @Override
     public void onTestSuccess(ITestResult result) {
@@ -39,11 +43,13 @@ public class TestLogContextListener implements ITestListener {
 
     @Override
     public void onTestSkipped(ITestResult result) {
+        // A retried attempt is reported as skipped; say so instead of printing the infrastructure error again
         String reason = result.wasRetried() ? "retried" : String.valueOf(result.getThrowable());
         LOG.warn("SKIP  {}: {}", name(result), reason);
         MDC.remove(MDC_KEY);
     }
 
+    /** "Class.method", shared with the other listeners. */
     static String name(ITestResult result) {
         return result.getTestClass().getRealClass().getSimpleName() + "." + result.getMethod().getMethodName();
     }
@@ -55,6 +61,7 @@ public class TestLogContextListener implements ITestListener {
         return parameters.length == 0 ? "" : " " + Arrays.toString(parameters);
     }
 
+    /** Test duration in milliseconds. */
     static long duration(ITestResult result) {
         return result.getEndMillis() - result.getStartMillis();
     }

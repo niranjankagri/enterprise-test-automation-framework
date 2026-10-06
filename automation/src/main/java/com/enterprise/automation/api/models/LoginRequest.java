@@ -5,6 +5,7 @@ import com.enterprise.automation.config.Credentials;
 /** Body of {@code POST /api/auth/login}. {@link #toString()} masks the password. */
 public record LoginRequest(String username, String password) {
 
+    /** Request body from configured credentials. */
     public static LoginRequest of(Credentials credentials) {
         return new LoginRequest(credentials.username(), credentials.password());
     }

@@ -59,6 +59,7 @@ public class DriverManagerTest {
     }
 
     /** Four sessions over two threads: every session is unique and stays with its own thread. */
+    // invocationCount = 4 runs, threadPoolSize = 2 threads in parallel
     @Test(invocationCount = 4, threadPoolSize = 2)
     public void everyThreadGetsItsOwnBrowser() {
         WebDriver driver = DriverManager.startDriver();

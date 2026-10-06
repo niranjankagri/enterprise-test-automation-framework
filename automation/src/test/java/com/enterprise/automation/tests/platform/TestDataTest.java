@@ -27,6 +27,7 @@ public class TestDataTest {
     private static final String EMAIL = "^[\\w.+-]+@[\\w-]+(\\.[\\w-]+)+$";
 
     public void generatedCustomersAreValidAndUniqueEvenInParallel() {
+        // 500 customers generated on parallel threads; a concurrent set collects the emails
         Set<String> emails = ConcurrentHashMap.newKeySet();
         IntStream.range(0, 500).parallel().forEach(i -> {
             CustomerData customer = TestDataFactory.newCustomer();
@@ -35,6 +36,7 @@ public class TestDataTest {
             assertThat(customer.firstName()).isNotBlank().matches("[A-Za-z]+");
             emails.add(customer.email());
         });
+        // 500 distinct emails = no collision, even in parallel
         assertThat(emails).hasSize(500);
     }
 
@@ -84,6 +86,7 @@ public class TestDataTest {
     }
 
     public void cleanupRunsNewestFirstAndSurvivesFailures() {
+        // Two working clean-ups and two failing ones, registered in this order
         List<String> ran = new ArrayList<>();
         CleanupRegistry.register("customer", () -> ran.add("customer"));
         CleanupRegistry.register("broken", () -> {
@@ -94,6 +97,7 @@ public class TestDataTest {
         });
         CleanupRegistry.register("order", () -> ran.add("order"));
 
+        // Newest first; failures are counted and logged, never thrown
         int failures = CleanupRegistry.runAll();
 
         assertThat(ran).containsExactly("order", "customer");

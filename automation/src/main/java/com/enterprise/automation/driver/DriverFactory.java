@@ -26,18 +26,23 @@ public final class DriverFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(DriverFactory.class);
 
+    // Static factory only
     private DriverFactory() {
     }
 
-    /** A new browser session for {@code config}: local, on a Grid, or (Milestone 9) in the cloud. */
+    /** A new browser session for {@code config}: local or on a Selenium Grid (cloud is not implemented). */
     public static WebDriver create(TestConfig config) {
+        // Same options for every execution mode
         MutableCapabilities options = BrowserOptionsFactory.create(config);
+        // Where the browser runs decides which driver class connects to it
         WebDriver driver = switch (config.execution()) {
             case LOCAL -> local(options);
             case REMOTE -> remote(config, options);
+            // Cloud providers are not integrated (see README, "Cloud execution"); fail fast with the alternatives
             case CLOUD -> throw new UnsupportedOperationException(
-                    "Cloud execution is added in Milestone 9; use -Dexecution=local or remote");
+                    "Cloud execution is not implemented; use -Dexecution=local or -Dexecution=remote (Selenium Grid)");
         };
+        // Timeouts and window size; if that fails, close the session we just opened
         try {
             configure(driver, config);
         } catch (RuntimeException e) {
@@ -50,6 +55,7 @@ public final class DriverFactory {
 
     /** Local browser. Selenium Manager finds or downloads the matching driver binary. */
     private static WebDriver local(MutableCapabilities options) {
+        // The options type tells which local driver to start (pattern matching for instanceof)
         if (options instanceof ChromeOptions chrome) {
             return new ChromeDriver(chrome);
         }
@@ -65,6 +71,7 @@ public final class DriverFactory {
     /** Browser on a Selenium Grid or standalone server at {@code grid.url}. */
     private static WebDriver remote(TestConfig config, MutableCapabilities options) {
         try {
+            // The Grid picks a node that offers the requested browser
             return new RemoteWebDriver(config.gridUrl().toURL(), options);
         } catch (MalformedURLException e) {
             throw new IllegalStateException("Invalid grid.url " + config.gridUrl(), e);
@@ -77,7 +84,9 @@ public final class DriverFactory {
      * uses explicit waits.
      */
     private static void configure(WebDriver driver, TestConfig config) {
+        // Upper limit for driver.get(...) to finish loading a page
         driver.manage().timeouts().pageLoadTimeout(config.pageLoadTimeout());
+        // Same window size everywhere, so layouts (and screenshots) are comparable between runs
         driver.manage().window().setSize(new Dimension(config.windowWidth(), config.windowHeight()));
     }
 }

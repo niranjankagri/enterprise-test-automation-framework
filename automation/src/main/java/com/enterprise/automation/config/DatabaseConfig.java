@@ -12,6 +12,7 @@ public record DatabaseConfig(String url, String username, String password) {
 
     @Override
     public String toString() {
+        // URL and user help debugging; the password never appears
         return "DatabaseConfig[url=" + url + ", username=" + username + ", password=****]";
     }
 }

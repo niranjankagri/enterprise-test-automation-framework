@@ -12,10 +12,12 @@ package com.enterprise.automation.data;
  */
 public record CustomerData(String firstName, String lastName, String email, String phone, String city) {
 
+    /** "First Last", as the UI shows it. */
     public String fullName() {
         return firstName + " " + lastName;
     }
 
+    // with...(): a copy with one field changed (records are immutable), e.g. for negative tests
     public CustomerData withFirstName(String value) {
         return new CustomerData(value, lastName, email, phone, city);
     }

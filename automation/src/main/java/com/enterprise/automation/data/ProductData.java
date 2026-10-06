@@ -17,10 +17,12 @@ public record ProductData(String sku, String name, String category, BigDecimal p
 
     /** Price as the UI shows it, e.g. {@code $1,199.00}. */
     public String displayPrice() {
+        // US currency format, exactly as the UI renders prices
         NumberFormat format = NumberFormat.getCurrencyInstance(Locale.US);
         return format.format(price);
     }
 
+    // with...(): a copy with one field changed (records are immutable)
     public ProductData withStock(int value) {
         return new ProductData(sku, name, category, price, value);
     }

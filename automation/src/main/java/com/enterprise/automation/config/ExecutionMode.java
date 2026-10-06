@@ -10,14 +10,16 @@ public enum ExecutionMode {
     LOCAL,
     /** A browser on a Selenium Grid (or standalone server), reached through RemoteWebDriver. */
     REMOTE,
-    /** A browser in a cloud provider (BrowserStack), added in Milestone 9. */
+    /** A cloud browser provider: reserved, not implemented (fails fast with the alternatives). */
     CLOUD;
 
     /** Parses a configuration value such as {@code "local"} or {@code "remote"}. */
     public static ExecutionMode from(String value) {
         try {
+            // Case-insensitive match against the constants
             return valueOf(value.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException | NullPointerException e) {
+            // Fail fast with the list of valid values
             String valid = Arrays.stream(values()).map(m -> m.name().toLowerCase(Locale.ROOT))
                     .collect(Collectors.joining(", "));
             throw new IllegalArgumentException("Unknown execution mode '" + value + "'. Valid values: " + valid, e);

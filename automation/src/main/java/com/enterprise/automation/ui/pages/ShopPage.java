@@ -19,7 +19,9 @@ import org.openqa.selenium.By;
  */
 public abstract class ShopPage<T extends ShopPage<T>> extends BasePage {
 
+    // The thin loading bar at the top, visible while API calls are running
     private static final By LOADER = TestId.of("loader");
+    // The h1 of every signed-in page
     private static final By PAGE_TITLE = TestId.of("page-title");
 
     /** The value of {@code body[data-page]}, e.g. {@code customers}. */
@@ -28,8 +30,10 @@ public abstract class ShopPage<T extends ShopPage<T>> extends BasePage {
     /** Path of the page, e.g. {@code /customers.html}. */
     protected abstract String path();
 
+    /** {@code this} typed as the concrete page, so fluent methods return e.g. CustomerPage. */
     @SuppressWarnings("unchecked")
     private T self() {
+        // Safe: every subclass declares itself as T (class CustomerPage extends ShopPage<CustomerPage>)
         return (T) this;
     }
 
@@ -44,16 +48,23 @@ public abstract class ShopPage<T extends ShopPage<T>> extends BasePage {
         navigateTo(path());
     }
 
+    /** Waits for the application's "page ready" signal (see the class comment). */
     public T waitUntilLoaded() {
+        // 1. the right page is shown (not the previous one, not the login page)
         wait.attributeIs(By.tagName("body"), "data-page", pageId());
+        // 2. the page has loaded its data
         wait.attributeIs(By.tagName("body"), "data-ready", "true");
+        // 3. no API call is still running
         wait.invisible(LOADER);
         return self();
     }
 
+    /** The page heading, e.g. "Customers". */
     public String heading() {
         return actions.text(PAGE_TITLE);
     }
+
+    // Shared components: new objects each time (cheap; they find their elements when used)
 
     public HeaderComponent header() {
         return new HeaderComponent();

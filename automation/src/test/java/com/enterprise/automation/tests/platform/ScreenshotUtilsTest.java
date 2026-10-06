@@ -31,6 +31,7 @@ public class ScreenshotUtilsTest {
 
     public void aClosedBrowserGivesNoScreenshotInsteadOfAnError() {
         var driver = DriverManager.startDriver();
+        // Quit behind DriverManager's back: the browser is gone, the reference is not
         driver.quit();
 
         assertThat(ScreenshotUtils.save(driver, "closed-browser")).isNull();

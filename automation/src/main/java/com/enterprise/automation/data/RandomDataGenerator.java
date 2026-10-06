@@ -17,10 +17,14 @@ import net.datafaker.Faker;
  */
 public final class RandomDataGenerator {
 
+    // Start time of this JVM in base 36: short, and different for every run
     private static final String RUN_ID = Long.toString(System.currentTimeMillis(), 36);
+    // Shared by all threads; incrementAndGet is atomic, so no two calls get the same number
     private static final AtomicInteger COUNTER = new AtomicInteger();
+    // US locale: names and cities in plain ASCII letters
     private static final ThreadLocal<Faker> FAKER = ThreadLocal.withInitial(() -> new Faker(Locale.US));
 
+    // Static helpers only
     private RandomDataGenerator() {
     }
 
@@ -29,33 +33,40 @@ public final class RandomDataGenerator {
         return RUN_ID + "-" + COUNTER.incrementAndGet();
     }
 
+    /** A realistic first name (letters only). */
     public static String firstName() {
         return lettersOnly(FAKER.get().name().firstName());
     }
 
+    /** A realistic last name (letters only). */
     public static String lastName() {
         return lettersOnly(FAKER.get().name().lastName());
     }
 
+    /** A realistic city name. */
     public static String city() {
         return FAKER.get().address().city();
     }
 
     /** Unique, valid email on a reserved test domain, e.g. {@code maria.lopez.mfx3k2q1-7@test.example.com}. */
     public static String email(String firstName, String lastName) {
+        // example.com is reserved for documentation/testing: no real mailbox can ever receive these
         return (firstName + "." + lastName).toLowerCase(Locale.ROOT) + "." + uniqueSuffix() + "@test.example.com";
     }
 
     /** Phone in the format the application accepts, e.g. {@code +1-555-0142}. */
     public static String phone() {
+        // 555 numbers are fictional; four random digits, zero-padded
         return "+1-555-" + String.format(Locale.ROOT, "%04d", ThreadLocalRandom.current().nextInt(10_000));
     }
 
     /** Unique SKU, e.g. {@code TST-MFX3K2Q1-7}. */
     public static String sku() {
+        // The TST- prefix marks test products, so catalogue checks can ignore them
         return "TST-" + uniqueSuffix().toUpperCase(Locale.ROOT);
     }
 
+    /** A realistic product name, e.g. "Ergonomic Steel Chair" (not unique: use the SKU to identify). */
     public static String productName() {
         return FAKER.get().commerce().productName();
     }
@@ -68,6 +79,7 @@ public final class RandomDataGenerator {
     /** Names such as "O'Connor" are kept readable but limited to letters, so emails stay valid. */
     private static String lettersOnly(String value) {
         String letters = value.replaceAll("[^A-Za-z]", "");
+        // Fallback in the (theoretical) case that nothing is left
         return letters.isEmpty() ? "Test" : letters;
     }
 }

@@ -12,22 +12,27 @@ import org.testng.annotations.AfterMethod;
  */
 public abstract class BaseApiTest {
 
+    /** The run configuration. */
     protected TestConfig config() {
         return ConfigManager.config();
     }
 
+    /** The API as the admin (cached token). */
     protected ApiSession admin() {
         return ApiSession.admin();
     }
 
+    /** The API as the read-only viewer. */
     protected ApiSession viewer() {
         return ApiSession.viewer();
     }
 
+    /** The API without any token. */
     protected ApiSession anonymous() {
         return ApiSession.anonymous();
     }
 
+    // alwaysRun: clean-ups also run after failed tests and in group-filtered suites
     @AfterMethod(alwaysRun = true)
     public void cleanUp() {
         CleanupRegistry.runAll();

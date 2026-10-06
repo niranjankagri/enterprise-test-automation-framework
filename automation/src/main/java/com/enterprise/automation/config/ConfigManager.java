@@ -17,6 +17,7 @@ public final class ConfigManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConfigManager.class);
 
+    // Static access only
     private ConfigManager() {
     }
 
@@ -27,14 +28,18 @@ public final class ConfigManager {
 
     /** Initialization-on-demand holder: lazy, thread-safe, no locking on every call. */
     private static final class Holder {
+        // The JVM initialises this class (and so loads the configuration) on first access, exactly once
         private static final TestConfig CONFIG = loadFromSystem();
     }
 
     private static TestConfig loadFromSystem() {
+        // System.getProperties() is a Properties (Object keys/values): copy it into a String map
         Map<String, String> systemProperties = new HashMap<>();
         System.getProperties().forEach((k, v) -> systemProperties.put(String.valueOf(k), String.valueOf(v)));
 
+        // The pure loader does the work; this class only feeds it the real JVM sources
         TestConfig config = new ConfigLoader(systemProperties, System.getenv()).load();
+        // One line in every run's log: which environment, URL, browser and mode (no secrets)
         LOG.info("Configuration: {}", config.summary());
         return config;
     }

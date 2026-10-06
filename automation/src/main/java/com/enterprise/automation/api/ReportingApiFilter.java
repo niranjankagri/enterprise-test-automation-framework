@@ -22,9 +22,12 @@ public final class ReportingApiFilter implements Filter {
     @Override
     public Response filter(FilterableRequestSpecification request, FilterableResponseSpecification responseSpec,
                            FilterContext context) {
+        // Step name, e.g. "POST /customers"
         String call = request.getMethod() + " " + request.getDerivedPath();
+        // A lambda cannot assign a local variable, so the response is passed out through an array
         Response[] holder = new Response[1];
         Report.step(call, () -> {
+            // Attach the request before sending, so it is in the report even if the call throws
             Report.attachText("Request", describeRequest(request));
             holder[0] = context.next(request, responseSpec);
             Report.attachText("Response " + holder[0].getStatusCode(), describeResponse(holder[0]));
@@ -33,6 +36,7 @@ public final class ReportingApiFilter implements Filter {
         return holder[0];
     }
 
+    /** Method, URL, headers and body of a request as readable text, secrets masked. */
     private static String describeRequest(FilterableRequestSpecification request) {
         String headers = request.getHeaders().asList().stream().map(ReportingApiFilter::header)
                 .collect(Collectors.joining("\n"));
@@ -41,6 +45,7 @@ public final class ReportingApiFilter implements Filter {
                 + (body == null ? "" : "\n\n" + SecretMasker.mask(String.valueOf(body)));
     }
 
+    /** Status line, headers and body of a response as readable text, secrets masked. */
     private static String describeResponse(Response response) {
         String headers = response.getHeaders().asList().stream().map(ReportingApiFilter::header)
                 .collect(Collectors.joining("\n"));
@@ -48,6 +53,7 @@ public final class ReportingApiFilter implements Filter {
         return response.getStatusLine() + "\n" + headers + (body.isEmpty() ? "" : "\n\n" + SecretMasker.mask(body));
     }
 
+    /** "Name: value"; Authorization keeps "Bearer ****", other secret headers become "****". */
     private static String header(Header header) {
         boolean secret = header.getName().equalsIgnoreCase("Authorization") || header.getName().equalsIgnoreCase("Cookie");
         return header.getName() + ": " + (secret ? SecretMasker.mask(header.getValue()).replaceAll("^(?!Bearer).*", "****")

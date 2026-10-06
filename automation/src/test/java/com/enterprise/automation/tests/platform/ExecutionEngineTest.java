@@ -26,6 +26,9 @@ public class ExecutionEngineTest {
         assertThat(TransientFailures.isTransient(new WebDriverException("chrome not reachable"))).isTrue();
         assertThat(TransientFailures.isTransient(new RuntimeException("wrapped", new ConnectException("Connection refused"))))
                 .as("causes are inspected").isTrue();
+        assertThat(TransientFailures.isTransient(
+                new TimeoutException("timeout: Timed out receiving message from renderer: 30.000")))
+                .as("browser renderer stalled at start-up").isTrue();
     }
 
     public void realFailuresAreNeverRetried() {

@@ -13,6 +13,8 @@ WORKDIR /workspace
 COPY pom.xml ./
 COPY demo-app/pom.xml demo-app/
 COPY automation/pom.xml automation/
+# Checkstyle rules: the code-quality gate runs in every Maven build, also in the container
+COPY config config
 COPY demo-app/src demo-app/src
 COPY automation/src automation/src
 RUN mvn -B -q -DskipTests package \
