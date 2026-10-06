@@ -20,7 +20,9 @@
     <description>Production-style UI + API + database test automation framework.</description>
     <url>https://github.com/niranjankagri/enterprise-test-automation-framework</url>
 
+    <!-- demo-app first: the automation module starts it for local runs (test scope only) -->
     <modules>
+        <module>demo-app</module>
         <module>automation</module>
     </modules>
 
@@ -41,10 +43,14 @@
         <allure.version>2.35.5</allure.version>
         <aspectj.version>1.9.25</aspectj.version>
 
+        <!-- Application under test -->
+        <h2.version>2.5.252</h2.version>
+
         <!-- Plugins -->
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
         <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
+        <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -95,6 +101,16 @@
                 <artifactId>logback-classic</artifactId>
                 <version>${logback.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${h2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>demo-app</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -122,6 +138,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
                     <version>${maven-resources-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>${maven-shade-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
