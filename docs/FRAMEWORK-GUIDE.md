@@ -511,7 +511,7 @@ What a test shows, without any reporting code in the test:
 | A step per click, typed value (passwords `****`), selection, form fill, navigation | `ElementActions`, `ModalComponent`, `BasePage` |
 | A step per API call with Request and Response attachments (secrets masked) | `ReportingApiFilter` |
 | A step per database query: name, SQL, parameters, database, duration, rows (hash/salt masked) | `QueryExecutor` |
-| Screenshot, page URL, page source and browser console (Chrome/Edge) of a failed UI test (screenshot also saved under `target/screenshots`) | `ReportEvidenceListener` (right after the test method, before the browser is quit) |
+| Screenshot, page URL, title, page source and browser console (Chrome/Edge) of a failed UI test (screenshot also saved under `target/screenshots`) | `ReportEvidenceListener` (right after the test method, before the browser is quit) |
 | The test's own log lines | `TestLogAppender` + `ReportEvidenceListener` |
 | Labels: epic = layer, feature = class, tags = groups | `ReportEvidenceListener` |
 | Parameters of data-driven tests, secret ones masked | Allure + `ParameterMasking` |

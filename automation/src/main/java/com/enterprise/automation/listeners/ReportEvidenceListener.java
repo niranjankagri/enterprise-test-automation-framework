@@ -19,7 +19,7 @@ import org.testng.ITestResult;
  * <ul>
  *   <li>labels: layer (epic) from the package, feature from the class, groups as tags;</li>
  *   <li>the test's own log lines;</li>
- *   <li>on failure: screenshot (also saved under {@code target/screenshots}), URL, page source and
+ *   <li>on failure: screenshot (also saved under {@code target/screenshots}), URL, title, page source and
  *       the browser console (Chrome/Edge).</li>
  * </ul>
  *
@@ -71,7 +71,7 @@ public class ReportEvidenceListener implements IInvokedMethodListener, ITestList
         }
     }
 
-    /** Screenshot (file + report), URL, page source and console of this thread's browser. */
+    /** Screenshot (file + report), URL, title, page source and console of this thread's browser. */
     private static void attachBrowserEvidence(ITestResult result) {
         WebDriver driver = DriverManager.getDriver();
         String name = result.getTestClass().getRealClass().getSimpleName() + "." + result.getMethod().getMethodName();
@@ -81,6 +81,7 @@ public class ReportEvidenceListener implements IInvokedMethodListener, ITestList
         // A crashed browser cannot answer: note it instead of failing again
         try {
             Report.attachText("Page URL", driver.getCurrentUrl());
+            Report.attachText("Page title", driver.getTitle());
             Report.attachHtml("Page source", driver.getPageSource());
             // JavaScript errors and failed requests often explain a UI failure (Chrome/Edge only)
             BrowserConsole.read(driver).ifPresent(console -> Report.attachText("Browser console", console));

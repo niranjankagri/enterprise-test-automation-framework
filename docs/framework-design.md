@@ -64,7 +64,7 @@ Add a named query to `ShopDatabase` (parameterized SQL only) and assert with `Da
 | `RetryTransformer` / `RetryAnalyzer` | annotation transform / after failure | retry transient infrastructure failures only |
 | `TestLogContextListener` | test start/end, around set-up/clean-up | test (or set-up method) name in log lines, START/PASS/FAIL/SKIP |
 | `FailureDiagnosticsListener` | test failure | diagnostic block in the log |
-| `ReportEvidenceListener` | test start / after test method | labels, per-test log, screenshot, URL, page source, browser console |
+| `ReportEvidenceListener` | test start / after test method | labels, per-test log, screenshot, URL, title, page source, browser console |
 | `ExecutionMetadataListener` | suite start/end | run metadata, Allure environment/executor/categories |
 | `DemoAppLifecycle` (test code) | suite start | start the application under test for `env=local` |
 

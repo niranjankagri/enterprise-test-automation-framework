@@ -142,7 +142,7 @@ Console (INFO) and `automation/target/logs/automation.log` (DEBUG) with `[thread
 
 ## Reporting
 
-Allure: every UI action, API call (request/response attached) and SQL query is a step; failed UI tests get screenshot, URL, page source and browser console; database steps name the query and show its duration; each test has its own log; Environment panel with environment, browser, Git commit and build; API steps show duration and the correlation id (`X-Request-Id`, also in the application log); failures categorised as configuration, infrastructure, timeout, authentication/authorization, database, UI, API, assertion or test/framework error. [docs/reporting.md](docs/reporting.md).
+Allure: every UI action, API call (request/response attached) and SQL query is a step; failed UI tests get screenshot, URL, title, page source and browser console; database steps name the query and show its duration; each test has its own log; Environment panel with environment, browser, Git commit and build; API steps show duration and the correlation id (`X-Request-Id`, also in the application log); failures categorised as configuration, infrastructure, timeout, authentication/authorization, database, UI, API, assertion or test/framework error. [docs/reporting.md](docs/reporting.md).
 
 ## Docker
 
