@@ -7,6 +7,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -17,7 +18,8 @@ import org.openqa.selenium.support.ui.WebDriverWait;
  *
  * <p>Every wait ignores {@link StaleElementReferenceException} and {@link NoSuchElementException},
  * because modern UIs re-render elements while data loads; the condition is simply checked again
- * on the next poll.
+ * on the next poll. ChromeDriver's generic "node does not belong to the document" error is the
+ * same race in other words and is treated the same way.
  */
 public final class WaitUtils {
 
@@ -41,7 +43,23 @@ public final class WaitUtils {
         wait.ignoring(StaleElementReferenceException.class).ignoring(NoSuchElementException.class);
         // The description becomes the timeout message: "Expected condition failed: <description>"
         wait.withMessage(description);
-        return wait.until(condition::apply);
+        return wait.until(d -> {
+            try {
+                return condition.apply(d);
+            } catch (WebDriverException e) {
+                // ChromeDriver reports some stale-node races (an element replaced while the page
+                // navigates) as a generic error instead of StaleElementReferenceException: same handling
+                if (isStaleNodeRace(e)) {
+                    return null;
+                }
+                throw e;
+            }
+        });
+    }
+
+    /** "Node with given id does not belong to the document": a stale element in ChromeDriver's words. */
+    static boolean isStaleNodeRace(WebDriverException e) {
+        return e.getMessage() != null && e.getMessage().contains("does not belong to the document");
     }
 
     // The helpers below wrap Selenium's ExpectedConditions with a readable description each
