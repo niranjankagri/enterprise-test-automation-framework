@@ -1,0 +1,80 @@
+# Full test platform in containers: application under test, Selenium Grid (hub + Chrome, Firefox
+# and Edge nodes) and the test runner.
+#
+#   docker compose -f docker/docker-compose.yml up --build --abort-on-container-exit --exit-code-from tests
+#
+# Variables: SUITE (smoke), BROWSER (chrome), THREADS (2), SELENIUM_IMAGE_TAG (latest).
+# Results land in automation/target on the host (allure-results, logs, screenshots).
+name: enterprise-tests
+
+x-node: &node
+  shm_size: 2gb
+  depends_on:
+    - selenium-hub
+  environment:
+    SE_EVENT_BUS_HOST: selenium-hub
+    SE_EVENT_BUS_PUBLISH_PORT: "4442"
+    SE_EVENT_BUS_SUBSCRIBE_PORT: "4443"
+    SE_NODE_MAX_SESSIONS: "2"
+    SE_NODE_OVERRIDE_MAX_SESSIONS: "true"
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: app
+    ports:
+      - "8081:8081"
+      - "9093:9093"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8081'"]
+      interval: 2s
+      retries: 30
+
+  selenium-hub:
+    image: selenium/hub:${SELENIUM_IMAGE_TAG:-latest}
+    ports:
+      - "4444:4444"
+    healthcheck:
+      # Ready = at least one node registered and able to start sessions
+      test: ["CMD-SHELL", "curl -s http://localhost:4444/status | grep -q '\"ready\": true'"]
+      interval: 2s
+      retries: 60
+
+  chrome:
+    <<: *node
+    image: selenium/node-chrome:${SELENIUM_IMAGE_TAG:-latest}
+
+  firefox:
+    <<: *node
+    image: selenium/node-firefox:${SELENIUM_IMAGE_TAG:-latest}
+
+  edge:
+    <<: *node
+    image: selenium/node-edge:${SELENIUM_IMAGE_TAG:-latest}
+
+  tests:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: tests
+    depends_on:
+      app:
+        condition: service_healthy
+      selenium-hub:
+        condition: service_healthy
+    environment:
+      ENV: qa
+      # Browsers run in the node containers, so they reach the app by its service name
+      BASE_URL: http://app:8081
+      API_BASE_URL: http://app:8081/api
+      DB_URL: jdbc:h2:tcp://app:9093/mem:shop
+      EXECUTION: remote
+      GRID_URL: http://selenium-hub:4444
+      BROWSER: ${BROWSER:-chrome}
+      HEADLESS: "true"
+      THREADS: ${THREADS:-2}
+    command: ["-Dsuite=${SUITE:-smoke}"]
+    volumes:
+      - ../automation/target:/workspace/automation/target
