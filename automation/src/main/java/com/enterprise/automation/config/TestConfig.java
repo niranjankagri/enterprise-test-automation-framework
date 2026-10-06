@@ -21,6 +21,9 @@ import java.util.Locale;
  * @param windowHeight    browser window height in pixels
  * @param explicitWait    default timeout of explicit waits
  * @param pageLoadTimeout maximum time for a page load
+ * @param appAutostart    start the demo application in-process before the suite ({@code local} only)
+ * @param admin           account with full rights
+ * @param viewer          read-only account
  */
 public record TestConfig(
         String environment,
@@ -33,7 +36,10 @@ public record TestConfig(
         int windowWidth,
         int windowHeight,
         Duration explicitWait,
-        Duration pageLoadTimeout) {
+        Duration pageLoadTimeout,
+        boolean appAutostart,
+        Credentials admin,
+        Credentials viewer) {
 
     /** One line for logs and reports: what this run is pointed at. */
     public String summary() {

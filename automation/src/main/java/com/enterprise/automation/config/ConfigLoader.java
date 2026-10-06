@@ -61,7 +61,10 @@ public final class ConfigLoader {
                 resolver.positiveInt(ConfigKey.WINDOW_WIDTH),
                 resolver.positiveInt(ConfigKey.WINDOW_HEIGHT),
                 Duration.ofSeconds(resolver.positiveInt(ConfigKey.TIMEOUT_EXPLICIT_SECONDS)),
-                Duration.ofSeconds(resolver.positiveInt(ConfigKey.TIMEOUT_PAGE_LOAD_SECONDS)));
+                Duration.ofSeconds(resolver.positiveInt(ConfigKey.TIMEOUT_PAGE_LOAD_SECONDS)),
+                Boolean.parseBoolean(resolver.required(ConfigKey.APP_AUTOSTART)),
+                new Credentials(resolver.required(ConfigKey.ADMIN_USERNAME), resolver.required(ConfigKey.ADMIN_PASSWORD)),
+                new Credentials(resolver.required(ConfigKey.VIEWER_USERNAME), resolver.required(ConfigKey.VIEWER_PASSWORD)));
     }
 
     private static Properties read(String fileName, boolean mandatory) {

@@ -30,6 +30,7 @@ public class ConfigLoaderTest {
         assertThat(config.browser()).isEqualTo(BrowserType.CHROME);
         assertThat(config.execution()).isEqualTo(ExecutionMode.LOCAL);
         assertThat(config.explicitWait()).isEqualTo(Duration.ofSeconds(10));
+        assertThat(config.appAutostart()).as("local starts the demo app").isTrue();
     }
 
     public void envSystemPropertySwitchesTheEnvironmentFile() {
@@ -43,10 +44,25 @@ public class ConfigLoaderTest {
     }
 
     public void envEnvironmentVariableSwitchesTheEnvironmentFile() {
-        TestConfig staging = load(Map.of(), Map.of("ENV", "staging"));
+        TestConfig staging = load(Map.of(), Map.of("ENV", "staging",
+                "ADMIN_PASSWORD", "from-ci-secret", "VIEWER_PASSWORD", "from-ci-secret"));
 
         assertThat(staging.environment()).isEqualTo("staging");
         assertThat(staging.execution()).isEqualTo(ExecutionMode.REMOTE);
+        assertThat(staging.admin().password()).isEqualTo("from-ci-secret");
+    }
+
+    public void secretsMissingFromAnEnvironmentFailFast() {
+        assertThatThrownBy(() -> load(Map.of("env", "staging"), Map.of()))
+                .hasMessageContaining("admin.password")
+                .hasMessageContaining("ADMIN_PASSWORD");
+    }
+
+    public void credentialsNeverPrintTheirPassword() {
+        TestConfig config = load(Map.of(), Map.of());
+
+        assertThat(config.admin().toString()).contains("admin").doesNotContain(config.admin().password());
+        assertThat(config.toString()).doesNotContain(config.admin().password());
     }
 
     public void systemPropertyBeatsEnvironmentVariableBeatsFile() {

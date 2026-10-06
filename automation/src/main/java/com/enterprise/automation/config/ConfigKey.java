@@ -19,7 +19,12 @@ public enum ConfigKey {
     WINDOW_WIDTH("window.width"),
     WINDOW_HEIGHT("window.height"),
     TIMEOUT_EXPLICIT_SECONDS("timeout.explicit.seconds"),
-    TIMEOUT_PAGE_LOAD_SECONDS("timeout.page.load.seconds");
+    TIMEOUT_PAGE_LOAD_SECONDS("timeout.page.load.seconds"),
+    APP_AUTOSTART("app.autostart"),
+    ADMIN_USERNAME("admin.username"),
+    ADMIN_PASSWORD("admin.password"),
+    VIEWER_USERNAME("viewer.username"),
+    VIEWER_PASSWORD("viewer.password");
 
     private final String property;
 
