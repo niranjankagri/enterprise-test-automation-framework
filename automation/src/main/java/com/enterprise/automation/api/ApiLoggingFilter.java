@@ -22,15 +22,20 @@ public final class ApiLoggingFilter implements Filter {
     @Override
     public Response filter(FilterableRequestSpecification request, FilterableResponseSpecification responseSpec,
                            FilterContext context) {
+        // nanoTime: a monotonic clock, right for measuring durations
         long start = System.nanoTime();
+        // Send the request (and run any later filters)
         Response response = context.next(request, responseSpec);
         long millis = (System.nanoTime() - start) / 1_000_000;
 
+        // Always: one compact line per call
         LOG.info("{} {} -> {} in {} ms", request.getMethod(), request.getDerivedPath(), response.getStatusCode(), millis);
+        // Bodies only at DEBUG (the file log); the check avoids building big strings when not needed
         if (LOG.isDebugEnabled()) {
             Object body = request.getBody();
             LOG.debug("Request {} {}{}", request.getMethod(), request.getURI(),
                     body == null ? "" : "\n" + SecretMasker.mask(String.valueOf(body)));
+            // The request id links this line to the application's own log
             LOG.debug("Response {} [X-Request-Id {}]\n{}", response.getStatusCode(), response.getHeader("X-Request-Id"),
                     SecretMasker.mask(response.asString()));
         }

@@ -18,15 +18,22 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
  */
 public final class JsonMapper {
 
+    // Configured once; ObjectMapper is thread-safe for reading and writing after configuration
     private static final ObjectMapper MAPPER = new ObjectMapper()
+            // Instant fields (createdAt) in responses
             .registerModule(new JavaTimeModule())
+            // Dates as ISO text, like the API sends them
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+            // New response fields do not break the models (schemas catch contract changes instead)
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            // null request fields are left out, e.g. a customer without phone
             .setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
 
+    // Static helpers only
     private JsonMapper() {
     }
 
+    /** Object (record, map) -> JSON text. */
     public static String toJson(Object value) {
         try {
             return MAPPER.writeValueAsString(value);
@@ -35,6 +42,7 @@ public final class JsonMapper {
         }
     }
 
+    /** JSON text -> one model; the failure message includes the JSON that did not fit. */
     public static <T> T fromJson(String json, Class<T> type) {
         try {
             return MAPPER.readValue(json, type);
@@ -43,6 +51,7 @@ public final class JsonMapper {
         }
     }
 
+    /** JSON text -> generic type, e.g. {@code new TypeReference<List<CustomerResponse>>() { }}. */
     public static <T> T fromJson(String json, TypeReference<T> type) {
         try {
             return MAPPER.readValue(json, type);

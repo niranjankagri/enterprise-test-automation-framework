@@ -14,6 +14,7 @@ public final class AuthService extends BaseService {
         super(client);
     }
 
+    /** {@code POST /auth/login} with username and password. */
     public Response login(LoginRequest request) {
         return client.post("/auth/login", request);
     }
@@ -23,11 +24,14 @@ public final class AuthService extends BaseService {
         return client.post("/auth/login", body);
     }
 
+    /** Logs in, expects 200, returns the token and user data. */
     public LoginResponse loginAs(Credentials credentials) {
         return expect(login(LoginRequest.of(credentials)), 200, LoginResponse.class);
     }
 
+    /** {@code POST /auth/logout}: revokes the client's token. */
     public Response logout() {
+        // The endpoint takes no data; an empty JSON object is sent as the body
         return client.post("/auth/logout", Map.of());
     }
 }

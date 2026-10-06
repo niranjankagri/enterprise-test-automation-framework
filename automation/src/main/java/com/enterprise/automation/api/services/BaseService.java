@@ -17,6 +17,7 @@ import io.restassured.response.Response;
  */
 abstract class BaseService {
 
+    // The session's client (base URL, token, filters)
     protected final ApiClient client;
 
     protected BaseService(ApiClient client) {
@@ -25,10 +26,12 @@ abstract class BaseService {
 
     /** Checks {@code status} and maps the body to {@code type}. */
     protected static <T> T expect(Response response, int status, Class<T> type) {
+        // Wrong status -> AssertionError with the (masked) body, before any mapping is attempted
         ApiAssertions.expectStatus(response, status);
         return JsonMapper.fromJson(response.asString(), type);
     }
 
+    /** Same for generic types such as lists. */
     protected static <T> T expect(Response response, int status, TypeReference<T> type) {
         ApiAssertions.expectStatus(response, status);
         return JsonMapper.fromJson(response.asString(), type);

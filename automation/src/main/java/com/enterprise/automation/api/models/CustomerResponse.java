@@ -6,6 +6,7 @@ import java.time.Instant;
 public record CustomerResponse(long id, String firstName, String lastName, String email, String phone, String city,
                                String status, Instant createdAt) {
 
+    /** "First Last", as the UI shows it. */
     public String fullName() {
         return firstName + " " + lastName;
     }

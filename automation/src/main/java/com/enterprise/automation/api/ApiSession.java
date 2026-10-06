@@ -24,8 +24,10 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class ApiSession {
 
+    // username -> bearer token, shared by all threads of the run
     private static final Map<String, String> TOKENS = new ConcurrentHashMap<>();
 
+    // Authenticated (or anonymous) client used by every service of this session
     private final ApiClient client;
 
     private ApiSession(ApiClient client) {
@@ -44,6 +46,7 @@ public final class ApiSession {
 
     /** Signed in as {@code credentials} (token reused if this account already signed in). */
     public static ApiSession as(Credentials credentials) {
+        // computeIfAbsent is atomic: parallel threads asking for the same account log in only once
         String token = TOKENS.computeIfAbsent(credentials.username(),
                 user -> new AuthService(ApiClient.anonymous()).loginAs(credentials).token());
         return new ApiSession(ApiClient.anonymous().withToken(token));
@@ -68,6 +71,8 @@ public final class ApiSession {
     public ApiClient client() {
         return client;
     }
+
+    // Services are tiny wrappers around the client: created on demand, nothing to cache
 
     public AuthService auth() {
         return new AuthService(client);

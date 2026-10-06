@@ -5,6 +5,7 @@ import com.enterprise.automation.data.UserData;
 /** Body of {@code POST /api/users}. {@link #toString()} masks the password. */
 public record UserRequest(String username, String password, String fullName, String role) {
 
+    /** Request body from a test-data record. */
     public static UserRequest from(UserData user) {
         return new UserRequest(user.username(), user.password(), user.fullName(), user.role());
     }

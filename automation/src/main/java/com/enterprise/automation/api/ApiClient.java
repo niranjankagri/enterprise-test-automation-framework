@@ -18,10 +18,13 @@ import java.util.Map;
  */
 public final class ApiClient {
 
+    // Stateless filters, shared by all clients and threads
     private static final ApiLoggingFilter LOGGING = new ApiLoggingFilter();
     private static final ReportingApiFilter REPORTING = new ReportingApiFilter();
 
+    // e.g. http://localhost:8080/api; request paths are appended to it
     private final URI baseUri;
+    // Bearer token, or null for anonymous calls
     private final String token;
 
     private ApiClient(URI baseUri, String token) {
@@ -39,10 +42,13 @@ public final class ApiClient {
         return new ApiClient(baseUri, bearerToken);
     }
 
+    // One method per HTTP verb; bodies are any object (serialized to JSON) or a ready JSON string
+
     public Response get(String path) {
         return request().get(path);
     }
 
+    /** GET with query parameters (URL-encoded by REST Assured). */
     public Response get(String path, Map<String, ?> queryParams) {
         return request().queryParams(queryParams).get(path);
     }
@@ -68,17 +74,22 @@ public final class ApiClient {
         return request().body(rawBody).post(path);
     }
 
+    /** A request with a JSON body: strings are sent as they are, objects through the framework's mapper. */
     private RequestSpecification withBody(Object body) {
         return request().body(body instanceof String s ? s : JsonMapper.toJson(body));
     }
 
+    /** A fresh request specification for every call (given() creates a new one each time). */
     private RequestSpecification request() {
         RequestSpecification spec = given()
                 .baseUri(baseUri.toString())
+                // Send and expect JSON
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
+                // Report step + attachments first, then the log line (the report filter wraps the logging one)
                 .filter(REPORTING)
                 .filter(LOGGING);
+        // Authenticated clients add the bearer token
         if (token != null) {
             spec.header("Authorization", "Bearer " + token);
         }
