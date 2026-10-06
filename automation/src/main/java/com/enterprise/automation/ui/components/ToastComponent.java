@@ -12,15 +12,18 @@ import org.openqa.selenium.WebElement;
  */
 public class ToastComponent extends BaseComponent {
 
+    // One toast and the text inside it; several toasts can be visible at once
     private static final By TOAST = TestId.of("toast");
     private static final By MESSAGE = TestId.of("toast-message");
 
     public ToastComponent() {
+        // The container is created by the page on the first toast
         super(By.id("toasts"));
     }
 
     /** Waits for a toast containing {@code text} and returns its full message. */
     public String waitForMessage(String text) {
+        // Searches all visible toasts (an older one may still be shown); null = keep waiting
         return wait.until(d -> d.findElements(TOAST).stream()
                 .map(t -> t.findElement(MESSAGE).getText().trim())
                 .filter(m -> m.contains(text))
@@ -30,12 +33,14 @@ public class ToastComponent extends BaseComponent {
     /** Waits for any toast and returns the newest message. */
     public String latestMessage() {
         List<WebElement> toasts = wait.allVisible(TOAST);
+        // New toasts are appended at the end
         return toasts.get(toasts.size() - 1).findElement(MESSAGE).getText().trim();
     }
 
     /** Type of the newest toast: {@code success} or {@code error}. */
     public String latestType() {
         List<WebElement> toasts = wait.allVisible(TOAST);
+        // data-type is set by the page: "success" or "error"
         return toasts.get(toasts.size() - 1).getDomAttribute("data-type");
     }
 }

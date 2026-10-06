@@ -12,11 +12,14 @@ import org.openqa.selenium.By;
 /** The side menu. Each method clicks a link and returns the loaded page. */
 public class NavigationComponent extends BaseComponent {
 
+    // The highlighted entry has the CSS class "active"
     private static final By ACTIVE = By.cssSelector("a.active");
 
     public NavigationComponent() {
         super(TestId.of("navigation"));
     }
+
+    // Each open...() clicks its menu link and returns the page once it has loaded its data
 
     public DashboardPage openDashboard() {
         actions.click(TestId.of("nav-dashboard"));

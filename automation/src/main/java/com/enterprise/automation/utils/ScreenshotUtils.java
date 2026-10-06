@@ -20,17 +20,22 @@ import org.slf4j.LoggerFactory;
 public final class ScreenshotUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(ScreenshotUtils.class);
+    // Relative to the module directory: automation/target/screenshots (cleaned by mvn clean)
     private static final Path DIRECTORY = Path.of("target", "screenshots");
+    // Millisecond timestamp: parallel failures of the same test never overwrite each other
     private static final DateTimeFormatter STAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSS");
 
+    // Static helpers only
     private ScreenshotUtils() {
     }
 
     /** PNG bytes of the current browser window, or {@code null} if no screenshot could be taken. */
     public static byte[] capture(WebDriver driver) {
         try {
+            // Every local and remote driver implements TakesScreenshot
             return ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
         } catch (RuntimeException e) {
+            // Browser crashed or already quit: report it, do not hide the test's own failure
             LOG.warn("Could not take a screenshot: {}", e.getMessage());
             return null;
         }
@@ -39,11 +44,13 @@ public final class ScreenshotUtils {
     /** Saves a screenshot to {@code target/screenshots/<name>-<timestamp>.png}; returns its path or {@code null}. */
     public static Path save(WebDriver driver, String name) {
         byte[] png = capture(driver);
+        // Nothing captured: nothing to save
         if (png == null) {
             return null;
         }
         try {
             Files.createDirectories(DIRECTORY);
+            // Characters that are illegal in file names on some systems become "_"
             Path file = DIRECTORY.resolve(name.replaceAll("[^A-Za-z0-9._-]", "_") + "-"
                     + LocalDateTime.now().format(STAMP) + ".png");
             Files.write(file, png);

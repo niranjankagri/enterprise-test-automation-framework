@@ -14,9 +14,11 @@ import org.openqa.selenium.WebElement;
  */
 public abstract class BaseComponent {
 
+    // Same building blocks as a page: browser, waits, actions
     protected final WebDriver driver;
     protected final WaitUtils wait;
     protected final ElementActions actions;
+    // Locator of the component's outer element; children are searched inside it
     protected final By root;
 
     protected BaseComponent(By root) {
@@ -33,12 +35,15 @@ public abstract class BaseComponent {
 
     /** A child of the root, waited for. */
     protected WebElement child(By locator) {
+        // Root is looked up again on every poll: if the component re-renders, the new one is used
         return wait.until(d -> {
             WebElement element = d.findElement(root).findElement(locator);
+            // null = "not yet" for the wait; it keeps polling until visible or timeout
             return element.isDisplayed() ? element : null;
         }, locator + " inside " + root);
     }
 
+    /** Immediate check, no waiting: is the component on screen right now? */
     public boolean isDisplayed() {
         return actions.isDisplayed(root);
     }
