@@ -43,7 +43,9 @@ public class CheckoutPage extends ShopPage<CheckoutPage> {
         String before = total();
         wait.until(d -> {
             WebElement field = d.findElement(input);
-            field.sendKeys(Keys.chord(Keys.CONTROL, "a"), String.valueOf(quantity), Keys.TAB);
+            // END + one BACK_SPACE per digit, not Ctrl+A: Firefox does not select-all in number inputs
+            int digits = String.valueOf(field.getDomProperty("value")).length();
+            field.sendKeys(Keys.END, Keys.BACK_SPACE.toString().repeat(digits), String.valueOf(quantity), Keys.TAB);
             return true;
         }, "quantity of " + productName);
         wait.until(d -> !before.equals(d.findElement(TOTAL).getText().trim()), "order total to change");
