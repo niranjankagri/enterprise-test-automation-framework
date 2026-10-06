@@ -1,0 +1,9 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!-- Default suite. Milestone 7 splits it into smoke / regression / api / ui / integration / e2e suites. -->
+<suite name="Enterprise Test Automation">
+    <test name="Foundation">
+        <packages>
+            <package name="com.enterprise.automation.tests.foundation"/>
+        </packages>
+    </test>
+</suite>
