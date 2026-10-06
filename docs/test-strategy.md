@@ -40,7 +40,7 @@ Most behaviour is covered at the API level (fast, precise); the UI covers what o
 
 ## Test data
 
-Every test creates what it needs with unique values and removes it afterwards (ADR-009, ADR-012). Reference data (the seeded catalogue) is read-only and described in `testdata/products.json`. Setup and clean-up of UI tests go through the API.
+Every test creates what it needs with unique values and removes it afterwards ([ADR-009](adr/ADR-009-every-test-owns-its-data.md), [ADR-012](adr/ADR-012-clean-ups-are-idempotent-and-never-fail-a-test.md)). Reference data (the seeded catalogue) is read-only and described in `testdata/products.json`. Setup and clean-up of UI tests go through the API.
 
 ## Environments
 

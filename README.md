@@ -33,7 +33,7 @@ flowchart LR
     T -. evidence .-> R[Allure report]
 ```
 
-Layers depend downwards only; tests contain no Selenium, HTTP or SQL. Full description, diagrams and 15 architecture decision records: [docs/architecture.md](docs/architecture.md).
+Layers depend downwards only; tests contain no Selenium, HTTP or SQL. Full description and diagrams: [docs/architecture.md](docs/architecture.md); 21 architecture decision records: [docs/adr](docs/adr/README.md).
 
 ## Technology stack
 
@@ -220,7 +220,7 @@ Test pyramid with the bulk at API level, UI for what only the UI shows, cross-la
 
 ## Architecture decisions
 
-15 ADRs (Problem → Options → Decision → Reason → Trade-offs) in [docs/architecture.md](docs/architecture.md), e.g. self-hosted application under test, layered configuration, components over inheritance, waiting for real state, tests owning their data, retrying infrastructure only, report evidence collected by the framework.
+21 ADRs (Problem → Options → Decision → Reason → Trade-offs), one file each in [docs/adr](docs/adr/README.md), e.g. Selenium + TestNG, REST Assured, Allure, Docker + Grid, GitHub Actions, cloud deferred, self-hosted application under test, layered configuration, components over inheritance, waiting for real state, tests owning their data, retrying infrastructure only, report evidence collected by the framework.
 
 ## Known limitations
 
@@ -242,7 +242,7 @@ Test pyramid with the bulk at API level, UI for what only the UI shows, cross-la
 
 **Start here: [the complete framework guide](docs/FRAMEWORK-GUIDE.md)**, which covers everything in one document (application under test, architecture, configuration, every layer, test data, coverage, execution, logging, reporting, Docker, CI/CD, security, extending, troubleshooting, class reference).
 
-Topic documents: [Architecture](docs/architecture.md) · [Framework design](docs/framework-design.md) · [Test strategy](docs/test-strategy.md) · [CI/CD](docs/ci-cd.md) · [Docker](docs/docker.md) · [Selenium Grid](docs/grid.md) · [Parallel execution](docs/parallel-execution.md) · [Reporting](docs/reporting.md) · [Troubleshooting](docs/troubleshooting.md) · [Coding standards](docs/coding-standards.md) · [Contributing](CONTRIBUTING.md)
+Topic documents: [Architecture](docs/architecture.md) · [Framework design](docs/framework-design.md) · [Test strategy](docs/test-strategy.md) · [CI/CD](docs/ci-cd.md) · [Docker](docs/docker.md) · [Selenium Grid](docs/grid.md) · [Decisions (ADRs)](docs/adr/README.md) · [Parallel execution](docs/parallel-execution.md) · [Reporting](docs/reporting.md) · [Troubleshooting](docs/troubleshooting.md) · [Coding standards](docs/coding-standards.md) · [Contributing](CONTRIBUTING.md)
 
 ## License
 

@@ -215,7 +215,7 @@ Framework packages (`automation/src/main/java/com/enterprise/automation`):
 | `reporting` | report steps and attachments, per-test log capture, Allure run files, parameter masking |
 | `utils` | waits, screenshots, failure classification |
 
-The architecture decisions behind this are recorded as 15 ADRs in [architecture.md](architecture.md).
+The architecture decisions behind this are recorded as 21 ADRs in [docs/adr](adr/README.md).
 
 ## 6. Configuration
 
@@ -600,7 +600,7 @@ Full table: [troubleshooting.md](troubleshooting.md). To debug: `mvn test -Dsuit
 | 1 | Multi-module Maven | one place for versions; the app under test as its own module |
 | 2 | Self-hosted application under test | the only way to check UI, API and database with the same data, deterministically |
 | 3 | Framework in `src/main`, tests in `src/test` | framework code treated as production code |
-| 4 | SLF4J + Logback | standard facade; thread and test in every line |
+| 4 | SLF4J + Logback | standard facade; thread, test and component in every line, secrets masked |
 | 5 | Layered, immutable configuration | one code base for laptop, CI and Docker; validated at start |
 | 6 | One browser per thread | parallel safety; creation and ownership separated |
 | 7 | Pages composed of components | each locator once; reusable parts |
@@ -612,8 +612,14 @@ Full table: [troubleshooting.md](troubleshooting.md). To debug: `mvn test -Dsuit
 | 13 | Suites say what, configuration says how | eight small suites instead of a matrix |
 | 14 | Retry infrastructure, report everything else | honest signal |
 | 15 | Evidence collected by the framework | no reporting code in tests; works on every JDK; secrets masked |
+| 16 | Selenium WebDriver + TestNG | W3C standard, every browser, Grid and cloud; suites, groups, parallel modes, listeners |
+| 17 | REST Assured | readable requests, schema validation, filters for logging and masked evidence |
+| 18 | Allure | steps, attachments, environment, categories, history from plain result files |
+| 19 | Docker + Selenium Grid | the same platform on any machine with one command; same browser options as local |
+| 20 | GitHub Actions | no server; PR, main and nightly pipelines; evidence kept for failed runs |
+| 21 | Cloud execution deferred, one provider later | Grid already proves remote runs; no untested provider code |
 
-Each is written out (problem, options, decision, reason, trade-offs) in [architecture.md](architecture.md).
+Each is written out (problem, options, decision, reason, trade-offs) as its own file in [docs/adr](adr/README.md).
 
 ## 23. Class reference
 

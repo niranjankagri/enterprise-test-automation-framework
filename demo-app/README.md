@@ -1,6 +1,6 @@
 # ShopEase Admin (application under test)
 
-A small shop back office that the framework tests through its **UI**, its **REST API** and its **database**. It lives in this repository so all three layers can be validated against the same data (see `docs/architecture.md`, ADR-002). It is deliberately simple: the JDK HTTP server, plain JDBC on H2, and Jackson.
+A small shop back office that the framework tests through its **UI**, its **REST API** and its **database**. It lives in this repository so all three layers can be validated against the same data (see [ADR-002](../docs/adr/ADR-002-a-self-hosted-application-under-test.md)). It is deliberately simple: the JDK HTTP server, plain JDBC on H2, and Jackson.
 
 ## Run it
 
