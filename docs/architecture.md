@@ -1,23 +1,72 @@
 # Architecture
 
-This document records how the framework is put together and why. It starts small and grows with each milestone.
+How the framework is put together, and why. The decisions behind it are recorded as ADRs at the end of this document.
+
+## System context
+
+```mermaid
+flowchart LR
+    subgraph Runner["Test run (Maven + TestNG)"]
+        T[Tests] --> F[Framework]
+    end
+    F -- "WebDriver (local / Grid)" --> B[Browsers]
+    B -- HTTP --> UI[ShopEase Admin UI]
+    F -- "REST + bearer token" --> API[ShopEase REST API]
+    F -- JDBC --> DB[(H2 database)]
+    UI --> API --> DB
+    F -- results --> R[Allure report]
+```
+
+The application under test (`demo-app`) exposes the same business data through three doors: UI, API and database. The framework can therefore check one record through all three (ADR-002).
 
 ## Layers
 
-```text
-Tests (src/test/java)            describe behaviour only, no Selenium or HTTP code
-   │
-   ▼
-Page Objects / API services      business-level actions: "create customer", "checkout"
-   │
-   ▼
-Components / ApiClient / DB      reusable technical building blocks
-   │
-   ▼
-Driver / Config                  browsers, environments, execution mode
+```mermaid
+flowchart TB
+    tests["Tests (src/test/java)<br/>behaviour and assertions only"]
+    pages["Page Objects · API services · ShopDatabase<br/>business actions and named queries"]
+    blocks["Components · ApiClient · QueryExecutor · ElementActions · WaitUtils<br/>reusable technical building blocks"]
+    infra["DriverManager / DriverFactory · ConfigManager<br/>browsers, environments, execution mode"]
+    cross["Cross-cutting: data · listeners · reporting · utils"]
+    tests --> pages --> blocks --> infra
+    tests -.-> cross
+    pages -.-> cross
 ```
 
 Dependencies only point downwards. A page never knows about a test, and `config` knows about nothing above it. That keeps every layer replaceable and testable on its own.
+
+| Package (`com.enterprise.automation`) | Responsibility |
+|---|---|
+| `config` | layered, immutable configuration: environment, browser, execution, accounts, database, parallelism |
+| `driver` | browser options, creation (local / Grid), one browser per thread, start-up retry |
+| `ui`, `ui.components`, `ui.pages` | waits and actions, component objects, page objects |
+| `api`, `api.models`, `api.services` | HTTP client, request/response records, one service per resource, sessions per account |
+| `db` | JDBC connection, parameterized queries, named queries, row assertions |
+| `data` | data records, generators, factory, JSON/CSV readers, clean-up registry |
+| `listeners` | execution settings, retry, log context, failure diagnostics, run metadata, report evidence |
+| `reporting` | report steps and attachments, per-test log capture, Allure run files, parameter masking |
+| `utils` | waits, screenshots, failure classification |
+
+## Run time view
+
+```mermaid
+sequenceDiagram
+    participant M as Maven / TestNG
+    participant L as Listeners
+    participant A as DemoAppLifecycle
+    participant T as Test
+    participant D as DriverManager
+    M->>L: alter suite (parallel, threads)
+    M->>A: suite start → start demo app (env=local)
+    loop every test (parallel per class)
+        M->>T: @BeforeMethod
+        T->>D: start browser (retry if transient)
+        M->>T: test method (UI / API / DB steps → report)
+        M->>L: afterInvocation → screenshot, URL, source, log
+        M->>T: @AfterMethod → clean-ups, quit browser
+    end
+    M->>L: suite end → metadata, environment, categories
+```
 
 ## Decisions
 
@@ -81,6 +130,14 @@ Each major decision is written as Problem → Options → Decision → Reason �
 - **Reason:** waiting for a condition is as fast as the application allows and as long as it needs. Fixed sleeps are either too short (flaky) or too long (slow).
 - **Trade-offs:** the application must cooperate. In a real project these hooks are agreed with the developers as part of the definition of done.
 
+### ADR-009: Every test owns its data
+
+- **Problem:** tests that share data (one "test customer" for everybody) break each other, cannot run in parallel and leave the environment dirtier after each run.
+- **Options:** (a) shared fixture data; (b) reset the database before each run; (c) each test creates unique data and removes it afterwards.
+- **Decision:** (c). `TestDataFactory` generates valid data with a run-unique suffix (`RandomDataGenerator`), and each test registers an undo action in `CleanupRegistry` right after creating something. Read-only reference data (the seeded catalogue) is described in `testdata/products.json`.
+- **Reason:** works on any environment, including shared ones where a reset is not allowed; parallel-safe; a failing test still cleans up.
+- **Trade-offs:** each test pays for its own setup. Since Milestone 5, setup and clean-up of UI tests go through the API (only the behaviour under test goes through the UI), which keeps that cost low; the end-to-end test creates its own buyer through the API and deletes the buyer's orders and the buyer afterwards. Products are only deactivated by the API (kept for order history), so test products remain as inactive rows.
+
 ### ADR-010: API services return raw responses and typed results
 
 - **Problem:** API tests need two different things: negative tests must inspect status codes, headers and error bodies, while setup, clean-up and happy paths just want "create a customer and give me its id".
@@ -125,11 +182,3 @@ Each major decision is written as Problem → Options → Decision → Reason �
 - **Decision:** (b). `ElementActions`/`BasePage`/`ModalComponent` (UI), `ReportingApiFilter` (API) and `QueryExecutor` (SQL) emit steps; `ReportEvidenceListener` adds labels, per-test logs and failure evidence; `AllureRunFiles` writes environment, executor and categories.
 - **Reason:** the AspectJ weaver fails on JDK 27, so annotated steps would silently vanish; lambda steps work everywhere. Allure's REST Assured filter attaches tokens and passwords unmasked; the own filter masks them. Failure evidence is taken in `IInvokedMethodListener.afterInvocation`, before `@AfterMethod` quits the browser.
 - **Trade-offs:** steps are as fine-grained as user actions (click, type), which makes long tests verbose; page-level steps could be added on top where a test needs a higher-level story.
-
-### ADR-009: Every test owns its data
-
-- **Problem:** tests that share data (one "test customer" for everybody) break each other, cannot run in parallel and leave the environment dirtier after each run.
-- **Options:** (a) shared fixture data; (b) reset the database before each run; (c) each test creates unique data and removes it afterwards.
-- **Decision:** (c). `TestDataFactory` generates valid data with a run-unique suffix (`RandomDataGenerator`), and each test registers an undo action in `CleanupRegistry` right after creating something. Read-only reference data (the seeded catalogue) is described in `testdata/products.json`.
-- **Reason:** works on any environment, including shared ones where a reset is not allowed; parallel-safe; a failing test still cleans up.
-- **Trade-offs:** each test pays for its own setup. Since Milestone 5, setup and clean-up of UI tests go through the API (only the behaviour under test goes through the UI), which keeps that cost low; the end-to-end test creates its own buyer through the API and deletes the buyer's orders and the buyer afterwards. Products are only deactivated by the API (kept for order history), so test products remain as inactive rows.
