@@ -2,11 +2,15 @@
 
 [![Main](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/workflows/regression.yml/badge.svg)](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/workflows/regression.yml)
 [![Nightly regression](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/workflows/nightly.yml/badge.svg)](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/workflows/nightly.yml)
-![Java 17](https://img.shields.io/badge/Java-17-blue) ![Selenium 4](https://img.shields.io/badge/Selenium-4.50-green) ![TestNG](https://img.shields.io/badge/TestNG-7.12-orange) ![REST Assured](https://img.shields.io/badge/REST%20Assured-6.0-brightgreen)
+![Java 17](https://img.shields.io/badge/Java-17-blue) ![Selenium 4](https://img.shields.io/badge/Selenium-4.50-green) ![TestNG](https://img.shields.io/badge/TestNG-7.12-orange) ![REST Assured](https://img.shields.io/badge/REST%20Assured-6.0-brightgreen) ![Allure](https://img.shields.io/badge/Allure-3-yellow) ![Docker](https://img.shields.io/badge/Docker-Selenium%20Grid-blue)
 
 ## Overview
 
-A production-style QA automation platform: UI, API and database testing of one application, with parallel execution, a resilience policy, an evidence-rich Allure report, Docker + Selenium Grid and GitHub Actions pipelines.
+**Production-style enterprise test automation platform demonstrating UI, API, database, integration, parallel execution, observability, containerization and CI/CD automation.**
+
+UI, API and database testing of one application, with parallel execution, a resilience policy, an evidence-rich Allure report, Docker + Selenium Grid and GitHub Actions pipelines.
+
+This is a portfolio project, not a framework running in a company: it shows how such a platform is designed, built, documented and operated, against an application built for it (below). Its limits are listed under [Known limitations](#known-limitations).
 
 It tests **ShopEase Admin** ([`demo-app`](demo-app/README.md)), a small shop back office kept in this repository, so the same business record can be checked through the UI, the REST API and the database.
 
