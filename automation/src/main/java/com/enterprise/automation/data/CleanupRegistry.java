@@ -44,7 +44,8 @@ public final class CleanupRegistry {
             try {
                 action.cleanup().run();
                 LOG.debug("Cleaned up: {}", action.description());
-            } catch (Exception e) {
+            } catch (Exception | AssertionError e) {
+                // AssertionError too: clean-ups reuse framework helpers that assert (expectStatus)
                 failures++;
                 LOG.warn("Clean-up failed ({}): {}", action.description(), e.toString());
             }

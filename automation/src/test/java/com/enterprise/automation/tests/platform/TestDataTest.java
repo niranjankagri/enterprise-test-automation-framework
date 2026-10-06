@@ -89,12 +89,15 @@ public class TestDataTest {
         CleanupRegistry.register("broken", () -> {
             throw new IllegalStateException("already gone");
         });
+        CleanupRegistry.register("failed check", () -> {
+            throw new AssertionError("Expected HTTP 204 but got 404");
+        });
         CleanupRegistry.register("order", () -> ran.add("order"));
 
         int failures = CleanupRegistry.runAll();
 
         assertThat(ran).containsExactly("order", "customer");
-        assertThat(failures).isEqualTo(1);
+        assertThat(failures).isEqualTo(2);
         assertThat(CleanupRegistry.pending()).isZero();
     }
 }
