@@ -9,6 +9,10 @@ updates:
     groups:
       maven-dependencies:
         patterns: ["*"]
+    ignore:
+      # Surefire 3.6 removed suiteXmlFiles; the suites (and their listeners) depend on it
+      - dependency-name: org.apache.maven.plugins:maven-surefire-plugin
+        versions: [">= 3.6.0"]
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
