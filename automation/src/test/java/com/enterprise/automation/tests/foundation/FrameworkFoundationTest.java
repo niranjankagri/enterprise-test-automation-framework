@@ -15,7 +15,7 @@ public class FrameworkFoundationTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(FrameworkFoundationTest.class);
 
-    @Test(description = "Framework identity is filled in from the Maven build")
+    @Test(description = "Framework identity is filled in from the Maven build", groups = "unit")
     public void frameworkIdentityComesFromTheBuild() {
         LOG.info("Running {} {}", FrameworkInfo.name(), FrameworkInfo.version());
 

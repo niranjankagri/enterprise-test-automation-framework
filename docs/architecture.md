@@ -104,6 +104,20 @@ Each major decision is written as Problem → Options → Decision → Reason �
 - **Reason:** the result of a test must reflect the behaviour under test, never the bookkeeping after it.
 - **Trade-offs:** a clean-up that keeps failing is only visible in the log. Milestone 8 surfaces it in the report.
 
+### ADR-013: Suites say what runs, configuration says how
+
+- **Problem:** the same tests run as a quick PR gate, a nightly regression, serially for debugging and with many threads in CI. Encoding parallelism in XML means one XML file per combination.
+- **Decision:** one suite file per purpose (`smoke`, `sanity`, `regression`, `api`, `ui`, `integration`, `e2e`, `full`) selecting groups; `ExecutionSettingsListener` (an `IAlterSuiteListener`) applies `parallel`/`threads` from configuration to whichever suite runs. Listeners are declared once per suite file.
+- **Reason:** eight small files instead of a matrix; CI changes threads with a variable.
+- **Trade-offs:** the listener list is repeated in each suite file (TestNG has no include mechanism for listeners in XML).
+
+### ADR-014: Retry infrastructure, report everything else
+
+- **Problem:** a blanket retry turns flaky tests and real defects green; no retry at all lets a crashed browser or a lost Grid node fail a whole nightly run.
+- **Decision:** `RetryAnalyzer` on every test (via `RetryTransformer`), retrying only failures `TransientFailures` classifies as infrastructure, at most `retry.count` times. Assertions and wait timeouts are never retried.
+- **Reason:** keeps the signal honest: a red test means the application or the test needs attention. Retries are logged and visible as skipped attempts.
+- **Trade-offs:** the classification is a list of known exception types and messages; a new kind of infrastructure failure must be added to it (it is unit-tested in `ExecutionEngineTest`).
+
 ### ADR-009: Every test owns its data
 
 - **Problem:** tests that share data (one "test customer" for everybody) break each other, cannot run in parallel and leave the environment dirtier after each run.

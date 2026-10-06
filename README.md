@@ -2,7 +2,7 @@
 
 A production-style QA automation framework: UI, API and database testing with Java 17, Selenium, TestNG and REST Assured.
 
-> **Status:** Milestones 1–6 of 10 (foundation, configuration and driver platform, UI automation framework, test data and UI coverage, API automation, database and integration) are done. The roadmap is below; this README grows with each milestone.
+> **Status:** Milestones 1–7 of 10 (foundation, configuration and driver platform, UI automation, test data, API automation, database and integration, parallel execution and resilience) are done. The roadmap is below; this README grows with each milestone.
 
 Its companion repository, [selenium-java-framework](https://github.com/niranjankagri/selenium-java-framework), is an interview-focused Selenium + Java + TestNG lab. This repository holds the production-style work that lab leaves out.
 
@@ -160,6 +160,27 @@ Isolation: every test creates its own data (unique email/SKU, safe in parallel a
 
 Test groups so far: `smoke` (fast, read-only), `sanity` (key happy paths and role checks), `regression` (full coverage, data-driven negatives), `e2e` (business journeys), plus `ui` and `unit`/`platform`.
 
+## Test suites
+
+| Suite (`-Dsuite=`) | Groups | Purpose |
+|---|---|---|
+| `full` (default) | all | everything, including unit and platform tests |
+| `smoke` | `smoke` | fast, read-only "is it up and usable" checks: pull-request gate |
+| `sanity` | `sanity` | key happy paths and role checks after a deployment |
+| `regression` | `regression` | full functional coverage |
+| `api` | `api` | API only, no browser |
+| `ui` | `ui` | browser tests |
+| `integration` | `integration`, `db` | database and cross-layer tests |
+| `e2e` | `e2e` | business journeys |
+
+## Parallel execution and resilience
+
+- `mvn clean test -Dthreads=4`: parallel mode and threads come from configuration (`parallel=classes`, `threads=2` by default) and apply to every suite. Details and measurements: [docs/parallel-execution.md](docs/parallel-execution.md).
+- **Retry**: only transient infrastructure failures (browser session lost, connection refused...) are retried, at most `retry.count` times (default 1). Assertion failures and wait timeouts are never retried.
+- **Failure diagnostics**: each failure logs a block with test, parameters, groups, thread, duration, environment, browser and cause; UI failures also save a screenshot.
+- **Logs**: every line carries thread and test name (`automation/target/logs/automation.log`).
+- **Execution metadata**: `automation/target/execution-metadata.json` records environment, URLs, browser, parallelism, Java, OS, framework version, Git commit, build number and the result counts.
+
 ## Running the tests
 
 Requirements: JDK 17 or newer, Maven 3.9+, Chrome or Edge (Selenium Manager can download Firefox).
@@ -183,7 +204,7 @@ Logs go to the console (INFO) and to `automation/target/logs/automation.log` (DE
 | 4 | Test data & UI coverage | ✅ done |
 | 5 | API automation platform | ✅ done |
 | 6 | Database & end-to-end integration | ✅ done |
-| 7 | Execution engine, parallelism & resilience | planned |
+| 7 | Execution engine, parallelism & resilience | ✅ done |
 | 8 | Observability & reporting | planned |
 | 9 | Docker, Selenium Grid, cloud & CI/CD | planned |
 | 10 | Quality engineering, documentation & portfolio polish | planned |

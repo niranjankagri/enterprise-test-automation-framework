@@ -27,7 +27,10 @@ public enum ConfigKey {
     VIEWER_PASSWORD("viewer.password"),
     DB_URL("db.url"),
     DB_USERNAME("db.username"),
-    DB_PASSWORD("db.password");
+    DB_PASSWORD("db.password"),
+    PARALLEL("parallel"),
+    THREADS("threads"),
+    RETRY_COUNT("retry.count");
 
     private final String property;
 

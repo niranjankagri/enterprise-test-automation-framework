@@ -68,7 +68,9 @@ public final class ConfigLoader {
                 new Credentials(resolver.required(ConfigKey.VIEWER_USERNAME), resolver.required(ConfigKey.VIEWER_PASSWORD)),
                 resolver.optional(ConfigKey.DB_URL).map(url -> new DatabaseConfig(url,
                         resolver.optional(ConfigKey.DB_USERNAME).orElse(""),
-                        resolver.optional(ConfigKey.DB_PASSWORD).orElse(""))));
+                        resolver.optional(ConfigKey.DB_PASSWORD).orElse(""))),
+                new ExecutionSettings(resolver.required(ConfigKey.PARALLEL), resolver.positiveInt(ConfigKey.THREADS),
+                        resolver.nonNegativeInt(ConfigKey.RETRY_COUNT)));
     }
 
     private static Properties read(String fileName, boolean mandatory) {
@@ -136,6 +138,19 @@ public final class ConfigLoader {
                 return uri;
             } catch (IllegalArgumentException e) {
                 throw new IllegalStateException("Configuration '" + key.property() + "' is not a valid URL: " + value, e);
+            }
+        }
+
+        int nonNegativeInt(ConfigKey key) {
+            String value = required(key);
+            try {
+                int number = Integer.parseInt(value);
+                if (number < 0) {
+                    throw new NumberFormatException("must not be negative");
+                }
+                return number;
+            } catch (NumberFormatException e) {
+                throw new IllegalStateException("Configuration '" + key.property() + "' must be 0 or more: " + value, e);
             }
         }
 

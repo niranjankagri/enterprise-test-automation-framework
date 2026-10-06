@@ -20,8 +20,8 @@
     <name>Automation Framework and Tests</name>
 
     <properties>
-        <!-- Suite file run by default; override with -Dsuite=... -->
-        <suite>testng.xml</suite>
+        <!-- Suite to run: src/test/resources/suites/<suite>.xml, e.g. -Dsuite=smoke -->
+        <suite>full</suite>
     </properties>
 
     <dependencies>
@@ -107,7 +107,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <suiteXmlFiles>
-                        <suiteXmlFile>src/test/resources/${suite}</suiteXmlFile>
+                        <suiteXmlFile>src/test/resources/suites/${suite}.xml</suiteXmlFile>
                     </suiteXmlFiles>
                 </configuration>
             </plugin>

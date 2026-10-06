@@ -1,0 +1,25 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!--
+    UI: every browser test.
+    Parallel mode and threads come from configuration (-Dparallel, -Dthreads), not from this file.
+-->
+<suite name="UI">
+    <listeners>
+        <listener class-name="com.enterprise.automation.listeners.ExecutionSettingsListener"/>
+        <listener class-name="com.enterprise.automation.listeners.RetryTransformer"/>
+        <listener class-name="com.enterprise.automation.listeners.TestLogContextListener"/>
+        <listener class-name="com.enterprise.automation.listeners.FailureDiagnosticsListener"/>
+        <listener class-name="com.enterprise.automation.listeners.ExecutionMetadataListener"/>
+        <listener class-name="com.enterprise.automation.tests.base.DemoAppLifecycle"/>
+    </listeners>
+    <test name="UI">
+        <groups>
+            <run>
+                <include name="ui"/>
+            </run>
+        </groups>
+        <packages>
+            <package name="com.enterprise.automation.tests.*"/>
+        </packages>
+    </test>
+</suite>

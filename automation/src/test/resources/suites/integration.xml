@@ -1,0 +1,26 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!--
+    Integration: database and cross-layer (UI / API / database) tests.
+    Parallel mode and threads come from configuration (-Dparallel, -Dthreads), not from this file.
+-->
+<suite name="Integration">
+    <listeners>
+        <listener class-name="com.enterprise.automation.listeners.ExecutionSettingsListener"/>
+        <listener class-name="com.enterprise.automation.listeners.RetryTransformer"/>
+        <listener class-name="com.enterprise.automation.listeners.TestLogContextListener"/>
+        <listener class-name="com.enterprise.automation.listeners.FailureDiagnosticsListener"/>
+        <listener class-name="com.enterprise.automation.listeners.ExecutionMetadataListener"/>
+        <listener class-name="com.enterprise.automation.tests.base.DemoAppLifecycle"/>
+    </listeners>
+    <test name="Integration">
+        <groups>
+            <run>
+                <include name="integration"/>
+                <include name="db"/>
+            </run>
+        </groups>
+        <packages>
+            <package name="com.enterprise.automation.tests.*"/>
+        </packages>
+    </test>
+</suite>

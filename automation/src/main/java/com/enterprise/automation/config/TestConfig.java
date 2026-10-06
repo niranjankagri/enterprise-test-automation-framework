@@ -26,6 +26,7 @@ import java.util.Optional;
  * @param admin           account with full rights
  * @param viewer          read-only account
  * @param database        direct database access, or empty where the environment does not allow it
+ * @param runSettings     parallel mode, threads and retries of this run
  */
 public record TestConfig(
         String environment,
@@ -42,11 +43,14 @@ public record TestConfig(
         boolean appAutostart,
         Credentials admin,
         Credentials viewer,
-        Optional<DatabaseConfig> database) {
+        Optional<DatabaseConfig> database,
+        ExecutionSettings runSettings) {
 
     /** One line for logs and reports: what this run is pointed at. */
     public String summary() {
         return "env=" + environment + ", baseUrl=" + baseUrl + ", browser=" + browser.name().toLowerCase(Locale.ROOT)
-                + (headless ? " (headless)" : "") + ", execution=" + execution.name().toLowerCase(Locale.ROOT);
+                + (headless ? " (headless)" : "") + ", execution=" + execution.name().toLowerCase(Locale.ROOT)
+                + ", parallel=" + runSettings.parallel() + (runSettings.isParallel() ? " x" + runSettings.threads() : "")
+                + ", retries=" + runSettings.retryCount();
     }
 }
