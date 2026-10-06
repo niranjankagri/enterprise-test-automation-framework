@@ -2,7 +2,7 @@
 
 A production-style QA automation framework: UI, API and database testing with Java 17, Selenium, TestNG and REST Assured.
 
-> **Status:** Milestones 1–4 of 10 (foundation, configuration and driver platform, UI automation framework, test data and UI coverage) are done. The roadmap is below; this README grows with each milestone.
+> **Status:** Milestones 1–5 of 10 (foundation, configuration and driver platform, UI automation framework, test data and UI coverage, API automation) are done. The roadmap is below; this README grows with each milestone.
 
 Its companion repository, [selenium-java-framework](https://github.com/niranjankagri/selenium-java-framework), is an interview-focused Selenium + Java + TestNG lab. This repository holds the production-style work that lab leaves out.
 
@@ -101,6 +101,28 @@ CheckoutPage checkout = loginAsAdmin().navigation().openProducts()
 assertThat(checkout.total()).isEqualTo("$49.00");
 ```
 
+## API automation
+
+```text
+Test → ApiSession (account) → Service (one per resource) → ApiClient → REST API
+```
+
+```java
+CustomerResponse created = ApiSession.admin().customers().createCustomer(TestDataFactory.newCustomer());
+
+Response response = ApiSession.viewer().customers().create(CustomerRequest.from(customer));
+ErrorResponse error = ApiAssertions.error(ApiAssertions.expectStatus(response, 403));
+```
+
+- **ApiClient**: base URL from configuration, JSON, bearer token, logging. Immutable, with no REST Assured global state, so it's parallel-safe.
+- **Services** (`AuthService`, `UserService`, `CustomerService`, `ProductService`, `OrderService`): raw methods return the `Response` for status/header/error checks; typed methods (`createCustomer`, `placeOrder`...) check the expected status and return a model.
+- **Models**: request/response records; secrets masked in `toString()`.
+- **Authentication**: `ApiSession.admin()`, `viewer()`, `as(credentials)`, `withToken(...)`, `anonymous()`; tokens cached per account for the run.
+- **Contract checks**: JSON schemas in `src/test/resources/schemas` (strict: no unexpected fields) via `ApiAssertions.matchesSchema(response, "customer")`.
+- **Logging**: one line per call (`POST /api/customers -> 201 in 35 ms`); bodies at DEBUG with passwords and tokens masked.
+
+Coverage: GET/POST/PUT/PATCH/DELETE on every resource; status codes 200/201/204/400/401/403/404/405/409; `Location` and `X-Request-Id` headers; payloads and computed values (order totals, stock reservation and release, status flow); authentication (login, invalid/expired/logged-out tokens) and authorization (viewer read-only, admin-only users API); validation messages per field (the same CSV drives UI and API negatives); malformed JSON and ids.
+
 ## Test data management
 
 | Need | Where it comes from |
@@ -136,7 +158,7 @@ Logs go to the console (INFO) and to `automation/target/logs/automation.log` (DE
 | 2 | Configuration & driver platform | ✅ done |
 | 3 | UI automation framework | ✅ done |
 | 4 | Test data & UI coverage | ✅ done |
-| 5 | API automation platform | planned |
+| 5 | API automation platform | ✅ done |
 | 6 | Database & end-to-end integration | planned |
 | 7 | Execution engine, parallelism & resilience | planned |
 | 8 | Observability & reporting | planned |

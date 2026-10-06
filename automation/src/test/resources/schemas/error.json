@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Error",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "error", "message", "path", "timestamp"],
+  "properties": {
+    "status": { "type": "integer", "minimum": 400, "maximum": 599 },
+    "error": { "type": "string" },
+    "message": { "type": "string", "minLength": 1 },
+    "path": { "type": "string", "pattern": "^/api/" },
+    "timestamp": { "type": "string" },
+    "fieldErrors": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "type": "string" }
+    }
+  }
+}

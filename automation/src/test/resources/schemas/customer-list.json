@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Customer list",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["id", "firstName", "lastName", "email", "phone", "city", "status", "createdAt"],
+    "properties": {
+      "id": { "type": "integer", "minimum": 1 },
+      "firstName": { "type": "string" },
+      "lastName": { "type": "string" },
+      "email": { "type": "string" },
+      "phone": { "type": ["string", "null"] },
+      "city": { "type": ["string", "null"] },
+      "status": { "enum": ["ACTIVE", "INACTIVE"] },
+      "createdAt": { "type": "string" }
+    }
+  }
+}

@@ -64,6 +64,11 @@ public final class ApiSession {
         TOKENS.remove(username);
     }
 
+    /** The authenticated client itself, for protocol-level negative tests (malformed ids or JSON). */
+    public ApiClient client() {
+        return client;
+    }
+
     public AuthService auth() {
         return new AuthService(client);
     }

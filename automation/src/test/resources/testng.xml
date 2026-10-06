@@ -15,6 +15,11 @@
             <package name="com.enterprise.automation.tests.platform"/>
         </packages>
     </test>
+    <test name="API">
+        <packages>
+            <package name="com.enterprise.automation.tests.api"/>
+        </packages>
+    </test>
     <test name="UI">
         <packages>
             <package name="com.enterprise.automation.tests.ui"/>

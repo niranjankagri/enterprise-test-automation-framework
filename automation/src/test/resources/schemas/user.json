@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "User (never contains a password)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "username", "fullName", "role", "createdAt"],
+  "properties": {
+    "id": { "type": "integer", "minimum": 1 },
+    "username": { "type": "string" },
+    "fullName": { "type": "string" },
+    "role": { "enum": ["ADMIN", "VIEWER"] },
+    "createdAt": { "type": "string" }
+  }
+}

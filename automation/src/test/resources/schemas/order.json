@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Order",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "customerId", "customerName", "status", "total", "createdAt", "items"],
+  "properties": {
+    "id": { "type": "integer", "minimum": 1 },
+    "customerId": { "type": "integer", "minimum": 1 },
+    "customerName": { "type": "string" },
+    "status": { "enum": ["PLACED", "SHIPPED", "DELIVERED", "CANCELLED"] },
+    "total": { "type": "number", "minimum": 0 },
+    "createdAt": { "type": "string" },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["productId", "sku", "name", "quantity", "unitPrice", "lineTotal"],
+        "properties": {
+          "productId": { "type": "integer" },
+          "sku": { "type": "string" },
+          "name": { "type": "string" },
+          "quantity": { "type": "integer", "minimum": 1 },
+          "unitPrice": { "type": "number" },
+          "lineTotal": { "type": "number" }
+        }
+      }
+    }
+  }
+}

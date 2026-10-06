@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Login response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["token", "tokenType", "expiresIn", "username", "fullName", "role"],
+  "properties": {
+    "token": { "type": "string", "minLength": 32 },
+    "tokenType": { "enum": ["Bearer"] },
+    "expiresIn": { "type": "integer", "minimum": 1 },
+    "username": { "type": "string" },
+    "fullName": { "type": "string" },
+    "role": { "enum": ["ADMIN", "VIEWER"] }
+  }
+}

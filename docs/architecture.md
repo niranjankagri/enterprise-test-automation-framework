@@ -81,6 +81,14 @@ Each major decision is written as Problem → Options → Decision → Reason �
 - **Reason:** waiting for a condition is as fast as the application allows and as long as it needs. Fixed sleeps are either too short (flaky) or too long (slow).
 - **Trade-offs:** the application must cooperate. In a real project these hooks are agreed with the developers as part of the definition of done.
 
+### ADR-010: API services return raw responses and typed results
+
+- **Problem:** API tests need two different things: negative tests must inspect status codes, headers and error bodies, while setup, clean-up and happy paths just want "create a customer and give me its id".
+- **Options:** (a) services return only models (negative tests cannot see status codes); (b) services return only raw responses (every test repeats status checks and JSON mapping); (c) both, clearly named.
+- **Decision:** (c). `create(...)`, `get(...)`... return the REST Assured `Response`; `createCustomer(...)`, `getCustomer(...)`... check the expected status (failure message includes the masked body) and return a record. `ApiClient` is immutable and builds every request from scratch; the framework owns its Jackson mapper.
+- **Reason:** tests read as intent in both cases, and no test re-implements HTTP plumbing. Owning the mapper keeps (de)serialization stable regardless of which JSON library REST Assured detects.
+- **Trade-offs:** two methods per operation. Response models ignore unknown fields, so contract drift is caught by the strict JSON schemas rather than by the models.
+
 ### ADR-009: Every test owns its data
 
 - **Problem:** tests that share data (one "test customer" for everybody) break each other, cannot run in parallel and leave the environment dirtier after each run.
