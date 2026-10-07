@@ -40,7 +40,9 @@ java -jar selenium-server-<version>.jar standalone --port 4444
 mvn clean test -Dexecution=remote -Dgrid.url=http://localhost:4444 -Dbrowser=firefox
 ```
 
-The Grid's own UI (`http://localhost:4444/ui`) shows nodes, free slots and running sessions.
+The Grid's own UI (`http://localhost:4444/ui`) shows nodes, free slots and running sessions. With the compose file it shows three nodes with 2 slots each:
+
+![Selenium Grid UI with Chrome, Firefox and Edge nodes from docker-compose](images/grid-ui.png)
 
 ## Capacity and parallel sessions
 
@@ -58,6 +60,7 @@ For more parallelism, raise `SE_NODE_MAX_SESSIONS` (memory permitting) or scale 
 | Run | Where | Result |
 |---|---|---|
 | Regression, Firefox, 4 threads, Docker Grid | nightly workflow | green (121/121) |
+| Smoke on Chrome, Edge and Firefox, 2 threads, `docker compose` (app + hub + nodes + tests) | local machine (Docker Desktop, WSL 2), 2026-10-07 | green (20/20 each) |
 | Smoke on Chrome, Firefox and Edge, 4 threads, Selenium standalone server 4.50 | local machine, 2026-10-07 | green (20/20 each) |
 | Full suite on a local browser, 4 threads | every local run / CI | green |
 
