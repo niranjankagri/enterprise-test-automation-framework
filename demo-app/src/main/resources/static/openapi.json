@@ -1,0 +1,620 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ShopEase Admin API",
+    "version": "1.0.0",
+    "license": { "name": "MIT", "url": "https://opensource.org/licenses/MIT" },
+    "description": "REST API of the ShopEase Admin demo application (the application under test of this framework).\n\n**How to try it:** call `POST /auth/login` with `admin` / `Admin@12345` (full access) or `viewer` / `Viewer@12345` (read-only), copy the `token` from the response, click **Authorize** and paste it. Tokens are valid for one hour.\n\nEvery response carries an `X-Request-Id` header (the client's own id if it sent a safe one). Every error has the same body: `status`, `error`, `message`, `path`, `timestamp` and, for validation failures, `fieldErrors`. The data lives in an in-memory database and is reset when the application restarts."
+  },
+  "servers": [
+    { "url": "/api", "description": "This application" }
+  ],
+  "tags": [
+    { "name": "Auth", "description": "Sign in and out (bearer tokens)" },
+    { "name": "Stats", "description": "Dashboard figures" },
+    { "name": "Users", "description": "Back-office accounts (ADMIN only, except /users/me)" },
+    { "name": "Customers", "description": "Customers; writes need ADMIN" },
+    { "name": "Products", "description": "Product catalogue; writes need ADMIN" },
+    { "name": "Orders", "description": "Orders: PLACED → SHIPPED → DELIVERED, or PLACED → CANCELLED; writes need ADMIN" }
+  ],
+  "security": [ { "bearerAuth": [] } ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Sign in and get a bearer token",
+        "operationId": "login",
+        "security": [],
+        "parameters": [ { "$ref": "#/components/parameters/RequestId" } ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": {
+            "schema": { "$ref": "#/components/schemas/LoginRequest" },
+            "examples": {
+              "admin": { "summary": "Admin (full access)", "value": { "username": "admin", "password": "Admin@12345" } },
+              "viewer": { "summary": "Viewer (read-only)", "value": { "username": "viewer", "password": "Viewer@12345" } }
+            }
+          } }
+        },
+        "responses": {
+          "200": { "description": "Signed in", "headers": { "X-Request-Id": { "$ref": "#/components/headers/RequestId" } },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginResponse" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "description": "Invalid username or password", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Sign out (invalidates the token)",
+        "operationId": "logout",
+        "parameters": [ { "$ref": "#/components/parameters/RequestId" } ],
+        "responses": {
+          "204": { "description": "Signed out" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/stats": {
+      "get": {
+        "tags": ["Stats"],
+        "summary": "Dashboard figures (revenue ignores cancelled orders)",
+        "operationId": "getStats",
+        "parameters": [ { "$ref": "#/components/parameters/RequestId" } ],
+        "responses": {
+          "200": { "description": "Figures", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Stats" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/users/me": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "The signed-in user",
+        "operationId": "getCurrentUser",
+        "parameters": [ { "$ref": "#/components/parameters/RequestId" } ],
+        "responses": {
+          "200": { "description": "The user", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "List all accounts, oldest first (ADMIN)",
+        "operationId": "listUsers",
+        "parameters": [ { "$ref": "#/components/parameters/RequestId" } ],
+        "responses": {
+          "200": { "description": "Accounts", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/User" } } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      },
+      "post": {
+        "tags": ["Users"],
+        "summary": "Create an account (ADMIN)",
+        "operationId": "createUser",
+        "parameters": [ { "$ref": "#/components/parameters/RequestId" } ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserInput" } } } },
+        "responses": {
+          "201": { "description": "Created", "headers": { "Location": { "$ref": "#/components/headers/Location" } },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "description": "Username is already taken", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/users/{id}": {
+      "parameters": [ { "$ref": "#/components/parameters/Id" }, { "$ref": "#/components/parameters/RequestId" } ],
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get an account (ADMIN)",
+        "operationId": "getUser",
+        "responses": {
+          "200": { "description": "The account", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "patch": {
+        "tags": ["Users"],
+        "summary": "Change full name and/or role (ADMIN)",
+        "operationId": "updateUser",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserPatch" } } } },
+        "responses": {
+          "200": { "description": "Updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Users"],
+        "summary": "Delete an account (ADMIN; not your own)",
+        "operationId": "deleteUser",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "description": "You cannot delete your own account", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/customers": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "List customers, optionally searched",
+        "operationId": "listCustomers",
+        "parameters": [
+          { "name": "search", "in": "query", "required": false, "description": "Case-insensitive match on first name, last name, email or city", "schema": { "type": "string" }, "example": "austin" },
+          { "$ref": "#/components/parameters/RequestId" }
+        ],
+        "responses": {
+          "200": { "description": "Customers, by id", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Customer" } } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Customers"],
+        "summary": "Create a customer (ADMIN)",
+        "operationId": "createCustomer",
+        "parameters": [ { "$ref": "#/components/parameters/RequestId" } ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CustomerInput" } } } },
+        "responses": {
+          "201": { "description": "Created", "headers": { "Location": { "$ref": "#/components/headers/Location" } },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Customer" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "description": "Email is already in use (case-insensitive)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/customers/{id}": {
+      "parameters": [ { "$ref": "#/components/parameters/Id" }, { "$ref": "#/components/parameters/RequestId" } ],
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Get a customer",
+        "operationId": "getCustomer",
+        "responses": {
+          "200": { "description": "The customer", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Customer" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Customers"],
+        "summary": "Replace a customer (ADMIN; omitted optional fields become null, status ACTIVE)",
+        "operationId": "replaceCustomer",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CustomerInput" } } } },
+        "responses": {
+          "200": { "description": "Replaced", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Customer" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "description": "Email is used by another customer", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      },
+      "patch": {
+        "tags": ["Customers"],
+        "summary": "Change some fields of a customer (ADMIN)",
+        "description": "Only the fields present in the body change. `\"phone\": null` or `\"city\": null` clears that field.",
+        "operationId": "updateCustomer",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CustomerPatch" } } } },
+        "responses": {
+          "200": { "description": "Updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Customer" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "description": "Email is used by another customer", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      },
+      "delete": {
+        "tags": ["Customers"],
+        "summary": "Delete a customer (ADMIN; refused while the customer has orders)",
+        "operationId": "deleteCustomer",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "description": "The customer has orders", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/products": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "List products, optionally searched and filtered",
+        "operationId": "listProducts",
+        "parameters": [
+          { "name": "search", "in": "query", "required": false, "description": "Case-insensitive match on name or SKU", "schema": { "type": "string" }, "example": "monitor" },
+          { "name": "category", "in": "query", "required": false, "description": "Exact category", "schema": { "type": "string" }, "example": "Accessories" },
+          { "name": "includeInactive", "in": "query", "required": false, "description": "Also list deactivated (deleted) products", "schema": { "type": "boolean", "default": false } },
+          { "$ref": "#/components/parameters/RequestId" }
+        ],
+        "responses": {
+          "200": { "description": "Products, by id", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Product" } } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Products"],
+        "summary": "Create a product (ADMIN)",
+        "operationId": "createProduct",
+        "parameters": [ { "$ref": "#/components/parameters/RequestId" } ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProductInput" } } } },
+        "responses": {
+          "201": { "description": "Created", "headers": { "Location": { "$ref": "#/components/headers/Location" } },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Product" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "description": "SKU is already in use", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/products/{id}": {
+      "parameters": [ { "$ref": "#/components/parameters/Id" }, { "$ref": "#/components/parameters/RequestId" } ],
+      "get": {
+        "tags": ["Products"],
+        "summary": "Get a product (also a deactivated one)",
+        "operationId": "getProduct",
+        "responses": {
+          "200": { "description": "The product", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Product" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Products"],
+        "summary": "Replace a product (ADMIN)",
+        "operationId": "replaceProduct",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProductInput" } } } },
+        "responses": {
+          "200": { "description": "Replaced", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Product" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "description": "SKU is used by another product", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      },
+      "patch": {
+        "tags": ["Products"],
+        "summary": "Change some fields of a product (ADMIN)",
+        "operationId": "updateProduct",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProductPatch" } } } },
+        "responses": {
+          "200": { "description": "Updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Product" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "description": "SKU is used by another product", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      },
+      "delete": {
+        "tags": ["Products"],
+        "summary": "Deactivate a product (ADMIN; soft delete, kept for order history)",
+        "operationId": "deleteProduct",
+        "responses": {
+          "204": { "description": "Deactivated" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/orders": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "List orders, newest first",
+        "operationId": "listOrders",
+        "parameters": [
+          { "name": "customerId", "in": "query", "required": false, "description": "Only this customer's orders", "schema": { "type": "integer", "format": "int64" } },
+          { "name": "status", "in": "query", "required": false, "description": "Only orders in this status", "schema": { "$ref": "#/components/schemas/OrderStatus" } },
+          { "$ref": "#/components/parameters/RequestId" }
+        ],
+        "responses": {
+          "200": { "description": "Orders with their lines", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Order" } } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Place an order (ADMIN; reserves stock)",
+        "description": "All or nothing: the order is stored and every line's stock reserved in one transaction. Prices are taken from the products at the time of ordering.",
+        "operationId": "createOrder",
+        "parameters": [ { "$ref": "#/components/parameters/RequestId" } ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderInput" } } } },
+        "responses": {
+          "201": { "description": "Placed (status PLACED)", "headers": { "Location": { "$ref": "#/components/headers/Location" } },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Order" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "description": "Unknown customer or product", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "409": { "description": "Customer inactive, product no longer sold, or insufficient stock", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/orders/{id}": {
+      "parameters": [ { "$ref": "#/components/parameters/Id" }, { "$ref": "#/components/parameters/RequestId" } ],
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Get an order with its lines",
+        "operationId": "getOrder",
+        "responses": {
+          "200": { "description": "The order", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Order" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "patch": {
+        "tags": ["Orders"],
+        "summary": "Change the status (ADMIN)",
+        "description": "Allowed: PLACED → SHIPPED or CANCELLED, SHIPPED → DELIVERED. Cancelling gives the stock back.",
+        "operationId": "updateOrderStatus",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderStatusPatch" } } } },
+        "responses": {
+          "200": { "description": "Updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Order" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "description": "Transition not allowed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      },
+      "delete": {
+        "tags": ["Orders"],
+        "summary": "Delete an order (ADMIN; a PLACED order gives its stock back)",
+        "operationId": "deleteOrder",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer", "description": "The `token` from POST /auth/login" }
+    },
+    "parameters": {
+      "Id": { "name": "id", "in": "path", "required": true, "description": "Numeric id (a non-number gives 400)", "schema": { "type": "integer", "format": "int64" }, "example": 1 },
+      "RequestId": { "name": "X-Request-Id", "in": "header", "required": false, "description": "Optional correlation id (letters, digits, dashes; 1-64 characters). Echoed back; otherwise the server generates a UUID.", "schema": { "type": "string", "pattern": "^[A-Za-z0-9-]{1,64}$" } }
+    },
+    "headers": {
+      "RequestId": { "description": "Correlation id of this request (also in the server log)", "schema": { "type": "string" } },
+      "Location": { "description": "URL of the created resource", "schema": { "type": "string" }, "example": "/api/customers/4" }
+    },
+    "responses": {
+      "BadRequest": { "description": "Validation failed, malformed JSON, missing body or non-numeric id",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" },
+          "example": { "status": 400, "error": "Bad Request", "message": "Validation failed", "path": "/api/customers", "timestamp": "2026-10-07T10:00:00Z", "fieldErrors": { "email": "Email must be a valid email address" } } } } },
+      "Unauthorized": { "description": "Missing, invalid or expired bearer token",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" },
+          "example": { "status": 401, "error": "Unauthorized", "message": "Missing bearer token", "path": "/api/customers", "timestamp": "2026-10-07T10:00:00Z" } } } },
+      "Forbidden": { "description": "Signed in, but the action needs the ADMIN role",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" },
+          "example": { "status": 403, "error": "Forbidden", "message": "This action needs the ADMIN role", "path": "/api/customers", "timestamp": "2026-10-07T10:00:00Z" } } } },
+      "NotFound": { "description": "No resource with this id",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" },
+          "example": { "status": 404, "error": "Not Found", "message": "Customer 999 not found", "path": "/api/customers/999", "timestamp": "2026-10-07T10:00:00Z" } } } }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": ["status", "error", "message", "path", "timestamp"],
+        "properties": {
+          "status": { "type": "integer", "example": 400 },
+          "error": { "type": "string", "example": "Bad Request" },
+          "message": { "type": "string", "example": "Validation failed" },
+          "path": { "type": "string", "example": "/api/customers" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "fieldErrors": { "type": "object", "description": "Field name → message; only for validation failures and some conflicts", "additionalProperties": { "type": "string" } }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["username", "password"],
+        "properties": {
+          "username": { "type": "string", "example": "admin" },
+          "password": { "type": "string", "format": "password", "example": "Admin@12345" }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "token": { "type": "string", "description": "Bearer token (64 hex characters)" },
+          "tokenType": { "type": "string", "example": "Bearer" },
+          "expiresIn": { "type": "integer", "description": "Seconds until the token expires", "example": 3600 },
+          "username": { "type": "string", "example": "admin" },
+          "fullName": { "type": "string", "example": "Alex Admin" },
+          "role": { "$ref": "#/components/schemas/Role" }
+        }
+      },
+      "Role": { "type": "string", "enum": ["ADMIN", "VIEWER"] },
+      "Stats": {
+        "type": "object",
+        "properties": {
+          "customers": { "type": "integer", "format": "int64", "example": 3 },
+          "products": { "type": "integer", "format": "int64", "description": "Active products only", "example": 8 },
+          "orders": { "type": "integer", "format": "int64", "example": 0 },
+          "revenue": { "type": "number", "description": "Sum of all orders except cancelled ones", "example": 0 }
+        }
+      },
+      "User": {
+        "type": "object",
+        "description": "An account; passwords are never returned",
+        "properties": {
+          "id": { "type": "integer", "format": "int64", "example": 1 },
+          "username": { "type": "string", "example": "admin" },
+          "fullName": { "type": "string", "example": "Alex Admin" },
+          "role": { "$ref": "#/components/schemas/Role" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "UserInput": {
+        "type": "object",
+        "required": ["username", "password", "fullName", "role"],
+        "properties": {
+          "username": { "type": "string", "maxLength": 50, "example": "jane" },
+          "password": { "type": "string", "format": "password", "minLength": 8, "maxLength": 100, "example": "Jane@12345" },
+          "fullName": { "type": "string", "maxLength": 100, "example": "Jane Doe" },
+          "role": { "$ref": "#/components/schemas/Role" }
+        }
+      },
+      "UserPatch": {
+        "type": "object",
+        "properties": {
+          "fullName": { "type": "string", "maxLength": 100, "example": "Jane Smith" },
+          "role": { "$ref": "#/components/schemas/Role" }
+        }
+      },
+      "CustomerStatus": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] },
+      "Customer": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64", "example": 1 },
+          "firstName": { "type": "string", "example": "Ava" },
+          "lastName": { "type": "string", "example": "Patel" },
+          "email": { "type": "string", "format": "email", "example": "ava.patel@example.com" },
+          "phone": { "type": "string", "nullable": true, "example": "+1-555-0101" },
+          "city": { "type": "string", "nullable": true, "example": "Austin" },
+          "status": { "$ref": "#/components/schemas/CustomerStatus" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CustomerInput": {
+        "type": "object",
+        "required": ["firstName", "lastName", "email"],
+        "properties": {
+          "firstName": { "type": "string", "maxLength": 50, "example": "Noah" },
+          "lastName": { "type": "string", "maxLength": 50, "example": "Kim" },
+          "email": { "type": "string", "format": "email", "maxLength": 120, "example": "noah.kim@example.com" },
+          "phone": { "type": "string", "nullable": true, "pattern": "^[+0-9 ()-]{7,20}$", "example": "+1-555-0199" },
+          "city": { "type": "string", "nullable": true, "maxLength": 60, "example": "Boston" },
+          "status": { "$ref": "#/components/schemas/CustomerStatus" }
+        }
+      },
+      "CustomerPatch": {
+        "type": "object",
+        "description": "Any subset of the customer fields",
+        "properties": {
+          "firstName": { "type": "string", "maxLength": 50 },
+          "lastName": { "type": "string", "maxLength": 50 },
+          "email": { "type": "string", "format": "email", "maxLength": 120 },
+          "phone": { "type": "string", "nullable": true, "pattern": "^[+0-9 ()-]{7,20}$" },
+          "city": { "type": "string", "nullable": true, "maxLength": 60, "example": "Chicago" },
+          "status": { "$ref": "#/components/schemas/CustomerStatus" }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64", "example": 1 },
+          "sku": { "type": "string", "example": "LAP-1001" },
+          "name": { "type": "string", "example": "Ultrabook 14" },
+          "category": { "type": "string", "example": "Laptops" },
+          "price": { "type": "number", "example": 1199.00 },
+          "stock": { "type": "integer", "example": 25 },
+          "active": { "type": "boolean", "description": "false once deleted (soft delete)", "example": true }
+        }
+      },
+      "ProductInput": {
+        "type": "object",
+        "required": ["sku", "name", "category", "price", "stock"],
+        "properties": {
+          "sku": { "type": "string", "maxLength": 30, "example": "ACC-3010" },
+          "name": { "type": "string", "maxLength": 100, "example": "Laptop Stand" },
+          "category": { "type": "string", "maxLength": 50, "example": "Accessories" },
+          "price": { "type": "number", "exclusiveMinimum": true, "minimum": 0, "description": "A JSON number greater than 0 (strings are rejected)", "example": 59.90 },
+          "stock": { "type": "integer", "minimum": 0, "example": 30 }
+        }
+      },
+      "ProductPatch": {
+        "type": "object",
+        "description": "Any subset of the product fields",
+        "properties": {
+          "sku": { "type": "string", "maxLength": 30 },
+          "name": { "type": "string", "maxLength": 100 },
+          "category": { "type": "string", "maxLength": 50 },
+          "price": { "type": "number", "exclusiveMinimum": true, "minimum": 0, "example": 54.90 },
+          "stock": { "type": "integer", "minimum": 0 }
+        }
+      },
+      "OrderStatus": { "type": "string", "enum": ["PLACED", "SHIPPED", "DELIVERED", "CANCELLED"] },
+      "OrderItem": {
+        "type": "object",
+        "properties": {
+          "productId": { "type": "integer", "format": "int64", "example": 5 },
+          "sku": { "type": "string", "example": "ACC-3001" },
+          "name": { "type": "string", "example": "Wireless Keyboard" },
+          "quantity": { "type": "integer", "example": 2 },
+          "unitPrice": { "type": "number", "description": "Price when the order was placed", "example": 79.00 },
+          "lineTotal": { "type": "number", "example": 158.00 }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64", "example": 1 },
+          "customerId": { "type": "integer", "format": "int64", "example": 1 },
+          "customerName": { "type": "string", "example": "Ava Patel" },
+          "status": { "$ref": "#/components/schemas/OrderStatus" },
+          "total": { "type": "number", "example": 207.00 },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrderItem" } }
+        }
+      },
+      "OrderInput": {
+        "type": "object",
+        "required": ["customerId", "items"],
+        "properties": {
+          "customerId": { "type": "integer", "format": "int64", "example": 1 },
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["productId", "quantity"],
+              "properties": {
+                "productId": { "type": "integer", "format": "int64", "example": 5 },
+                "quantity": { "type": "integer", "minimum": 1, "example": 2 }
+              }
+            }
+          }
+        },
+        "example": { "customerId": 1, "items": [ { "productId": 5, "quantity": 2 }, { "productId": 6, "quantity": 1 } ] }
+      },
+      "OrderStatusPatch": {
+        "type": "object",
+        "required": ["status"],
+        "properties": { "status": { "$ref": "#/components/schemas/OrderStatus" } },
+        "example": { "status": "SHIPPED" }
+      }
+    }
+  }
+}

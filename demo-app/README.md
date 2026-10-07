@@ -25,6 +25,8 @@ Accounts: `admin` (role ADMIN, full access) and `viewer` (role VIEWER, read-only
 
 All endpoints except login need `Authorization: Bearer <token>`. Errors share one shape: `{status, error, message, path, timestamp, fieldErrors?}`. Every response has an `X-Request-Id` header: the client's own (letters, digits, dashes, at most 64) or a new UUID.
 
+**Swagger UI:** open `/swagger.html` on the running app (e.g. http://localhost:8081/swagger.html), sign in with `POST /auth/login`, click **Authorize**, paste the token and try any endpoint. The OpenAPI 3.0 description is served as `/openapi.json` (source: `src/main/resources/static/openapi.json`, written by hand; keep it in step with the routes in `DemoApp`). Swagger UI itself is loaded from a CDN, so that page needs internet access.
+
 | Method | Path | Role | Notes |
 |---|---|---|---|
 | POST | `/api/auth/login` | public | `{username, password}` → `{token, tokenType, expiresIn, username, fullName, role}` |
