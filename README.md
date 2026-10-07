@@ -179,6 +179,8 @@ Not implemented by decision: `-Dexecution=cloud` fails fast with a clear message
 | Main | push to main | build → API → UI → smoke on Edge → report |
 | Nightly | daily + manual | full suite (Chrome), regression (Firefox, Edge), regression on Docker + Grid → report |
 
+<img src="docs/images/ci-nightly.png" alt="Nightly run: every job green, including Docker + Selenium Grid" width="60%">
+
 [docs/ci-cd.md](docs/ci-cd.md).
 
 ## Quality gates
@@ -247,7 +249,7 @@ Test pyramid with the bulk at API level, UI for what only the UI shows, cross-la
 
 **Start here: [the complete framework guide](docs/FRAMEWORK-GUIDE.md)**, which covers everything in one document (application under test, architecture, configuration, every layer, test data, coverage, execution, logging, reporting, Docker, CI/CD, security, extending, troubleshooting, class reference).
 
-Topic documents: [Architecture](docs/architecture.md) · [Framework design](docs/framework-design.md) · [Test strategy](docs/test-strategy.md) · [CI/CD](docs/ci-cd.md) · [Docker](docs/docker.md) · [Selenium Grid](docs/grid.md) · [Decisions (ADRs)](docs/adr/README.md) · [Parallel execution](docs/parallel-execution.md) · [Reporting](docs/reporting.md) · [Troubleshooting](docs/troubleshooting.md) · [Coding standards](docs/coding-standards.md) · [Contributing](CONTRIBUTING.md)
+Topic documents: [Architecture](docs/architecture.md) · [Framework design](docs/framework-design.md) · [Test strategy](docs/test-strategy.md) · [CI/CD](docs/ci-cd.md) · [Docker](docs/docker.md) · [Selenium Grid](docs/grid.md) · [Decisions (ADRs)](docs/adr/README.md) · [Parallel execution](docs/parallel-execution.md) · [Reporting](docs/reporting.md) · [Troubleshooting](docs/troubleshooting.md) · [Coding standards](docs/coding-standards.md) · [Demo and interview guide](docs/demo.md) · [Contributing](CONTRIBUTING.md)
 
 ## License
 

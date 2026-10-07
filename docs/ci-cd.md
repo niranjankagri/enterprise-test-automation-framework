@@ -2,6 +2,8 @@
 
 GitHub Actions, in `.github/workflows`.
 
+![A nightly run: full suite on Chrome, regression on Firefox and Edge, regression on Docker + Selenium Grid, combined Allure report](images/ci-nightly.png)
+
 ```mermaid
 flowchart LR
     subgraph PR["Pull request (ci.yml)"]
