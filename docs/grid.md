@@ -67,6 +67,6 @@ For more parallelism, raise `SE_NODE_MAX_SESSIONS` (memory permitting) or scale 
 |---|---|---|
 | `SessionNotCreatedException: Could not start a new session` | no node offers the browser, or the hub is not ready | check `/ui`; wait for the hub healthcheck; check `-Dbrowser` |
 | `Connection refused` to `:4444` | Grid not running or wrong `grid.url` | start it; check `GRID_URL` |
-| Pages fail to load on the Grid only | the browser (in a container) cannot reach the URL | use an address the node can resolve (`http://app:8081` inside compose; `localhost` means the node itself) |
+| Pages fail to load on the Grid only | the browser (in a container) cannot reach the URL | use an address the node can resolve (`http://demo-app:8081` inside compose; `localhost` means the node itself) |
 | Long pauses before tests start | more threads than free slots | lower `THREADS` or add capacity (above) |
 | Browser console missing in a Firefox failure | geckodriver has no console log | expected; Chrome and Edge attach it |

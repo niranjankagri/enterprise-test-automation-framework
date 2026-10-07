@@ -19,7 +19,7 @@ x-node: &node
     SE_NODE_OVERRIDE_MAX_SESSIONS: "true"
 
 services:
-  app:
+  demo-app:
     build:
       context: ..
       dockerfile: docker/Dockerfile
@@ -60,16 +60,17 @@ services:
       dockerfile: docker/Dockerfile
       target: tests
     depends_on:
-      app:
+      demo-app:
         condition: service_healthy
       selenium-hub:
         condition: service_healthy
     environment:
       ENV: qa
-      # Browsers run in the node containers, so they reach the app by its service name
-      BASE_URL: http://app:8081
-      API_BASE_URL: http://app:8081/api
-      DB_URL: jdbc:h2:tcp://app:9093/mem:shop
+      # Browsers run in the node containers, so they reach the app by its service name. Not "app":
+      # .app is a real top-level domain on Chrome's HSTS preload list, so Chrome would force HTTPS.
+      BASE_URL: http://demo-app:8081
+      API_BASE_URL: http://demo-app:8081/api
+      DB_URL: jdbc:h2:tcp://demo-app:9093/mem:shop
       EXECUTION: remote
       GRID_URL: http://selenium-hub:4444
       BROWSER: ${BROWSER:-chrome}

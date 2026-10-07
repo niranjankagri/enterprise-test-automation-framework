@@ -54,7 +54,7 @@ jobs:
           --abort-on-container-exit --exit-code-from tests
       - name: Container logs
         if: failure()
-        run: docker compose -f docker/docker-compose.yml logs --tail=200 app selenium-hub
+        run: docker compose -f docker/docker-compose.yml logs --tail=200 demo-app selenium-hub
       - name: Stop containers
         if: always()
         run: docker compose -f docker/docker-compose.yml down

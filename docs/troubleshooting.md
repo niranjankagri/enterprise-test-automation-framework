@@ -19,7 +19,7 @@ Start with the evidence: the Allure report (failure category, steps, screenshot,
 | `warnings found and -Werror specified` in CI | a compiler warning (e.g. deprecated API) | run `mvn compile` without `-q` locally to see the warning |
 | Allure report is empty | results not written / wrong folder | results are in `automation/target/allure-results`; run `npx allure-commandline serve automation/target/allure-results` |
 | `@Step` annotations have no effect | AspectJ weaver does not run on JDK 27 | use `Report.step(...)`; the framework does not use `@Step` |
-| Docker run: tests cannot reach the app | browsers run in node containers | inside compose use `http://app:8081`, not `localhost` (already set in `docker-compose.yml`) |
+| Docker run: tests cannot reach the app | browsers run in node containers | inside compose use `http://demo-app:8081`, not `localhost` (already set in `docker-compose.yml`) |
 
 ## Debugging a single test
 
