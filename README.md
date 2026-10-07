@@ -185,7 +185,7 @@ Not implemented by decision: `-Dexecution=cloud` fails fast with a clear message
 
 ## Quality gates
 
-Compilation without warnings (CI), Checkstyle (no sleeps, no implicit waits, no empty catch, no unused imports...), all tests green, no new high-severity vulnerable dependency, grouped Dependabot updates.
+Compilation without warnings (CI), Checkstyle (no sleeps, no implicit waits, no empty catch, no unused imports...), all tests green, no new high-severity vulnerable dependency (dependency review on every PR), Dependabot security alerts and grouped weekly updates.
 
 ## Security
 
