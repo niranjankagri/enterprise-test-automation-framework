@@ -57,7 +57,8 @@ For more parallelism, raise `SE_NODE_MAX_SESSIONS` (memory permitting) or scale 
 
 | Run | Where | Result |
 |---|---|---|
-| Regression, Firefox, 4 threads, Docker Grid | nightly workflow | green |
+| Regression, Firefox, 4 threads, Docker Grid | nightly workflow | green (121/121) |
+| Smoke on Chrome, Firefox and Edge, 4 threads, Selenium standalone server 4.50 | local machine, 2026-10-07 | green (20/20 each) |
 | Full suite on a local browser, 4 threads | every local run / CI | green |
 
 ## Troubleshooting

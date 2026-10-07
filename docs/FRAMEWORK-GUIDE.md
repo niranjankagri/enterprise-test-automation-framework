@@ -472,7 +472,7 @@ Every suite declares the same listeners: `ExecutionSettingsListener`, `RetryTran
 
 ### 14.2 Parallel execution
 
-**How** tests run comes from configuration: `ExecutionSettingsListener` applies `parallel` and `threads` to whichever suite runs. The supported mode is `classes` (a class runs on one thread; classes run in parallel). Isolation that makes this safe: one browser per thread, unique data, per-thread clean-ups, immutable configuration, a stateless API client, a connection per query, and assertions that ignore other tests' data. Measured: full suite ~186 s serial, ~132 s with 2 threads, ~118 s with 4. Details: [parallel-execution.md](parallel-execution.md).
+**How** tests run comes from configuration: `ExecutionSettingsListener` applies `parallel` and `threads` to whichever suite runs. The supported mode is `classes` (a class runs on one thread; classes run in parallel). Isolation that makes this safe: one browser per thread, unique data, per-thread clean-ups, immutable configuration, a stateless API client, a connection per query, and assertions that ignore other tests' data. Measured (169 tests, clean clone): full suite ~242 s serial, ~171 s with 2 threads, ~148 s with 4. Details: [parallel-execution.md](parallel-execution.md).
 
 ### 14.3 Retries
 

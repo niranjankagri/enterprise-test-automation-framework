@@ -15,13 +15,13 @@ Parallel mode and threads come from configuration (`parallel`, `threads`; also `
 
 | Mode | Wall time (Maven) | Tests |
 |---|---|---|
-| serial (`-Dparallel=none`) | ~186 s | 154* passed |
-| `classes`, 2 threads | ~132 s | 158 passed |
-| `classes`, 4 threads | ~118 s | 158 passed |
+| serial (`-Dparallel=none`) | ~242 s | 169 passed |
+| `classes`, 2 threads | ~171 s | 169 passed |
+| `classes`, 4 threads | ~148 s | 169 passed |
 
-\* before the 4 execution-engine unit tests existed.
+Measured from a clean clone on a laptop (Chrome, headless), 2026-10-07; Maven start-up and compilation included.
 
-The gain flattens at 4 threads because parallelism is per class and the largest data-driven classes (customer management with 8 CSV cases, the 8-product catalogue) set the critical path. Splitting those classes, or a Grid with more browsers (Milestone 9), shortens it further.
+The gain flattens at 4 threads because parallelism is per class and the largest data-driven classes (customer management with 8 CSV cases, the 8-product catalogue) set the critical path. Splitting those classes, or more Grid capacity ([grid.md](grid.md)), shortens it further.
 
 ## Why it is safe
 

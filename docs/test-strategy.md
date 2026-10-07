@@ -13,10 +13,12 @@
 | Unit (framework) | configuration rules, data generation, CSV/JSON readers, retry classification, secret masking, log components | `unit` | 32 | every build (quality gate) |
 | Platform | real browsers start with the configured settings, one per thread; screenshots | `platform` | 8 | full suite |
 | API | every endpoint and method, status codes, headers, payloads, schemas, authentication, authorization, validation, business rules, correlation id | `api` | 57 | main, nightly |
-| Database | schema, catalogue rows, parameter binding, assertions | `db` | 13 | nightly, integration |
+| Database | schema, catalogue rows, parameter binding, assertions | `db` (`DatabaseLayerTest`; integration tests also carry `db`, 22 in the group) | 13 | nightly, integration |
 | Integration | API → DB (stored values, transactions, hashing); API → DB → UI and UI → API → DB | `integration` | 9 | nightly |
 | UI | sign-in, navigation, customer management, catalogue, checkout, roles | `ui` | 53 | main, nightly |
 | E2E | business journeys (order placement, cancellation) | `e2e` | 5 | nightly |
+
+Tests can belong to more than one group, so the rows overlap; the full suite runs 169 tests (verified from a clean clone).
 
 Most behaviour is covered at the API level (fast, precise); the UI covers what only the UI can show (forms, field errors, role-based controls, cart behaviour) and a few journeys. Cross-layer tests prove that the layers agree.
 

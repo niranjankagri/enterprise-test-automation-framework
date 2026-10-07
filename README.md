@@ -134,7 +134,7 @@ Invalid values stop the run at start-up with the list of valid ones.
 
 ## Parallel execution
 
-`mvn test -Dthreads=4`. One browser per thread, unique data, per-thread clean-up and logs. Full suite: ~186 s serial, ~132 s with 2 threads, ~118 s with 4. Details: [docs/parallel-execution.md](docs/parallel-execution.md).
+`mvn test -Dthreads=4`. One browser per thread, unique data, per-thread clean-up and logs. Full suite (169 tests, clean clone): ~242 s serial, ~171 s with 2 threads, ~148 s with 4. Details: [docs/parallel-execution.md](docs/parallel-execution.md).
 
 ## Retry strategy
 
@@ -187,7 +187,7 @@ Compilation without warnings (CI), Checkstyle (no sleeps, no implicit waits, no 
 
 ## Security
 
-No credentials in code or Git (scan of all files and history), secrets from environment/CI only, `.env` ignored and `.env.example` provided, one masking utility (`SecretMasker`) for passwords, tokens, client secrets, API keys, cookies and URL credentials in every log line, report attachment, failure message, test parameter, the run metadata and `toString()`; the application stores salted password hashes, which a test verifies.
+No real credentials in code or Git (scan of all files and the full history); the only passwords in the repository are the public default demo-account passwords of the self-hosted demo app (`local`/`qa`, documented, overridable), while `staging` requires them from the environment; secrets from environment/CI only, `.env` ignored and `.env.example` provided, one masking utility (`SecretMasker`) for passwords, tokens, client secrets, API keys, cookies and URL credentials in every log line, report attachment, failure message, test parameter, the run metadata and `toString()`; the application stores salted password hashes, which a test verifies.
 
 ## Running tests
 
@@ -232,7 +232,8 @@ Test pyramid with the bulk at API level, UI for what only the UI shows, cross-la
 - `parallel=methods` needs `ThreadLocal` fields in a few test classes; `classes` is the supported mode.
 - The application under test uses an in-memory H2 database and demo-grade security (salted SHA-256, in-memory tokens); it exists to be tested, not to be deployed.
 - Allure steps are user-action level; there are no business-level step names on page methods yet.
-- Dependency review needs the repository's Dependency graph setting enabled.
+- API-only tests can only deactivate the products they create (the API keeps products for order history), so repeated runs against a long-lived environment accumulate inactive `TST-` products; assertions ignore them, and tests with database access hard-delete theirs ([ADR-009](docs/adr/ADR-009-every-test-owns-its-data.md)).
+- Surefire is held on 3.5.x: 3.6 removed TestNG suite-file support, which the suites rely on.
 
 ## Future enhancements
 

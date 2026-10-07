@@ -8,7 +8,7 @@ npx allure-commandline serve automation/target/allure-results         # build an
 npx allure-commandline generate automation/target/allure-results -o automation/target/allure-report --clean
 ```
 
-Requires Node.js (for `npx`) and Java. CI publishes the generated report as a build artifact (Milestone 9).
+Requires Node.js (for `npx`) and Java. CI publishes the generated report as the `allure-report` build artifact of every pipeline run ([ci-cd.md](ci-cd.md)).
 
 ## What a failed test answers
 
