@@ -231,7 +231,6 @@ Test pyramid with the bulk at API level, UI for what only the UI shows, cross-la
 ## Known limitations
 
 - Cloud device farms are not integrated (see Cloud execution).
-- `parallel=methods` needs `ThreadLocal` fields in a few test classes; `classes` is the supported mode.
 - The application under test uses an in-memory H2 database and demo-grade security (salted SHA-256, in-memory tokens); it exists to be tested, not to be deployed.
 - Allure steps are user-action level; there are no business-level step names on page methods yet.
 - API-only tests can only deactivate the products they create (the API keeps products for order history), so repeated runs against a long-lived environment accumulate inactive `TST-` products; assertions ignore them, and tests with database access hard-delete theirs ([ADR-009](docs/adr/ADR-009-every-test-owns-its-data.md)).

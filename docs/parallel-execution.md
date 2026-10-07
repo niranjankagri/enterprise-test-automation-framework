@@ -36,9 +36,16 @@ The gain flattens at 4 threads because parallelism is per class and the largest 
 | Assertions on shared lists | check only the seeded catalogue (`ProductPage.catalogueRows()` ignores `TST-` products) or the test's own rows; never "the 5 most recent orders" |
 | Logs | every line carries the thread, the test name (`%X{test}` via `TestLogContextListener`) and the component (`[API]`, `[UI]`, `[DB]`...) |
 
-## Why `classes`, not `methods`
+## `classes` (default) and `methods`
 
-Some test classes keep per-test state in fields set in `@BeforeMethod` (`OrderApiTest`'s customer and products, `PurchaseJourneyTest`'s buyer). With `parallel=classes` each class runs on one thread, so those fields are safe. `parallel=methods` would make several threads share one instance; it would need `ThreadLocal` fields first. The mode is a setting, so this can be revisited per suite.
+Both modes are supported. With `parallel=methods` several threads run tests of the same class instance at the same time, so per-test state cannot live in plain fields: the two classes that set state in `@BeforeMethod` (`OrderApiTest`'s customer and products, `PurchaseJourneyTest`'s buyer) keep it in `ThreadLocal`s, which works because TestNG runs a `@BeforeMethod` on its test's thread. Shared fields set once in `@BeforeClass` (`ShopDatabase`) are read-only and safe in both modes.
+
+| Mode, 4 threads | Full suite, same session (2026-10-07) |
+|---|---|
+| `methods` | 169/169 twice (~187 s, ~270 s) |
+| `classes` | 169/169 (~192 s) |
+
+`methods` gave no measurable gain here (timings vary with machine load, and every UI test starts its own browser in either mode), so `classes` stays the default: fewer threads touch one class's data at once, which keeps failures easier to read. Switch per run with `-Dparallel=methods`.
 
 ## Retry strategy
 
