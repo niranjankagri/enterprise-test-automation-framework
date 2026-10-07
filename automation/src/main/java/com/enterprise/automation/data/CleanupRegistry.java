@@ -1,5 +1,6 @@
 package com.enterprise.automation.data;
 
+import com.enterprise.automation.reporting.Report;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import org.slf4j.Logger;
@@ -48,9 +49,17 @@ public final class CleanupRegistry {
             // Newest first: e.g. an order is removed before the customer it belongs to
             Action action = actions.pop();
             try {
-                action.cleanup().run();
+                // A report step per clean-up: a failure shows as a broken step under "Tear down"
+                Report.step("Clean up: " + action.description(), () -> {
+                    try {
+                        action.cleanup().run();
+                    } catch (Exception e) {
+                        // Checked exceptions cannot leave a Runnable; the step still records the cause
+                        throw new IllegalStateException(e.getMessage(), e);
+                    }
+                });
                 LOG.debug("Cleaned up: {}", action.description());
-            } catch (Exception | AssertionError e) {
+            } catch (RuntimeException | AssertionError e) {
                 // AssertionError too: clean-ups reuse framework helpers that assert (expectStatus)
                 failures++;
                 LOG.warn("Clean-up failed ({}): {}", action.description(), e.toString());
