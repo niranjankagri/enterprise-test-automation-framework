@@ -27,6 +27,7 @@ public final class UserApi {
     // Creates accounts with salted password hashes
     private final AuthService auth;
 
+    /** Users are stored in this database; auth hashes their passwords. */
     public UserApi(Database database, AuthService auth) {
         this.database = database;
         this.auth = auth;

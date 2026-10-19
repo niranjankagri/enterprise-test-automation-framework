@@ -25,6 +25,7 @@ public final class CustomerApi {
 
     private final Database database;
 
+    /** Handlers read and write through this database. */
     public CustomerApi(Database database) {
         this.database = database;
     }

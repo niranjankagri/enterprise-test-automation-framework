@@ -224,6 +224,7 @@ const App = (() => {
   /* ---------- cart (kept in the browser session) ---------- */
   // Cart lines: [{productId, sku, name, price, quantity}]
   const cart = () => { try { return JSON.parse(sessionStorage.getItem(CART_KEY)) || []; } catch { return []; } };
+  /** Stores the cart in sessionStorage and updates the count in the header. */
   function saveCart(items) {
     sessionStorage.setItem(CART_KEY, JSON.stringify(items));
     updateCartCount();

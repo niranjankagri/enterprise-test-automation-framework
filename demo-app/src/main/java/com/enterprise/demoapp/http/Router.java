@@ -57,6 +57,10 @@ public final class Router implements HttpHandler {
     // Artificial delay per API call, so the UI behaves like a real (slower) backend
     private final long latencyMillis;
 
+    /**
+     * authenticator checks tokens; latencyMillis delays every API answer (0 normally), to test waits against a slow
+     * server.
+     */
     public Router(Authenticator authenticator, long latencyMillis) {
         // Keep the token checker and the latency setting for every request
         this.authenticator = authenticator;
@@ -70,6 +74,10 @@ public final class Router implements HttpHandler {
         return this;
     }
 
+    /**
+     * Handles one API request: request id, optional latency, route lookup, authorisation, the handler, and errors
+     * turned into JSON with the right status (404 unknown path, 405 wrong method).
+     */
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         // An id per request: returned as a header and written to the log, so a client-side failure
@@ -228,6 +236,7 @@ public final class Router implements HttpHandler {
         // Placeholder names in template order, e.g. [id]
         private final List<String> names = new ArrayList<>();
 
+        /** Compiles the path template ("/api/customers/{id}") into a regex and remembers the parameter names. */
         Route(String method, String template, Access access, Function<Request, Response> handler) {
             this.method = method;
             this.access = access;

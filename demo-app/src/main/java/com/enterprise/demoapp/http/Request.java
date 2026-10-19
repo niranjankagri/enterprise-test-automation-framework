@@ -23,6 +23,7 @@ public final class Request {
     private String username;
     private String role;
 
+    /** Created by the router once a route matched; pathParams are the {name} parts of the path. */
     Request(HttpExchange exchange, Map<String, String> pathParams) {
         this.exchange = exchange;
         this.pathParams = pathParams;

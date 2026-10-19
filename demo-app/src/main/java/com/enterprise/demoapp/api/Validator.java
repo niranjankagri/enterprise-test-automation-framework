@@ -28,6 +28,7 @@ final class Validator {
     // Field name -> first error message; insertion order = order of the checks
     private final Map<String, String> errors = new LinkedHashMap<>();
 
+    /** partial = true for PATCH: missing fields are allowed, present ones must still be valid. */
     Validator(JsonNode body, boolean partial) {
         this.body = body;
         this.partial = partial;

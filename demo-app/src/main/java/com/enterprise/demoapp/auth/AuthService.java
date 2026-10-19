@@ -41,6 +41,7 @@ public final class AuthService {
     // Cryptographically strong randomness for salts
     private final SecureRandom random = new SecureRandom();
 
+    /** Users and tokens live in this database. */
     public AuthService(Database database) {
         this.database = database;
     }

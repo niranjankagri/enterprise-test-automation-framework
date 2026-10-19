@@ -18,11 +18,13 @@ public class ApiException extends RuntimeException {
     // Field name -> message for validation errors (empty otherwise); transient: not serialized
     private final transient Map<String, String> fieldErrors;
 
+    /** An error without field errors. */
     public ApiException(int status, String message) {
         // No field errors
         this(status, message, Map.of());
     }
 
+    /** An error with one message per invalid field; the response lists them under fieldErrors. */
     public ApiException(int status, String message, Map<String, String> fieldErrors) {
         super(message);
         this.status = status;

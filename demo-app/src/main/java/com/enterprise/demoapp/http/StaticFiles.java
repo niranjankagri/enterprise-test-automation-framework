@@ -18,6 +18,7 @@ public final class StaticFiles implements HttpHandler {
             "json", "application/json; charset=utf-8",
             "svg", "image/svg+xml");
 
+    /** Serves the web UI from the classpath; the site root redirects to the login page. */
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         // try-with-resources closes the exchange in every branch

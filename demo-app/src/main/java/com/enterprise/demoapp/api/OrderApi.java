@@ -34,6 +34,7 @@ public final class OrderApi {
 
     private final Database database;
 
+    /** Handlers read and write through this database. */
     public OrderApi(Database database) {
         this.database = database;
     }

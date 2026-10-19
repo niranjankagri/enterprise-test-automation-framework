@@ -30,6 +30,10 @@ public final class Database implements AutoCloseable {
     // Optional TCP server through which tests read the same database (null when disabled)
     private final Server tcpServer;
 
+    /**
+     * Creates the in-memory H2 database with schema and seed data, kept alive for the whole run. With tcpPort > 0
+     * it also opens an H2 TCP server, so tests can query the database directly; allowRemote lets other hosts connect.
+     */
     public Database(String name, int tcpPort, boolean allowRemote) {
         this.url = "jdbc:h2:mem:" + name + ";DB_CLOSE_DELAY=-1";
         try {

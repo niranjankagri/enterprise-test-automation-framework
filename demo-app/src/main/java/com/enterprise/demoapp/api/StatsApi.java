@@ -13,10 +13,15 @@ public final class StatsApi {
 
     private final Database database;
 
+    /** Handlers read and write through this database. */
     public StatsApi(Database database) {
         this.database = database;
     }
 
+    /**
+     * {@code GET /api/stats}: number of customers, active products and orders, and revenue (orders that are not
+     * cancelled), read in one query.
+     */
     public Response get(Request request) {
         return Sql.run(database, c -> {
             Map<String, Object> stats = new LinkedHashMap<>();

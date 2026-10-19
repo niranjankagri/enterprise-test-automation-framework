@@ -23,6 +23,7 @@ public final class ProductApi {
 
     private final Database database;
 
+    /** Handlers read and write through this database. */
     public ProductApi(Database database) {
         this.database = database;
     }

@@ -86,12 +86,17 @@ public final class DemoApp implements AutoCloseable {
     // The in-memory database (and its TCP server)
     private final Database database;
 
+    /** Use start(options) or main(). */
     private DemoApp(HttpServer server, ExecutorService executor, Database database) {
         this.server = server;
         this.executor = executor;
         this.database = database;
     }
 
+    /**
+     * Starts ShopEase Admin from the command line: defaults and environment variables, overridden by --name value
+     * pairs.
+     */
     public static void main(String[] args) {
         // Defaults and environment variables first; command-line options override them
         Options options = Options.fromEnvironment();
@@ -187,6 +192,7 @@ public final class DemoApp implements AutoCloseable {
         return server.getAddress().getPort();
     }
 
+    /** Stops the server at once, then the worker threads, then the database. */
     @Override
     public void close() {
         // Stop at once (0 s grace), then the worker threads, then the database
