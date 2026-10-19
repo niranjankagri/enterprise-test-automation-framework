@@ -17,6 +17,10 @@ public class FailureDiagnosticsListener implements ITestListener {
 
     private static final Logger LOG = LoggerFactory.getLogger(FailureDiagnosticsListener.class);
 
+    /**
+     * Logs one block of facts about the failure (test, environment, browser, URL, error) that stays together in a
+     * parallel log.
+     */
     @Override
     public void onTestFailure(ITestResult result) {
         TestConfig config = ConfigManager.config();

@@ -11,6 +11,7 @@ package com.enterprise.automation.config;
  */
 public record Credentials(String username, String password) {
 
+    /** Hides the password: a toString can end up in logs and reports. */
     @Override
     public String toString() {
         // Overrides the record's generated toString, which would print the password

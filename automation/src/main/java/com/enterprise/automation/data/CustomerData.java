@@ -22,18 +22,22 @@ public record CustomerData(String firstName, String lastName, String email, Stri
         return new CustomerData(value, lastName, email, phone, city);
     }
 
+    /** A copy with another last name. */
     public CustomerData withLastName(String value) {
         return new CustomerData(firstName, value, email, phone, city);
     }
 
+    /** A copy with another email address. */
     public CustomerData withEmail(String value) {
         return new CustomerData(firstName, lastName, value, phone, city);
     }
 
+    /** A copy with another phone number (null for none). */
     public CustomerData withPhone(String value) {
         return new CustomerData(firstName, lastName, email, value, city);
     }
 
+    /** A copy with another city. */
     public CustomerData withCity(String value) {
         return new CustomerData(firstName, lastName, email, phone, value);
     }

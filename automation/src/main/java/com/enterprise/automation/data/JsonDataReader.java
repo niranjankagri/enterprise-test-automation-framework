@@ -15,6 +15,7 @@ public final class JsonDataReader {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    /** Static helpers only: no instances. */
     private JsonDataReader() {
     }
 

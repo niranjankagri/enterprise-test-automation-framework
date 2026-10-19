@@ -15,6 +15,7 @@ public final class ShopDatabase {
     // Runs the (parameterized) SQL below
     private final QueryExecutor sql;
 
+    /** All queries go through this executor (report steps, evidence, masking). */
     public ShopDatabase(QueryExecutor sql) {
         this.sql = sql;
     }

@@ -26,6 +26,7 @@ public class TestLogContextListener implements ITestListener, IInvokedMethodList
     // The test name that was in the MDC before a set-up/clean-up method replaced it (per thread)
     private static final ThreadLocal<String> OUTER_NAME = new ThreadLocal<>();
 
+    /** Tags this thread's log lines with the test name and logs START with the parameters. */
     @Override
     public void onTestStart(ITestResult result) {
         // MDC is per thread: from here on, every log line of this thread carries the test name
@@ -41,12 +42,14 @@ public class TestLogContextListener implements ITestListener, IInvokedMethodList
         MDC.remove(MDC_KEY);
     }
 
+    /** Logs FAIL with the duration and the error, then removes the tag. */
     @Override
     public void onTestFailure(ITestResult result) {
         LOG.error("FAIL  {} ({} ms): {}", name(result), duration(result), String.valueOf(result.getThrowable()));
         MDC.remove(MDC_KEY);
     }
 
+    /** Logs SKIP with the reason ("retried" for a retried attempt), then removes the tag. */
     @Override
     public void onTestSkipped(ITestResult result) {
         // A retried attempt is reported as skipped; say so instead of printing the infrastructure error again
@@ -55,6 +58,9 @@ public class TestLogContextListener implements ITestListener, IInvokedMethodList
         MDC.remove(MDC_KEY);
     }
 
+    /**
+     * Tags the log lines of set-up and clean-up methods with their own name, remembering the enclosing test's name.
+     */
     @Override
     public void beforeInvocation(IInvokedMethod method, ITestResult result) {
         // Test methods are tagged in onTestStart; here only set-up/clean-up methods
@@ -65,6 +71,7 @@ public class TestLogContextListener implements ITestListener, IInvokedMethodList
         }
     }
 
+    /** Restores the enclosing test's name (or no name) after a set-up or clean-up method. */
     @Override
     public void afterInvocation(IInvokedMethod method, ITestResult result) {
         if (method.isConfigurationMethod()) {

@@ -16,6 +16,7 @@ public class ToastComponent extends BaseComponent {
     private static final By TOAST = TestId.of("toast");
     private static final By MESSAGE = TestId.of("toast-message");
 
+    /** The toast container of the app. */
     public ToastComponent() {
         // The container is created by the page on the first toast
         super(By.id("toasts"));

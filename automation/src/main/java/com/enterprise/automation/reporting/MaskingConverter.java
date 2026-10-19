@@ -10,6 +10,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
  */
 public class MaskingConverter extends MessageConverter {
 
+    /** The log message with every secret masked. */
     @Override
     public String convert(ILoggingEvent event) {
         return SecretMasker.mask(super.convert(event));

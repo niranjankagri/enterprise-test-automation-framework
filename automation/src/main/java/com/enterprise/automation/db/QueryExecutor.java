@@ -37,10 +37,12 @@ public final class QueryExecutor {
     // Business name of the queries ("customer by email"), or null for ad-hoc SQL
     private final String queryName;
 
+    /** An executor without a query name; see named(). */
     public QueryExecutor(DatabaseConnection connection) {
         this(connection, null);
     }
 
+    /** Used by named() to carry the business name. */
     private QueryExecutor(DatabaseConnection connection, String queryName) {
         this.connection = connection;
         this.queryName = queryName;

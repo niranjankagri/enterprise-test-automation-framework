@@ -10,6 +10,7 @@ import java.util.Map;
 /** {@code /api/auth}: login and logout. */
 public final class AuthService extends BaseService {
 
+    /** Calls go through this client: its base URL, token and request id. */
     public AuthService(ApiClient client) {
         super(client);
     }

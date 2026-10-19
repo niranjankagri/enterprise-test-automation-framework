@@ -15,6 +15,7 @@ public class HeaderComponent extends BaseComponent {
     private static final By CART_LINK = TestId.of("cart-link");
     private static final By LOGOUT = TestId.of("logout-button");
 
+    /** The header of the signed-in app. */
     public HeaderComponent() {
         super(TestId.of("header"));
     }

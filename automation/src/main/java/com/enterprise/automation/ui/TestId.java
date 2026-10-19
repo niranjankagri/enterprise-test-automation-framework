@@ -10,6 +10,7 @@ import org.openqa.selenium.By;
  */
 public final class TestId {
 
+    /** Static helpers only: no instances. */
     private TestId() {
     }
 

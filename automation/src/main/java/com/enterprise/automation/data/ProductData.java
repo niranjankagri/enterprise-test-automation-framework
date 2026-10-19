@@ -27,6 +27,7 @@ public record ProductData(String sku, String name, String category, BigDecimal p
         return new ProductData(sku, name, category, price, value);
     }
 
+    /** A copy with another price. */
     public ProductData withPrice(BigDecimal value) {
         return new ProductData(sku, name, category, value, stock);
     }

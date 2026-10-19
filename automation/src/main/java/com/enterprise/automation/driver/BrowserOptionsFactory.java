@@ -33,6 +33,7 @@ public final class BrowserOptionsFactory {
         };
     }
 
+    /** Chrome: full page load, the shared Chromium arguments and no password manager pop-ups. */
     private static ChromeOptions chrome(TestConfig config) {
         ChromeOptions options = new ChromeOptions();
         // NORMAL: navigation returns when the page has fully loaded (document "complete")
@@ -45,6 +46,7 @@ public final class BrowserOptionsFactory {
         return options;
     }
 
+    /** Edge: the same settings as Chrome (both are Chromium). */
     private static EdgeOptions edge(TestConfig config) {
         // Same settings as Chrome: Edge is Chromium too
         EdgeOptions options = new EdgeOptions();
@@ -73,6 +75,7 @@ public final class BrowserOptionsFactory {
             "profile.password_manager_enabled", false,
             "profile.password_manager_leak_detection", false);
 
+    /** Firefox: full page load and its own headless flag. */
     private static FirefoxOptions firefox(TestConfig config) {
         FirefoxOptions options = new FirefoxOptions();
         options.setPageLoadStrategy(PageLoadStrategy.NORMAL);

@@ -21,6 +21,7 @@ public abstract class BaseComponent {
     // Locator of the component's outer element; children are searched inside it
     protected final By root;
 
+    /** root is the component's outer element; the component uses the thread's browser, waits and actions. */
     protected BaseComponent(By root) {
         this.driver = DriverManager.getDriver();
         this.wait = new WaitUtils(driver, ConfigManager.config().explicitWait());

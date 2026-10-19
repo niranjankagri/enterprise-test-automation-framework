@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
  */
 public final class Report {
 
+    /** Static helpers only: no instances. */
     private Report() {
     }
 
@@ -39,15 +40,18 @@ public final class Report {
         Allure.attachment(name, "text/plain", text == null ? "" : text, AttachmentOptions.withFileExtension(".txt"));
     }
 
+    /** Attaches JSON to the current report step (empty for null). */
     public static void attachJson(String name, String json) {
         Allure.attachment(name, "application/json", json == null ? "" : json, AttachmentOptions.withFileExtension(".json"));
     }
 
+    /** Attaches HTML to the current report step (empty for null). */
     public static void attachHtml(String name, String html) {
         Allure.attachment(name, "text/html", new ByteArrayInputStream(
                 (html == null ? "" : html).getBytes(StandardCharsets.UTF_8)), AttachmentOptions.withFileExtension(".html"));
     }
 
+    /** Attaches a screenshot to the current report step, if one was taken. */
     public static void attachPng(String name, byte[] png) {
         // No screenshot could be taken (browser gone): nothing to attach
         if (png != null) {

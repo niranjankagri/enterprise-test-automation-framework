@@ -11,6 +11,7 @@ import org.testng.annotations.ITestAnnotation;
  */
 public class RetryTransformer implements IAnnotationTransformer {
 
+    /** Gives every @Test the RetryAnalyzer, unless the test already names its own. */
     @Override
     @SuppressWarnings("rawtypes")
     public void transform(ITestAnnotation annotation, Class testClass, Constructor testConstructor, Method testMethod) {

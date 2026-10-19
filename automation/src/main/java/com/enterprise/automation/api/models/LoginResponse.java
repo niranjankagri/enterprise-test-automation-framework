@@ -4,6 +4,7 @@ package com.enterprise.automation.api.models;
 public record LoginResponse(String token, String tokenType, long expiresIn, String username, String fullName,
                             String role) {
 
+    /** Hides the token: a toString can end up in logs and reports. */
     @Override
     public String toString() {
         return "LoginResponse[username=" + username + ", role=" + role + ", tokenType=" + tokenType

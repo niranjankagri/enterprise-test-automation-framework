@@ -34,6 +34,7 @@ public class ReportEvidenceListener implements IInvokedMethodListener, ITestList
             "api", "API", "ui", "UI", "db", "Database", "integration", "Integration",
             "e2e", "End-to-end", "platform", "Framework", "foundation", "Framework");
 
+    /** Starts capturing this test's log lines and labels the test in the report by its layer (API, UI, DB...). */
     @Override
     public void onTestStart(ITestResult result) {
         // Collect this thread's log lines from now on
@@ -50,6 +51,10 @@ public class ReportEvidenceListener implements IInvokedMethodListener, ITestList
         }
     }
 
+    /**
+     * After a test method: masks secret parameters and attaches the evidence (log lines, and for UI tests screenshot,
+     * page source and browser console on failure).
+     */
     @Override
     public void afterInvocation(IInvokedMethod method, ITestResult result) {
         // Also called after @Before/@After methods: only test methods are of interest here

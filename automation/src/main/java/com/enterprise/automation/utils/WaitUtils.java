@@ -30,6 +30,7 @@ public final class WaitUtils {
     // Maximum wait (timeout.explicit.seconds), after which a TimeoutException names the condition
     private final Duration timeout;
 
+    /** Waits use this browser and give up after timeout. */
     public WaitUtils(WebDriver driver, Duration timeout) {
         this.driver = driver;
         this.timeout = timeout;

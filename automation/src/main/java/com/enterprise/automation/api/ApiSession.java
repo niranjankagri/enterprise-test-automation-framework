@@ -30,6 +30,7 @@ public final class ApiSession {
     // Authenticated (or anonymous) client used by every service of this session
     private final ApiClient client;
 
+    /** Use admin(), viewer() or as(credentials). */
     private ApiSession(ApiClient client) {
         this.client = client;
     }

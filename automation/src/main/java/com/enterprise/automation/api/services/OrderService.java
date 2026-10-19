@@ -14,6 +14,7 @@ public final class OrderService extends BaseService {
 
     private static final String PATH = "/orders";
 
+    /** Calls go through this client: its base URL, token and request id. */
     public OrderService(ApiClient client) {
         super(client);
     }

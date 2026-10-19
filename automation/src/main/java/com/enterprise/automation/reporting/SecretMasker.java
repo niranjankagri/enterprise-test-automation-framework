@@ -42,6 +42,7 @@ public final class SecretMasker {
     // scheme://user:password@host
     private static final Pattern URL_PASSWORD = Pattern.compile("(://[^/\\s:@]+:)[^@\\s/]+(@)");
 
+    /** Static helpers only: no instances. */
     private SecretMasker() {
     }
 

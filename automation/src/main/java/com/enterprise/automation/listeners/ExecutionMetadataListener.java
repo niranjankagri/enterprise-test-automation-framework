@@ -30,6 +30,7 @@ public class ExecutionMetadataListener implements ISuiteListener {
     // Suite start, for the duration
     private Instant start;
 
+    /** Logs the run's metadata (environment, browser, versions) before any test output and starts the clock. */
     @Override
     public void onStart(ISuite suite) {
         start = Instant.now();
@@ -37,6 +38,7 @@ public class ExecutionMetadataListener implements ISuiteListener {
         LOG.info("Run metadata: {}", ExecutionMetadata.collect());
     }
 
+    /** Adds up passed, failed and skipped over the suite and writes the run summary with its duration. */
     @Override
     public void onFinish(ISuite suite) {
         // Add up the results of every <test> in the suite

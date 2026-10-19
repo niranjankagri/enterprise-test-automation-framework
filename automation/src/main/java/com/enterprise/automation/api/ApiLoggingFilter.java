@@ -20,6 +20,10 @@ public final class ApiLoggingFilter implements Filter {
 
     private static final Logger LOG = LoggerFactory.getLogger(ApiLoggingFilter.class);
 
+    /**
+     * Logs every call with its request id, status and duration, so a failing test's log shows the API traffic that
+     * led to it.
+     */
     @Override
     public Response filter(FilterableRequestSpecification request, FilterableResponseSpecification responseSpec,
                            FilterContext context) {

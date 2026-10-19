@@ -42,6 +42,7 @@ public enum ConfigKey {
     // Dotted name used in files and -D options
     private final String property;
 
+    /** property is the dotted name used in properties files and -D options. */
     ConfigKey(String property) {
         this.property = property;
     }

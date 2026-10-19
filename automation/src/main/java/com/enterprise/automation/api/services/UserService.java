@@ -13,6 +13,7 @@ public final class UserService extends BaseService {
 
     private static final String PATH = "/users";
 
+    /** Calls go through this client: its base URL, token and request id. */
     public UserService(ApiClient client) {
         super(client);
     }

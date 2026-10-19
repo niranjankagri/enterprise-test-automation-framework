@@ -20,6 +20,7 @@ import java.util.Optional;
  */
 public final class DatabaseAssertions {
 
+    /** Static helpers only: no instances. */
     private DatabaseAssertions() {
     }
 
@@ -30,6 +31,7 @@ public final class DatabaseAssertions {
         return new RowAssert(row.get(), description);
     }
 
+    /** Fails if the row exists, for example after a delete that must have removed it. */
     public static void assertNoRow(Optional<Map<String, Object>> row, String description) {
         assertThat(row).as("%s must not exist in the database", description).isEmpty();
     }
@@ -41,11 +43,16 @@ public final class DatabaseAssertions {
         private final Map<String, Object> row;
         private final String description;
 
+        /** Created by assertRow() once the row is known to exist. */
         private RowAssert(Map<String, Object> row, String description) {
             this.row = row;
             this.description = description;
         }
 
+        /**
+         * Checks one column; numbers are compared by value, and a misspelled column name fails clearly. Returns this
+         * for chaining.
+         */
         public RowAssert hasValue(String column, Object expected) {
             // A typo in the column name fails clearly instead of comparing against null
             assertThat(row).as("%s has a column '%s'", description, column).containsKey(column);

@@ -33,6 +33,7 @@ public final class ApiClient {
     // Fixed correlation id, or null for a new one per call (the normal case)
     private final String requestId;
 
+    /** Use anonymous() or a signed-in session; every client keeps one request id for the calls of one test. */
     private ApiClient(URI baseUri, String token, String requestId) {
         this.baseUri = baseUri;
         this.token = token;
@@ -65,18 +66,22 @@ public final class ApiClient {
         return request().queryParams(queryParams).get(path);
     }
 
+    /** POST with the body serialised as JSON. */
     public Response post(String path, Object body) {
         return withBody(body).post(path);
     }
 
+    /** PUT with the body serialised as JSON. */
     public Response put(String path, Object body) {
         return withBody(body).put(path);
     }
 
+    /** PATCH with the body serialised as JSON. */
     public Response patch(String path, Object body) {
         return withBody(body).patch(path);
     }
 
+    /** DELETE without a body. */
     public Response delete(String path) {
         return request().delete(path);
     }

@@ -23,6 +23,7 @@ public final class LogComponent {
             "ScreenshotUtils", "UI", "WaitUtils", "UI", "TransientFailures", "TEST");
     private static final String FRAMEWORK = "com.enterprise.automation.";
 
+    /** Static helpers only: no instances. */
     private LogComponent() {
     }
 

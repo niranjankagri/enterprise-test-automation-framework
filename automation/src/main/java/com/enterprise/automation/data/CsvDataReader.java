@@ -21,6 +21,7 @@ import java.util.Map;
  */
 public final class CsvDataReader {
 
+    /** Static helpers only: no instances. */
     private CsvDataReader() {
     }
 

@@ -16,6 +16,7 @@ public final class CustomerService extends BaseService {
 
     private static final String PATH = "/customers";
 
+    /** Calls go through this client: its base URL, token and request id. */
     public CustomerService(ApiClient client) {
         super(client);
     }

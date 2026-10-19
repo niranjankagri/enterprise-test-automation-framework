@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
  */
 public final class ReportingApiFilter implements Filter {
 
+    /** Turns every call into an Allure step ("POST /customers") with the masked request and response attached. */
     @Override
     public Response filter(FilterableRequestSpecification request, FilterableResponseSpecification responseSpec,
                            FilterContext context) {

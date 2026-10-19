@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
  */
 public final class AllureRunFiles {
 
+    /** Static helpers only: no instances. */
     private AllureRunFiles() {
     }
 

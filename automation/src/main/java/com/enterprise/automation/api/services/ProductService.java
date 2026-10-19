@@ -15,6 +15,7 @@ public final class ProductService extends BaseService {
 
     private static final String PATH = "/products";
 
+    /** Calls go through this client: its base URL, token and request id. */
     public ProductService(ApiClient client) {
         super(client);
     }

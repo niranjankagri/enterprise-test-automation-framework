@@ -21,6 +21,7 @@ public class TableComponent extends BaseComponent {
     private static final By BODY_ROWS = By.cssSelector("tbody tr");
     private static final By EMPTY_ROW = By.cssSelector("tbody tr[data-testid='empty-row']");
 
+    /** root is the table element of the page that uses it. */
     public TableComponent(By root) {
         super(root);
     }

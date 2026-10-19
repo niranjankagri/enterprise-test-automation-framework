@@ -32,6 +32,7 @@ public final class ConfigManager {
         private static final TestConfig CONFIG = loadFromSystem();
     }
 
+    /** Loads the configuration from the real system properties and environment variables of this JVM. */
     private static TestConfig loadFromSystem() {
         // System.getProperties() is a Properties (Object keys/values): copy it into a String map
         Map<String, String> systemProperties = new HashMap<>();

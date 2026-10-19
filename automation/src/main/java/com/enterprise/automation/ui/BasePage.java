@@ -22,6 +22,7 @@ public abstract class BasePage {
     // Clicks, typing, reading: each waits first and becomes a report step
     protected final ElementActions actions;
 
+    /** Every page uses the thread's browser, the configured wait and the shared actions. */
     protected BasePage() {
         // Pages are created freely in tests (new CustomerPage()); they find the browser themselves
         this.driver = DriverManager.getDriver();

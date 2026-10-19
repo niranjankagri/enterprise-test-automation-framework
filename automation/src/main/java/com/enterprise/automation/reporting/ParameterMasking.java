@@ -10,6 +10,7 @@ import java.lang.reflect.Parameter;
  */
 public final class ParameterMasking {
 
+    /** Static helpers only: no instances. */
     private ParameterMasking() {
     }
 

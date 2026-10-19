@@ -10,6 +10,7 @@ package com.enterprise.automation.config;
  */
 public record DatabaseConfig(String url, String username, String password) {
 
+    /** Hides the password: a toString can end up in logs and reports. */
     @Override
     public String toString() {
         // URL and user help debugging; the password never appears

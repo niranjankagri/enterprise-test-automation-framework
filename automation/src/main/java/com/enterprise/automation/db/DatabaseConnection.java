@@ -19,6 +19,7 @@ public final class DatabaseConnection {
     // URL, user and password of the environment's database
     private final DatabaseConfig config;
 
+    /** Connections are opened per query from this configuration. */
     public DatabaseConnection(DatabaseConfig config) {
         this.config = config;
     }

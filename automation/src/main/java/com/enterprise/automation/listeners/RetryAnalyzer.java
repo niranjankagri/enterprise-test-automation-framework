@@ -23,6 +23,10 @@ public class RetryAnalyzer implements IRetryAnalyzer {
     // Retries used by this test so far (atomic: safe if TestNG calls from another thread)
     private final AtomicInteger attempts = new AtomicInteger();
 
+    /**
+     * Retries only infrastructure failures (lost session, refused connection), up to the configured count; assertion
+     * failures are never retried.
+     */
     @Override
     public boolean retry(ITestResult result) {
         Throwable failure = result.getThrowable();

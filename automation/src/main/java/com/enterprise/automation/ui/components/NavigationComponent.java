@@ -15,6 +15,7 @@ public class NavigationComponent extends BaseComponent {
     // The highlighted entry has the CSS class "active"
     private static final By ACTIVE = By.cssSelector("a.active");
 
+    /** The side navigation of the signed-in app. */
     public NavigationComponent() {
         super(TestId.of("navigation"));
     }
@@ -26,21 +27,25 @@ public class NavigationComponent extends BaseComponent {
         return new DashboardPage().waitUntilLoaded();
     }
 
+    /** Opens Customers and waits until its data has loaded. */
     public CustomerPage openCustomers() {
         actions.click(TestId.of("nav-customers"));
         return new CustomerPage().waitUntilLoaded();
     }
 
+    /** Opens Products and waits until its data has loaded. */
     public ProductPage openProducts() {
         actions.click(TestId.of("nav-products"));
         return new ProductPage().waitUntilLoaded();
     }
 
+    /** Opens Orders and waits until its data has loaded. */
     public OrderPage openOrders() {
         actions.click(TestId.of("nav-orders"));
         return new OrderPage().waitUntilLoaded();
     }
 
+    /** Opens Checkout and waits until its data has loaded. */
     public CheckoutPage openCheckout() {
         actions.click(TestId.of("nav-checkout"));
         return new CheckoutPage().waitUntilLoaded();

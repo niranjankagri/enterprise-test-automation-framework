@@ -19,6 +19,7 @@ public class ExecutionSettingsListener implements IAlterSuiteListener {
 
     private static final Logger LOG = LoggerFactory.getLogger(ExecutionSettingsListener.class);
 
+    /** Applies the configured parallel mode and thread count to the suites before anything runs. */
     @Override
     public void alter(List<XmlSuite> suites) {
         ExecutionSettings settings = ConfigManager.config().runSettings();

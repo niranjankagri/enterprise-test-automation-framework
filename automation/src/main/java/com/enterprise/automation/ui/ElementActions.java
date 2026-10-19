@@ -26,6 +26,7 @@ public final class ElementActions {
     // Explicit waits with the configured timeout
     private final WaitUtils wait;
 
+    /** Actions use this browser and these waits. */
     public ElementActions(WebDriver driver, WaitUtils wait) {
         this.driver = driver;
         this.wait = wait;

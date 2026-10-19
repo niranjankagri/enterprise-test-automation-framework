@@ -20,6 +20,7 @@ abstract class BaseService {
     // The session's client (base URL, token, filters)
     protected final ApiClient client;
 
+    /** Calls go through this client: its base URL, token and request id. */
     protected BaseService(ApiClient client) {
         this.client = client;
     }

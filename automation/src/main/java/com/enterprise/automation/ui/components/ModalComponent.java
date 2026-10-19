@@ -22,6 +22,7 @@ public class ModalComponent extends BaseComponent {
     private static final By ERROR = TestId.of("modal-error");
     private static final By MESSAGE = TestId.of("modal-message");
 
+    /** The one dialog of the app. */
     public ModalComponent() {
         // Only one dialog is open at a time, so the root is always the same
         super(TestId.of("modal"));

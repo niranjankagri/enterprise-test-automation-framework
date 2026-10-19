@@ -23,6 +23,7 @@ public final class BrowserConsole {
     private static final int MAX_ENTRIES = 100;
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm:ss.SSS").withZone(ZoneId.systemDefault());
 
+    /** Static helpers only: no instances. */
     private BrowserConsole() {
     }
 

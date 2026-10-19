@@ -11,6 +11,7 @@ import io.restassured.response.Response;
  */
 public final class ApiAssertions {
 
+    /** Static helpers only: no instances. */
     private ApiAssertions() {
     }
 

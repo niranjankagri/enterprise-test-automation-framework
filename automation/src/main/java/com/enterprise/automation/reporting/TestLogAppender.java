@@ -32,6 +32,7 @@ public class TestLogAppender extends AppenderBase<ILoggingEvent> {
         return buffer == null ? "" : buffer.toString();
     }
 
+    /** Adds a log line to the buffer of the thread's running test, if a capture is active. */
     @Override
     protected void append(ILoggingEvent event) {
         // Logback calls this on the thread that logged, so BUFFER is that thread's (that test's) buffer

@@ -40,6 +40,9 @@ public final class ConfigLoader {
     // Second layer (CI, Docker)
     private final Map<String, String> environmentVariables;
 
+    /**
+     * The loader gets its sources as plain maps, so tests can feed it any combination without touching the real JVM.
+     */
     public ConfigLoader(Map<String, String> systemProperties, Map<String, String> environmentVariables) {
         // Immutable copies: later changes to the caller's maps cannot change this loader
         this.systemProperties = Map.copyOf(systemProperties);
@@ -119,6 +122,10 @@ public final class ConfigLoader {
         // default.properties merged with <env>.properties
         private final Properties files;
 
+        /**
+         * Resolves keys for one environment over the layered properties files, system properties and environment
+         * variables.
+         */
         Resolver(String environment, Properties files) {
             this.environment = environment;
             this.files = files;

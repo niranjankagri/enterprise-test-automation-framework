@@ -19,6 +19,7 @@ public final class FrameworkInfo {
     // Read once, when the class is first used
     private static final Properties PROPERTIES = load();
 
+    /** Static access only: no instances. */
     private FrameworkInfo() {
     }
 

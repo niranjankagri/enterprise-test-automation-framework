@@ -18,6 +18,7 @@ import java.util.concurrent.TimeUnit;
  */
 public final class ExecutionMetadata {
 
+    /** Static helpers only: no instances. */
     private ExecutionMetadata() {
     }
 
