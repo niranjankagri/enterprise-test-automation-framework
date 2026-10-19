@@ -39,6 +39,7 @@ public class CustomerManagementTest extends BaseTest {
         });
     }
 
+    /** A customer created through the form shows a toast and appears with exactly the entered values. */
     @Test(groups = "sanity")
     public void adminCreatesACustomer() {
         // A unique, valid customer and the customer list
@@ -57,6 +58,7 @@ public class CustomerManagementTest extends BaseTest {
                 .containsEntry("Status", "ACTIVE");
     }
 
+    /** A customer without phone and city is saved with empty cells. */
     public void customerWithoutOptionalFieldsIsAccepted() {
         // Phone and city are optional: leave them empty
         CustomerData customer = TestDataFactory.newCustomer().withPhone(null).withCity(null);
@@ -69,6 +71,7 @@ public class CustomerManagementTest extends BaseTest {
         assertThat(row).containsEntry("Phone", "").containsEntry("City", "");
     }
 
+    /** The edit form opens pre-filled, and the saved change shows in the list. */
     public void adminEditsACustomer() {
         CustomerData customer = TestDataFactory.newCustomer();
         CustomerPage customers = createCustomer(loginAsAdmin().navigation().openCustomers(), customer);
@@ -87,6 +90,7 @@ public class CustomerManagementTest extends BaseTest {
         assertThat(customers.waitUntilLoaded().table().row("Email", customer.email())).containsEntry("City", "Lisbon");
     }
 
+    /** The delete confirmation names the customer, and the customer is gone afterwards. */
     public void adminDeletesACustomer() {
         CustomerData customer = TestDataFactory.newCustomer();
         registerRemoval(customer); // safety net if the deletion under test fails
@@ -102,6 +106,7 @@ public class CustomerManagementTest extends BaseTest {
         assertThat(customers.waitUntilLoaded().search(customer.email()).table().isEmpty()).isTrue();
     }
 
+    /** Cancelling a filled form creates nothing. */
     public void cancellingTheFormCreatesNothing() {
         CustomerData customer = TestDataFactory.newCustomer();
         CustomerPage customers = loginAsAdmin().navigation().openCustomers();
@@ -130,6 +135,7 @@ public class CustomerManagementTest extends BaseTest {
         assertThat(form.isDisplayed()).as("form stays open").isTrue();
     }
 
+    /** An email already in use is rejected in the form. */
     public void duplicateEmailIsRejected() {
         // A new customer, but with the email of a seeded one
         CustomerData duplicate = TestDataFactory.newCustomer().withEmail("ava.patel@example.com");
@@ -142,6 +148,7 @@ public class CustomerManagementTest extends BaseTest {
         assertThat(form.fieldError("email")).isEqualTo("Email is already in use");
     }
 
+    /** A viewer sees the list but no add, edit or delete controls. */
     @Test(groups = "sanity")
     public void viewerCannotChangeCustomers() {
         CustomerPage customers = loginAsViewer().navigation().openCustomers();

@@ -13,6 +13,7 @@ import org.testng.annotations.Test;
 @Test(groups = {"unit", "security"})
 public class SecretMaskingTest {
 
+    /** Password, token and API key fields in JSON are masked; others stay. */
     public void jsonSecretFieldsAreMasked() {
         String json = "{\"username\":\"admin\",\"password\":\"S3cret!\",\"token\":\"abc123\",\"apiKey\":\"k\"}";
 
@@ -25,10 +26,12 @@ public class SecretMaskingTest {
                 .doesNotContain("S3cret!").doesNotContain("abc123");
     }
 
+    /** A bearer token in a header line is masked. */
     public void bearerTokensAreMasked() {
         assertThat(SecretMasker.mask("Authorization: Bearer eyJhbGciOi.payload.sig")).isEqualTo("Authorization: Bearer ****");
     }
 
+    /** Other secret field names (client secret, refresh token, new password, cookie) are masked too. */
     public void moreSecretFieldNamesAreMasked() {
         String json = "{\"clientSecret\":\"cs1\",\"refresh_token\":\"rt1\",\"newPassword\":\"np1\",\"cookie\":\"c1\"}";
 
@@ -36,12 +39,14 @@ public class SecretMaskingTest {
                 .doesNotContain("c1\"").contains("\"clientSecret\":\"****\"");
     }
 
+    /** key=value and key: value secrets in plain text are masked. */
     public void keyValueSecretsInTextAreMasked() {
         String text = "login with password=S3cret! and client_secret: cs1&api_key=k1";
 
         assertThat(SecretMasker.mask(text)).isEqualTo("login with password=**** and client_secret: ****&api_key=****");
     }
 
+    /** Credential headers are masked completely; other headers stay readable. */
     public void credentialHeadersAreMaskedCompletely() {
         String headers = "Authorization: Basic YWRtaW46cHc=\nCookie: session=abc\nX-Api-Key: k1\nAccept: */*";
 
@@ -52,12 +57,14 @@ public class SecretMaskingTest {
         assertThat(SecretMasker.maskHeader("X-Request-Id", "r1")).isEqualTo("r1");
     }
 
+    /** Passwords inside JDBC URLs are masked. */
     public void credentialsInUrlsAreMasked() {
         assertThat(SecretMasker.mask("jdbc:postgresql://shop:pw1@db:5432/shop")).isEqualTo("jdbc:postgresql://shop:****@db:5432/shop");
         assertThat(SecretMasker.mask("jdbc:h2:tcp://localhost:9092/shop;USER=sa;PASSWORD=pw1"))
                 .isEqualTo("jdbc:h2:tcp://localhost:9092/shop;USER=sa;PASSWORD=****");
     }
 
+    /** Ordinary text, the word token in prose and URLs with ports are not touched. */
     public void ordinaryTextIsUnchanged() {
         String text = "{\"email\":\"ava.patel@example.com\",\"city\":\"Austin\"}";
 
@@ -67,6 +74,7 @@ public class SecretMaskingTest {
         assertThat(SecretMasker.mask("http://localhost:8080/api")).isEqualTo("http://localhost:8080/api");
     }
 
+    /** Objects that hold secrets never print them in toString(). */
     public void objectsWithSecretsMaskThemInToString() {
         assertThat(new Credentials("admin", "S3cret!").toString()).doesNotContain("S3cret!");
         assertThat(new LoginRequest("admin", "S3cret!").toString()).doesNotContain("S3cret!");

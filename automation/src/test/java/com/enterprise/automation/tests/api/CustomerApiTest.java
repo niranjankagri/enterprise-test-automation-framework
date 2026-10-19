@@ -36,6 +36,7 @@ public class CustomerApiTest extends BaseApiTest {
         return created;
     }
 
+    /** POST creates an active customer: 201, the contract, and every field as sent. */
     @Test(groups = {"smoke", "sanity"})
     public void postCreatesACustomer() {
         CustomerData data = TestDataFactory.newCustomer();
@@ -60,6 +61,7 @@ public class CustomerApiTest extends BaseApiTest {
                 .returns("ACTIVE", CustomerResponse::status);
     }
 
+    /** GET returns exactly what POST returned. */
     public void getReturnsTheCustomer() {
         CustomerResponse created = givenCustomer(TestDataFactory.newCustomer());
 
@@ -70,6 +72,7 @@ public class CustomerApiTest extends BaseApiTest {
         assertThat(JsonMapper.fromJson(response.asString(), CustomerResponse.class)).isEqualTo(created);
     }
 
+    /** Search finds a customer by email and by city, ignoring case; an unknown term finds nothing. */
     public void searchFindsByEmailNameAndCity() {
         // A city nobody else has, so a city search can only find this customer
         CustomerData data = TestDataFactory.newCustomer().withCity("Reykjavik-" + System.nanoTime());
@@ -86,6 +89,7 @@ public class CustomerApiTest extends BaseApiTest {
         assertThat(customers().findCustomers("no-such-customer-xyz")).isEmpty();
     }
 
+    /** PUT replaces every field except id and creation time; an omitted phone becomes null. */
     public void putReplacesTheWholeCustomer() {
         CustomerResponse created = givenCustomer(TestDataFactory.newCustomer());
         // Completely different data, without a phone
@@ -103,6 +107,7 @@ public class CustomerApiTest extends BaseApiTest {
         assertThat(updated.createdAt()).isEqualTo(created.createdAt());
     }
 
+    /** PATCH changes only the given field and leaves the others exactly as they were. */
     public void patchChangesOnlyTheGivenFields() {
         CustomerResponse created = givenCustomer(TestDataFactory.newCustomer());
 
@@ -115,6 +120,7 @@ public class CustomerApiTest extends BaseApiTest {
         assertThat(patched).usingRecursiveComparison().ignoringFields("city").isEqualTo(created);
     }
 
+    /** DELETE answers 204 with an empty body, and the customer is gone afterwards. */
     public void deleteRemovesTheCustomer() {
         // No clean-up registered: deleting it is the test
         CustomerResponse created = customers().createCustomer(TestDataFactory.newCustomer());
@@ -128,6 +134,7 @@ public class CustomerApiTest extends BaseApiTest {
                 .isEqualTo("Customer " + created.id() + " not found");
     }
 
+    /** Each invalid value from the CSV gives a 400 with the same field message the UI shows. */
     @Test(dataProvider = "invalidCustomers", dataProviderClass = TestDataProviders.class)
     public void invalidFieldsGive400WithTheFieldMessage(String testCase, String field, String label, String value,
                                                         String expected) {
@@ -143,6 +150,7 @@ public class CustomerApiTest extends BaseApiTest {
         assertThat(error.fieldErrors()).as(testCase).containsEntry(field, expected);
     }
 
+    /** Several invalid fields are all reported in one 400, and nothing else. */
     public void allInvalidFieldsAreReportedTogether() {
         // Two names missing, a bad email and an unknown status in one request
         ErrorResponse error = error(expectStatus(customers().create(Map.of("email", "bad", "status", "UNKNOWN")), 400));
@@ -151,6 +159,7 @@ public class CustomerApiTest extends BaseApiTest {
         assertThat(error.fieldErrors()).containsOnlyKeys("firstName", "lastName", "email", "status");
     }
 
+    /** An email already in use, even in another case, is a 409 on the email field. */
     public void duplicateEmailGives409() {
         CustomerResponse existing = givenCustomer(TestDataFactory.newCustomer());
         // Upper-cased: uniqueness must ignore case
@@ -161,6 +170,7 @@ public class CustomerApiTest extends BaseApiTest {
         assertThat(error.fieldErrors()).containsEntry("email", "Email is already in use");
     }
 
+    /** A customer with orders cannot be deleted (409), so order history stays complete. */
     public void customerWithOrdersCannotBeDeleted() {
         CustomerResponse customer = givenCustomer(TestDataFactory.newCustomer());
         // Give the customer one order (removed again after the test, before the customer)
@@ -173,6 +183,7 @@ public class CustomerApiTest extends BaseApiTest {
         assertThat(error.message()).contains("has orders");
     }
 
+    /** GET, PATCH and DELETE on an unknown id are 404. */
     public void unknownIdsGive404() {
         // GET, PATCH and DELETE on an id that cannot exist
         assertThat(error(expectStatus(customers().get(999_999), 404)).error()).isEqualTo("Not Found");
@@ -180,6 +191,10 @@ public class CustomerApiTest extends BaseApiTest {
         expectStatus(customers().delete(999_999), 404);
     }
 
+    /**
+     * Requests the typed client cannot send (non-numeric id, broken JSON, an array body, an unsupported method) get
+     * 400 or 405 with a clear message, never a 500.
+     */
     public void malformedRequestsGive400Or405() {
         // The raw client sends what the typed services cannot: a non-numeric id, broken JSON,
         // a JSON array instead of an object, and a method the path does not support

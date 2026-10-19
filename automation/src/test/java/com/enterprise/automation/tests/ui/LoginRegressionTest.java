@@ -34,6 +34,7 @@ public class LoginRegressionTest extends BaseTest {
         assertThat(dashboard.header().currentUser()).isEqualTo("Vera Viewer (VIEWER)");
     }
 
+    /** Opening a protected page without a session redirects to the login page. */
     public void protectedPagesRedirectToLoginWithoutASession() {
         // A fresh browser has no session: open a protected page directly
         new CustomerPage().visit();

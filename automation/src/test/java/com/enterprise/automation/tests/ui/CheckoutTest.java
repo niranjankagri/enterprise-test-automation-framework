@@ -16,6 +16,7 @@ import org.testng.annotations.Test;
 @Test(groups = {"ui", "regression"})
 public class CheckoutTest extends BaseTest {
 
+    /** An empty cart shows a zero total and cannot be ordered. */
     public void emptyCartCannotBeOrdered() {
         // A fresh browser session has an empty cart
         CheckoutPage checkout = loginAsAdmin().navigation().openCheckout();
@@ -26,6 +27,7 @@ public class CheckoutTest extends BaseTest {
         assertThat(checkout.canPlaceOrder()).isFalse();
     }
 
+    /** Changing a line's quantity updates the total, which matches the catalogue maths. */
     public void quantitiesDriveTheTotal() {
         // Expected total computed from the reference catalogue (no customer needed for the maths)
         OrderData expected = TestDataFactory.order(null,
@@ -41,6 +43,7 @@ public class CheckoutTest extends BaseTest {
         assertThat(checkout.header().waitForCartCount(expected.itemCount()).cartCount()).isEqualTo(4);
     }
 
+    /** Removing the only line empties the cart and the badge. */
     public void removingTheLastItemEmptiesTheCart() {
         ProductPage products = loginAsAdmin().navigation().openProducts().addToCart("USB-C Dock");
 
@@ -53,6 +56,7 @@ public class CheckoutTest extends BaseTest {
         assertThat(checkout.header().waitForCartCount(0).cartCount()).isZero();
     }
 
+    /** An order without a customer is refused by the page before any API call. */
     public void orderNeedsACustomer() {
         ProductPage products = loginAsAdmin().navigation().openProducts().addToCart("Wireless Mouse");
 
@@ -63,6 +67,7 @@ public class CheckoutTest extends BaseTest {
         assertThat(error).isEqualTo("Please select a customer");
     }
 
+    /** A viewer can fill a cart but not place the order. */
     @Test(groups = "sanity")
     public void viewerCannotPlaceOrders() {
         ProductPage products = loginAsViewer().navigation().openProducts().addToCart("Wireless Mouse");

@@ -26,6 +26,7 @@ public class DatabaseLayerTest {
         db = ShopDatabase.fromConfig();
     }
 
+    /** The database layer connects and sees exactly the application's five tables. */
     @Test(groups = "smoke")
     public void connectsAndReadsTheSchema() {
         // The standard information_schema lists the application's tables (H2 keeps them in PUBLIC)
@@ -37,6 +38,7 @@ public class DatabaseLayerTest {
                 .containsExactly("app_users", "customers", "order_items", "orders", "products");
     }
 
+    /** Each seeded product's row matches the reference data, column by column. */
     @Test(dataProvider = "catalogue", dataProviderClass = TestDataProviders.class)
     public void catalogueRowsMatchTheReferenceData(String sku, ProductData expected) {
         // The stored row of each reference product, column by column
@@ -47,6 +49,9 @@ public class DatabaseLayerTest {
                 .hasValue("active", true);
     }
 
+    /**
+     * SQL injection text is bound as a parameter and matches nothing, proving queries are not built by concatenation.
+     */
     public void parametersAreBoundNotConcatenated() {
         // Classic SQL injection text: concatenated into SQL it would match every row
         String hostile = "x' OR '1'='1";
@@ -56,12 +61,14 @@ public class DatabaseLayerTest {
         assertThat(db.sql().count("SELECT COUNT(*) FROM customers WHERE email = ?", hostile)).isZero();
     }
 
+    /** A single-row query that finds several rows fails instead of picking one. */
     public void queryForOneRejectsSeveralRows() {
         // All products for a "single row" query: a mistake that must not pass silently
         assertThatThrownBy(() -> db.sql().queryForOne("SELECT * FROM products"))
                 .hasMessageContaining("at most one row");
     }
 
+    /** A failed row check names the column and shows the real row. */
     public void assertionFailuresShowTheRow() {
         // A deliberately wrong expectation: the message must name the column and show the real row
         assertThatThrownBy(() -> assertRow(db.productBySku("ACC-3002"), "product ACC-3002").hasValue("name", "Wrong"))
@@ -69,6 +76,7 @@ public class DatabaseLayerTest {
                 .hasMessageContaining("Wireless Mouse");
     }
 
+    /** The seeded catalogue in the database has as many products as the reference file. */
     public void catalogueSizeMatches() {
         // Seeded products only (TST- products come and go with other tests)
         long seeded = db.sql().count("SELECT COUNT(*) FROM products WHERE sku NOT LIKE 'TST-%'");

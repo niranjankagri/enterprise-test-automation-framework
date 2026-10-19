@@ -27,6 +27,7 @@ public class ProductCatalogTest extends BaseTest {
                 .containsEntry("Price", expected.displayPrice());
     }
 
+    /** Each category filter shows exactly its seeded products and no product of another category. */
     @Test(dataProvider = "categories", dataProviderClass = TestDataProviders.class)
     public void categoryFilterShowsExactlyItsProducts(String category, List<String> expectedNames) {
         ProductPage products = loginAsAdmin().navigation().openProducts().filterByCategory(category);
@@ -36,6 +37,7 @@ public class ProductCatalogTest extends BaseTest {
         assertThat(products.table().column("Category")).as("no product of another category").containsOnly(category);
     }
 
+    /** A search without a match shows the empty placeholder and a zero count. */
     public void searchWithoutMatchShowsAnEmptyList() {
         ProductPage products = loginAsAdmin().navigation().openProducts().search("no-such-product-xyz");
 

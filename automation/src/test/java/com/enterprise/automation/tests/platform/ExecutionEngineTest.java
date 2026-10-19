@@ -20,6 +20,10 @@ import org.testng.annotations.Test;
 @Test(groups = "unit")
 public class ExecutionEngineTest {
 
+    /**
+     * Lost sessions, unreachable browsers and refused connections (also as causes) count as transient, so they are
+     * retried.
+     */
     public void infrastructureFailuresAreTransient() {
         assertThat(TransientFailures.isTransient(new SessionNotCreatedException("no node available"))).isTrue();
         assertThat(TransientFailures.isTransient(new NoSuchSessionException("session deleted"))).isTrue();
@@ -31,6 +35,7 @@ public class ExecutionEngineTest {
                 .as("browser renderer stalled at start-up").isTrue();
     }
 
+    /** Assertions, application timeouts and missing elements are real results and never retried. */
     public void realFailuresAreNeverRetried() {
         assertThat(TransientFailures.isTransient(new AssertionError("expected 3 but was 2"))).isFalse();
         assertThat(TransientFailures.isTransient(new TimeoutException("waiting for toast")))
@@ -41,6 +46,7 @@ public class ExecutionEngineTest {
                 .as("an assertion stays an assertion, whatever its cause").isFalse();
     }
 
+    /** Parallel mode, threads and retries have defaults, can be overridden, and invalid values are refused. */
     public void executionSettingsComeFromConfiguration() {
         ExecutionSettings defaults = new ConfigLoader(Map.of(), Map.of()).load().runSettings();
         assertThat(defaults).isEqualTo(new ExecutionSettings("classes", 2, 1));
@@ -55,6 +61,7 @@ public class ExecutionEngineTest {
                 .hasMessageContaining("retry.count");
     }
 
+    /** The run metadata holds the expected keys and no password. */
     public void metadataDescribesTheRunWithoutSecrets() {
         Map<String, String> metadata = ExecutionMetadata.collect();
 

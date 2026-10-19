@@ -23,6 +23,7 @@ public class LoginSmokeTest extends BaseTest {
         assertThat(dashboard.header().currentUser()).isEqualTo("Alex Admin (ADMIN)");
     }
 
+    /** A wrong password shows the API's message and stays on the login page. */
     public void wrongPasswordIsRejected() {
         // A real username with a wrong password
         LoginPage login = openLoginPage().attemptLogin(config().admin().username(), "wrong-password");
@@ -32,6 +33,7 @@ public class LoginSmokeTest extends BaseTest {
         assertThat(login.currentUrl()).contains("/login.html");
     }
 
+    /** Logging out returns to the login page with a confirmation. */
     public void signingOutReturnsToTheLoginPage() {
         // Sign in, then use the header's "Log out"
         LoginPage login = loginAsAdmin().header().logout();

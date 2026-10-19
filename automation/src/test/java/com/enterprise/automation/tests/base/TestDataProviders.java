@@ -22,6 +22,7 @@ import org.testng.annotations.DataProvider;
  */
 public final class TestDataProviders {
 
+    /** Static data providers only: no instances. */
     private TestDataProviders() {
     }
 

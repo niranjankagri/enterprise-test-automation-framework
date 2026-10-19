@@ -23,6 +23,7 @@ public class ConfigLoaderTest {
         return new ConfigLoader(systemProperties, environmentVariables).load();
     }
 
+    /** Without any setting the local environment and its defaults are used. */
     public void localIsTheDefaultEnvironment() {
         TestConfig config = load(Map.of(), Map.of());
 
@@ -38,6 +39,7 @@ public class ConfigLoaderTest {
         });
     }
 
+    /** -Denv=qa loads the qa file; keys it does not set fall back to the defaults. */
     public void envSystemPropertySwitchesTheEnvironmentFile() {
         TestConfig qa = load(Map.of("env", "qa"), Map.of());
 
@@ -48,6 +50,7 @@ public class ConfigLoaderTest {
         assertThat(qa.windowWidth()).as("not set in qa: falls back to default").isEqualTo(1440);
     }
 
+    /** ENV=staging loads the staging file, and secrets come from environment variables. */
     public void envEnvironmentVariableSwitchesTheEnvironmentFile() {
         TestConfig staging = load(Map.of(), Map.of("ENV", "staging",
                 "ADMIN_PASSWORD", "from-ci-secret", "VIEWER_PASSWORD", "from-ci-secret"));
@@ -58,6 +61,7 @@ public class ConfigLoaderTest {
         assertThat(staging.database()).as("no database access unless a pipeline provides DB_URL").isEmpty();
     }
 
+    /** An environment without its secrets stops the run and names the variable to set. */
     public void secretsMissingFromAnEnvironmentFailFast() {
         // Staging commits no passwords: without the secrets the run stops and says which variable to set
         assertThatThrownBy(() -> load(Map.of("env", "staging"), Map.of()))
@@ -65,6 +69,7 @@ public class ConfigLoaderTest {
                 .hasMessageContaining("ADMIN_PASSWORD");
     }
 
+    /** Neither the credentials nor the whole configuration print a password. */
     public void credentialsNeverPrintTheirPassword() {
         TestConfig config = load(Map.of(), Map.of());
 
@@ -72,6 +77,7 @@ public class ConfigLoaderTest {
         assertThat(config.toString()).doesNotContain(config.admin().password());
     }
 
+    /** The precedence: system property over environment variable over file. */
     public void systemPropertyBeatsEnvironmentVariableBeatsFile() {
         // Environment variable over the file, then system property over the environment variable
         TestConfig fromVariable = load(Map.of(), Map.of("BROWSER", "edge"));
@@ -81,6 +87,7 @@ public class ConfigLoaderTest {
         assertThat(fromProperty.browser()).isEqualTo(BrowserType.FIREFOX);
     }
 
+    /** Headless mode and both base URLs can be overridden. */
     public void headlessAndUrlsCanBeOverridden() {
         TestConfig config = load(Map.of("headless", "true", "base.url", "http://shop.test:9000"),
                 Map.of("API_BASE_URL", "http://shop.test:9000/api"));
@@ -90,6 +97,7 @@ public class ConfigLoaderTest {
         assertThat(config.apiBaseUrl()).hasToString("http://shop.test:9000/api");
     }
 
+    /** An unknown environment stops the run with the list of valid ones. */
     public void unknownEnvironmentFailsWithAHint() {
         // "prod" has no file: a typo must stop the run, not silently use defaults
         assertThatThrownBy(() -> load(Map.of("env", "prod"), Map.of()))
@@ -98,6 +106,7 @@ public class ConfigLoaderTest {
                 .hasMessageContaining("-Denv=local|qa|staging");
     }
 
+    /** An unknown browser stops the run with the list of valid ones. */
     public void unknownBrowserListsTheValidOnes() {
         assertThatThrownBy(() -> load(Map.of("browser", "safarii"), Map.of()))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -105,6 +114,7 @@ public class ConfigLoaderTest {
                 .hasMessageContaining("chrome, firefox, edge");
     }
 
+    /** An invalid URL or a non-positive timeout stops the run, naming the key. */
     public void invalidValuesFailFast() {
         assertThatThrownBy(() -> load(Map.of("base.url", "not a url"), Map.of()))
                 .hasMessageContaining("base.url");

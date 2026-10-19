@@ -34,6 +34,7 @@ public class ProductApiTest extends BaseApiTest {
         return created;
     }
 
+    /** Each seeded product matches the reference data and the single-product contract. */
     @Test(dataProvider = "catalogue", dataProviderClass = TestDataProviders.class, groups = "smoke")
     public void catalogueMatchesTheReferenceData(String sku, ProductData expected) {
         // Look the product up by SKU, then fetch it by id to check the single-product contract
@@ -47,6 +48,7 @@ public class ProductApiTest extends BaseApiTest {
         assertThat(product.active()).isTrue();
     }
 
+    /** A new product is stored as sent and found through its category. */
     public void createdProductIsListedInItsCategory() {
         ProductData data = TestDataFactory.newProduct();
 
@@ -59,6 +61,7 @@ public class ProductApiTest extends BaseApiTest {
                 .extracting(ProductResponse::sku).contains(data.sku());
     }
 
+    /** PATCH changes price and stock; a stock of 0 is valid, and the name stays. */
     public void patchUpdatesPriceAndStock() {
         ProductResponse created = givenProduct(TestDataFactory.newProduct());
 
@@ -72,6 +75,7 @@ public class ProductApiTest extends BaseApiTest {
         assertThat(updated.name()).isEqualTo(created.name());
     }
 
+    /** PUT replaces the product; a fresh GET shows the new values. */
     public void putReplacesTheProduct() {
         ProductResponse created = givenProduct(TestDataFactory.newProduct());
         ProductData replacement = TestDataFactory.newProduct();
@@ -84,6 +88,7 @@ public class ProductApiTest extends BaseApiTest {
         assertThat(current.name()).isEqualTo(replacement.name());
     }
 
+    /** DELETE deactivates a product: it stays readable by id for order history but leaves the catalogue. */
     public void deleteDeactivatesInsteadOfRemoving() {
         ProductResponse created = products().createProduct(TestDataFactory.newProduct());
 
@@ -94,6 +99,7 @@ public class ProductApiTest extends BaseApiTest {
         assertThat(products().findProducts(Map.of("search", created.sku()))).as("hidden from the catalogue").isEmpty();
     }
 
+    /** Empty SKU, missing name, negative price and negative stock are each reported in one 400. */
     public void invalidValuesGive400PerField() {
         // Empty SKU, no name, negative price and negative stock in one request
         ErrorResponse error = error(expectStatus(products().create(
@@ -106,6 +112,7 @@ public class ProductApiTest extends BaseApiTest {
                 .containsEntry("stock", "Stock must be a whole number of 0 or more");
     }
 
+    /** A SKU already in use is a 409 on the sku field. */
     public void duplicateSkuGives409() {
         // A valid new product that reuses a seeded SKU
         ProductData duplicate = TestDataFactory.newProduct();

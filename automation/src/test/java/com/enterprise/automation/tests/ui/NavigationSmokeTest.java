@@ -11,6 +11,7 @@ import org.testng.annotations.Test;
 @Test(groups = {"ui", "smoke"})
 public class NavigationSmokeTest extends BaseTest {
 
+    /** Every section opens from the menu with its heading and highlighted entry. */
     public void everySectionOpensFromTheMenu() {
         DashboardPage dashboard = loginAsAdmin();
         // The same menu component is used for every hop (it re-finds its elements on each page)
@@ -33,6 +34,7 @@ public class NavigationSmokeTest extends BaseTest {
         assertThat(menu.openDashboard().heading()).isEqualTo("Dashboard");
     }
 
+    /** The dashboard shows its figures and the recent-orders table with the right columns. */
     public void dashboardShowsTheKeyFigures() {
         DashboardPage dashboard = loginAsAdmin();
 

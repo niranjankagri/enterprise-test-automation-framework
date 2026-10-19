@@ -56,6 +56,10 @@ public class OrderApiTest extends BaseApiTest {
         return admin().orders();
     }
 
+    /**
+     * Every test gets its own customer and two products with known price and stock, cleaned up afterwards in the
+     * right order.
+     */
     @BeforeMethod(alwaysRun = true)
     public void givenACustomerAndProducts() {
         // Own products with known price and stock, so every stock assertion is exact
@@ -84,6 +88,7 @@ public class OrderApiTest extends BaseApiTest {
         return admin().products().getProduct(p.id()).stock();
     }
 
+    /** Placing an order returns 201 with its Location, computes line and order totals, and reserves the stock. */
     @Test(groups = {"smoke", "sanity"})
     public void placingAnOrderComputesTotalsAndReservesStock() {
         // 2 x product (10.50, stock 5) + 1 x otherProduct (4.00, stock 3)
@@ -107,6 +112,7 @@ public class OrderApiTest extends BaseApiTest {
         assertThat(stockOf(otherProduct())).isEqualTo(2);
     }
 
+    /** Orders can be filtered by customer and by status. */
     public void ordersCanBeListedPerCustomerAndStatus() {
         OrderResponse order = placeOrder(OrderRequest.of(customer().id(), item(product().id(), 1)));
 
@@ -117,6 +123,7 @@ public class OrderApiTest extends BaseApiTest {
         assertThat(placed).isEmpty();
     }
 
+    /** Status moves PLACED -> SHIPPED -> DELIVERED; a delivered order cannot be cancelled (409). */
     public void statusFollowsTheAllowedFlow() {
         OrderResponse order = placeOrder(OrderRequest.of(customer().id(), item(product().id(), 1)));
 
@@ -129,6 +136,7 @@ public class OrderApiTest extends BaseApiTest {
         assertThat(error.message()).isEqualTo("Order " + order.id() + " cannot go from DELIVERED to CANCELLED");
     }
 
+    /** Cancelling an order puts its units back in stock. */
     public void cancellingGivesTheStockBack() {
         // Reserve 4 of 5
         OrderResponse order = placeOrder(OrderRequest.of(customer().id(), item(product().id(), 4)));
@@ -140,6 +148,7 @@ public class OrderApiTest extends BaseApiTest {
         assertThat(stockOf(product())).isEqualTo(5);
     }
 
+    /** Ordering more than the stock is a 409 naming the product, and the whole order is rolled back. */
     public void orderingMoreThanTheStockGives409AndChangesNothing() {
         // The first line is fine, the second asks for 6 of 5
         ErrorResponse error = error(expectStatus(orders().create(
@@ -151,6 +160,7 @@ public class OrderApiTest extends BaseApiTest {
         assertThat(orders().ordersOf(customer().id())).isEmpty();
     }
 
+    /** Missing customer, no items and a zero quantity each give a field error; a line is named by its index. */
     public void invalidOrdersGive400PerField() {
         // No customer and no items
         ErrorResponse empty = error(expectStatus(orders().create(new OrderRequest(null, List.of())), 400));
@@ -163,6 +173,7 @@ public class OrderApiTest extends BaseApiTest {
         assertThat(zero.fieldErrors()).containsEntry("items[0].quantity", "Quantity must be at least 1");
     }
 
+    /** An unknown customer or product is 404 and reserves nothing. */
     public void unknownReferencesGive404() {
         // Unknown customer, then unknown product
         expectStatus(orders().create(OrderRequest.of(999_999, item(product().id(), 1))), 404);
@@ -171,6 +182,7 @@ public class OrderApiTest extends BaseApiTest {
         assertThat(stockOf(product())).isEqualTo(5);
     }
 
+    /** An inactive customer cannot order: a business rule (409), not a validation error. */
     public void inactiveCustomerCannotOrder() {
         // Deactivate this test's customer
         admin().customers().update(customer().id(), Map.of("status", "INACTIVE"));
@@ -181,6 +193,7 @@ public class OrderApiTest extends BaseApiTest {
         assertThat(error.message()).isEqualTo("Customer " + customer().id() + " is inactive");
     }
 
+    /** A viewer can read an order but not place one (403). */
     @Test(groups = "sanity")
     public void viewerCanReadOrdersButNotPlaceThem() {
         OrderResponse order = placeOrder(OrderRequest.of(customer().id(), item(product().id(), 1)));

@@ -26,6 +26,7 @@ public class TestDataTest {
     /** Same pattern the application uses to validate emails. */
     private static final String EMAIL = "^[\\w.+-]+@[\\w-]+(\\.[\\w-]+)+$";
 
+    /** 500 customers generated in parallel are all valid and have unique emails. */
     public void generatedCustomersAreValidAndUniqueEvenInParallel() {
         // 500 customers generated on parallel threads; a concurrent set collects the emails
         Set<String> emails = ConcurrentHashMap.newKeySet();
@@ -40,6 +41,7 @@ public class TestDataTest {
         assertThat(emails).hasSize(500);
     }
 
+    /** Generated products and users are valid, and a user never prints the password. */
     public void generatedProductsAndUsersAreValid() {
         ProductData product = TestDataFactory.newProduct();
         assertThat(product.sku()).startsWith("TST-").hasSizeLessThanOrEqualTo(30);
@@ -51,6 +53,7 @@ public class TestDataTest {
         assertThat(user.toString()).doesNotContain(user.password());
     }
 
+    /** The reference catalogue is read from JSON with its prices and display prices. */
     public void catalogueIsReadFromJson() {
         List<ProductData> catalogue = TestDataFactory.catalogue();
 
@@ -61,6 +64,7 @@ public class TestDataTest {
         assertThat(TestDataFactory.catalogueProduct("LAP-1001").displayPrice()).isEqualTo("$1,199.00");
     }
 
+    /** An order's total, display total and item count come from the catalogue prices. */
     public void orderTotalsAreComputedFromTheCatalogue() {
         OrderData order = TestDataFactory.order(TestDataFactory.newCustomer(),
                 TestDataFactory.line("LAP-1001", 2), TestDataFactory.line("ACC-3001", 1));
@@ -70,6 +74,7 @@ public class TestDataTest {
         assertThat(order.itemCount()).isEqualTo(3);
     }
 
+    /** CSV test data is read with headers, comments, quotes and empty values. */
     public void csvIsReadWithHeadersCommentsAndQuotes() {
         List<Map<String, String>> rows = CsvDataReader.read("testdata/invalid-customers.csv");
 
@@ -80,11 +85,13 @@ public class TestDataTest {
                 .satisfies(r -> assertThat(r.get("value")).isEmpty());
     }
 
+    /** A missing file or an unknown SKU fails with its name in the message. */
     public void missingDataFilesFailClearly() {
         assertThatThrownBy(() -> CsvDataReader.read("testdata/nope.csv")).hasMessageContaining("testdata/nope.csv");
         assertThatThrownBy(() -> TestDataFactory.catalogueProduct("XXX-0000")).hasMessageContaining("XXX-0000");
     }
 
+    /** Clean-ups run newest first, and one failing clean-up does not stop the others. */
     public void cleanupRunsNewestFirstAndSurvivesFailures() {
         // Two working clean-ups and two failing ones, registered in this order
         List<String> ran = new ArrayList<>();

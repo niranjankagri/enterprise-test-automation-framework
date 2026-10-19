@@ -53,6 +53,7 @@ public class ApiToDatabaseTest extends BaseApiTest {
         return product;
     }
 
+    /** A customer created through the API is stored with every column exactly as sent. */
     @Test(groups = "sanity")
     public void createdCustomerIsStoredExactlyAsSent() {
         CustomerData data = TestDataFactory.newCustomer();
@@ -70,6 +71,7 @@ public class ApiToDatabaseTest extends BaseApiTest {
                 .hasNonNull("created_at");
     }
 
+    /** PATCH and DELETE through the API change the stored row. */
     public void updatesAndDeletesReachTheDatabase() {
         CustomerResponse created = givenCustomer(TestDataFactory.newCustomer());
 
@@ -82,6 +84,7 @@ public class ApiToDatabaseTest extends BaseApiTest {
         assertNoRow(db.customerById(created.id()), "deleted customer " + created.id());
     }
 
+    /** A placed order is stored with its total and line, and the product's stock drops by the quantity. */
     @Test(groups = "sanity")
     public void placedOrderIsStoredWithItsLinesAndReservesStock() {
         CustomerResponse customer = givenCustomer(TestDataFactory.newCustomer());
@@ -102,6 +105,7 @@ public class ApiToDatabaseTest extends BaseApiTest {
         assertThat(db.stockOf(product.sku())).isEqualTo(7);
     }
 
+    /** Cancelling one order and deleting another both give their units back in the database. */
     public void cancellingAndDeletingOrdersGiveStockBackInTheDatabase() {
         CustomerResponse customer = givenCustomer(TestDataFactory.newCustomer());
         ProductResponse product = givenProduct(4, "5.00");
@@ -122,6 +126,7 @@ public class ApiToDatabaseTest extends BaseApiTest {
         assertThat(db.orderItems(deleted.id())).as("order lines are deleted with the order").isEmpty();
     }
 
+    /** A refused order leaves no order row and no reserved stock behind. */
     public void rejectedOrderLeavesNoTraceInTheDatabase() {
         CustomerResponse customer = givenCustomer(TestDataFactory.newCustomer());
         ProductResponse plenty = givenProduct(50, "1.00");
@@ -135,6 +140,7 @@ public class ApiToDatabaseTest extends BaseApiTest {
         assertThat(db.stockOf(plenty.sku())).as("transaction rolled back").isEqualTo(50);
     }
 
+    /** Two users with the same password must not be stored with the same value: passwords are hashed with a salt. */
     @Test(groups = "security")
     public void passwordsAreStoredHashedAndSalted() {
         // Two different users with the SAME password

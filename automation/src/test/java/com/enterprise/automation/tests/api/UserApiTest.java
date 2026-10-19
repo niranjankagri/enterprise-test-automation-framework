@@ -31,6 +31,7 @@ public class UserApiTest extends BaseApiTest {
         return created;
     }
 
+    /** An admin creates a user who can then sign in with the given role; the password is never returned. */
     public void adminCreatesAUserWhoCanSignInWithTheirRole() {
         UserData user = TestDataFactory.newUser("VIEWER");
 
@@ -48,6 +49,7 @@ public class UserApiTest extends BaseApiTest {
         expectStatus(session.customers().create(Map.of()), 403);
     }
 
+    /** Promoting a user to ADMIN gives a new login access to the admin-only users list. */
     public void promotingAUserGrantsWriteAccess() {
         UserData user = TestDataFactory.newUser("VIEWER");
         UserResponse created = givenUser(user);
@@ -62,6 +64,7 @@ public class UserApiTest extends BaseApiTest {
         expectStatus(session.users().list(), 200);
     }
 
+    /** The users list holds at least the two seeded accounts. */
     public void adminListsUsers() {
         List<?> users = JsonMapper.fromJson(expectStatus(admin().users().list(), 200).asString(), List.class);
 
@@ -69,6 +72,7 @@ public class UserApiTest extends BaseApiTest {
         assertThat(users).hasSizeGreaterThanOrEqualTo(2);
     }
 
+    /** A short password and an unknown role are 400; an existing username is refused too. */
     public void invalidAndDuplicateUsersAreRejected() {
         // Too-short password and a role that does not exist
         ErrorResponse invalid = error(expectStatus(admin().users().create(
@@ -83,6 +87,7 @@ public class UserApiTest extends BaseApiTest {
         assertThat(duplicate.fieldErrors()).containsEntry("username", "Username is already taken");
     }
 
+    /** An admin cannot delete their own account (409): that would lock them out. */
     public void adminCannotDeleteTheirOwnAccount() {
         // The admin's own id, via /users/me
         long ownId = admin().users().currentUser().id();
@@ -93,6 +98,7 @@ public class UserApiTest extends BaseApiTest {
         assertThat(error.message()).isEqualTo("You cannot delete your own account");
     }
 
+    /** A deleted user's credentials no longer work. */
     public void deletedUserCannotSignIn() {
         UserData user = TestDataFactory.newUser("VIEWER");
         // Created and deleted within the test (deleting is what is tested, so no clean-up)

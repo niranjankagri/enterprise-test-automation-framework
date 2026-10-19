@@ -16,6 +16,7 @@ import org.testng.annotations.Test;
 @Test(groups = {"ui", "smoke"})
 public class CatalogSmokeTest extends BaseTest {
 
+    /** Searching for a customer's email leaves exactly that customer with the seeded values. */
     public void customerSearchNarrowsTheList() {
         CustomerPage customers = loginAsAdmin().navigation().openCustomers();
         // How many customers are listed before searching
@@ -34,6 +35,7 @@ public class CatalogSmokeTest extends BaseTest {
         assertThat(customers.resultCount()).isEqualTo("1 customer");
     }
 
+    /** The category filter and the name search each list only matching products. */
     public void productSearchAndCategoryFilter() {
         ProductPage products = loginAsAdmin().navigation().openProducts();
 
@@ -47,6 +49,7 @@ public class CatalogSmokeTest extends BaseTest {
         assertThat(products.table().column("Name")).allSatisfy(n -> assertThat(n).containsIgnoringCase("keyboard"));
     }
 
+    /** Adding products fills the cart: merged quantities, lines and the right total. */
     public void addingProductsFillsTheCart() {
         ProductPage products = loginAsAdmin().navigation().openProducts();
 

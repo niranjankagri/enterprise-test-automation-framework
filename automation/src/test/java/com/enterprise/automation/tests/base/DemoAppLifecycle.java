@@ -24,6 +24,7 @@ public class DemoAppLifecycle implements ISuiteListener {
     // One application per JVM, shared by all suites of the run
     private static DemoApp app;
 
+    /** Starts the demo app before the suite when this environment runs it in-process. */
     @Override
     public void onStart(ISuite suite) {
         startIfNeeded();

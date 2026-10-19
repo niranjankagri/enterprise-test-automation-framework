@@ -9,6 +9,7 @@ import org.testng.annotations.Test;
 @Test(groups = {"unit"})
 public class LogComponentTest {
 
+    /** Framework loggers are tagged with their layer (API, DB, UI, DRIVER, TEST). */
     public void frameworkPackagesMapToTheirLayer() {
         assertThat(LogComponent.of("com.enterprise.automation.api.ApiLoggingFilter")).isEqualTo("API");
         assertThat(LogComponent.of("com.enterprise.automation.db.QueryExecutor")).isEqualTo("DB");
@@ -18,6 +19,7 @@ public class LogComponentTest {
         assertThat(LogComponent.of("com.enterprise.automation.utils.ScreenshotUtils")).isEqualTo("UI");
     }
 
+    /** Application loggers are APP, library loggers LIB, the framework root CORE. */
     public void applicationAndLibrariesAreNamedAsSuch() {
         assertThat(LogComponent.of("com.enterprise.demoapp.http.Router")).isEqualTo("APP");
         assertThat(LogComponent.of("org.openqa.selenium.remote.RemoteWebDriver")).isEqualTo("LIB");

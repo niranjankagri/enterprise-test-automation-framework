@@ -20,6 +20,7 @@ import org.testng.annotations.Test;
 @Test(groups = {"api", "regression"})
 public class AuthApiTest extends BaseApiTest {
 
+    /** Login with the admin credentials returns a Bearer token that matches the login contract. */
     @Test(groups = "smoke")
     public void adminLogsInAndGetsABearerToken() {
         // Log in without any token, with the configured admin credentials
@@ -35,6 +36,10 @@ public class AuthApiTest extends BaseApiTest {
         assertThat(login.expiresIn()).isEqualTo(3600);
     }
 
+    /**
+     * A wrong password and an unknown user get the same 401 message, so the API does not reveal which usernames
+     * exist.
+     */
     public void wrongPasswordGives401WithoutRevealingWhichPartWasWrong() {
         // A known user with a wrong password, and an unknown user
         ErrorResponse wrongPassword = error(expectStatus(
@@ -47,6 +52,7 @@ public class AuthApiTest extends BaseApiTest {
                 .isEqualTo(unknownUser.message());
     }
 
+    /** A login without username and password reports both missing fields in one 400. */
     public void missingCredentialsGive400PerField() {
         // An empty JSON object: no username, no password
         ErrorResponse error = error(expectStatus(anonymous().auth().login(Map.of()), 400));
@@ -56,6 +62,9 @@ public class AuthApiTest extends BaseApiTest {
                 .containsEntry("password", "Password is required");
     }
 
+    /**
+     * The client's X-Request-Id comes back for correlation; an unsafe value is replaced by an id the server makes.
+     */
     public void theClientsRequestIdIsUsedForCorrelation() {
         // ApiClient sends an X-Request-Id with every call; the application logs and returns it
         Response traced = ApiClient.anonymous().withRequestId("trace-auth-0001").get("/customers");
@@ -66,6 +75,7 @@ public class AuthApiTest extends BaseApiTest {
         assertThat(unsafe.getHeader(ApiClient.REQUEST_ID)).matches("[0-9a-f-]{36}");
     }
 
+    /** A protected endpoint without a token is 401, naming the problem and the path. */
     public void requestsWithoutTokenGet401() {
         // A protected endpoint called without Authorization header
         ErrorResponse error = error(expectStatus(anonymous().customers().list(null), 401));
@@ -75,6 +85,7 @@ public class AuthApiTest extends BaseApiTest {
         assertThat(error.path()).isEqualTo("/api/customers");
     }
 
+    /** A token the server never issued is 401. */
     public void invalidTokenGets401() {
         // A well-formed header with a token the server never issued
         ErrorResponse error = error(expectStatus(ApiSession.withToken("not-a-real-token").customers().list(null), 401));
@@ -82,6 +93,7 @@ public class AuthApiTest extends BaseApiTest {
         assertThat(error.message()).isEqualTo("Invalid or expired token");
     }
 
+    /** After logout the same token is rejected. */
     public void loggedOutTokenStopsWorking() {
         // A fresh token of its own (not the cached one other tests use), proven to work
         String token = anonymous().auth().loginAs(config().viewer()).token();
@@ -95,6 +107,7 @@ public class AuthApiTest extends BaseApiTest {
         expectStatus(session.customers().list(null), 401);
     }
 
+    /** The viewer role can read but every write, and the users list, is 403. */
     @Test(groups = "sanity")
     public void viewerCanReadButNotWrite() {
         // Reads are allowed
@@ -109,6 +122,7 @@ public class AuthApiTest extends BaseApiTest {
         expectStatus(viewer().users().list(), 403);
     }
 
+    /** /users/me returns the signed-in user, and the body never contains a password. */
     public void currentUserIsReturnedWithoutPassword() {
         Response me = expectStatus(viewer().users().me(), 200);
 

@@ -38,6 +38,7 @@ public class PurchaseJourneyTest extends BaseTest {
         return BUYER.get();
     }
 
+    /** A new buyer for every test, created through the API and removed afterwards with their orders. */
     @BeforeMethod(alwaysRun = true)
     public void givenABuyer() {
         // Setup through the API: fast, and not part of what this test checks
@@ -53,6 +54,10 @@ public class PurchaseJourneyTest extends BaseTest {
         });
     }
 
+    /**
+     * The whole purchase through the UI: log in, add products to the cart, choose the buyer and place the order, then
+     * check the result.
+     */
     public void adminPlacesAnOrderForACustomer() {
         // The order to place: 1 laptop + 2 mice; its expected total comes from the reference catalogue
         OrderData order = TestDataFactory.order(buyer(),
@@ -97,6 +102,7 @@ public class PurchaseJourneyTest extends BaseTest {
         assertThat(orders.filterByStatus("PLACED").table().column("Order")).contains("#" + orderId);
     }
 
+    /** An order placed through the UI can be cancelled from its detail dialog. */
     public void adminCancelsAnOrder() {
         // Place a one-line order through the UI
         OrderData order = TestDataFactory.order(buyer(), TestDataFactory.line("AUD-4001", 1));

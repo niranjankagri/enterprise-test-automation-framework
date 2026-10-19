@@ -27,11 +27,13 @@ public class DriverManagerTest {
 
     private final Set<String> sessionIds = ConcurrentHashMap.newKeySet();
 
+    /** Every test leaves no browser behind. */
     @AfterMethod(alwaysRun = true)
     public void quitBrowser() {
         DriverManager.quitDriver();
     }
 
+    /** The configured browser starts with the configured settings and can load a page. */
     public void configuredBrowserStartsWithConfiguredSettings() {
         TestConfig config = ConfigManager.config();
         WebDriver driver = DriverManager.startDriver();
@@ -71,6 +73,7 @@ public class DriverManagerTest {
         assertThat(DriverManager.getDriver()).as("same thread, same browser").isSameAs(driver);
     }
 
+    /** After quit, this thread has no browser and asking for one fails clearly. */
     public void quitReleasesTheBrowserOfThisThread() {
         DriverManager.startDriver();
         assertThat(DriverManager.hasDriver()).isTrue();
