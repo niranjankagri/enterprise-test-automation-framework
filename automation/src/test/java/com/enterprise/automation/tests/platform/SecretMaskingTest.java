@@ -59,9 +59,22 @@ public class SecretMaskingTest {
 
     /** Passwords inside JDBC URLs are masked. */
     public void credentialsInUrlsAreMasked() {
-        assertThat(SecretMasker.mask("jdbc:postgresql://shop:pw1@db:5432/shop")).isEqualTo("jdbc:postgresql://shop:****@db:5432/shop");
+        assertThat(SecretMasker.mask("jdbc:postgresql://shop:pw1@db:5432/shop"))
+                .isEqualTo("jdbc:postgresql://****@db:5432/shop");
         assertThat(SecretMasker.mask("jdbc:h2:tcp://localhost:9092/shop;USER=sa;PASSWORD=pw1"))
                 .isEqualTo("jdbc:h2:tcp://localhost:9092/shop;USER=sa;PASSWORD=****");
+    }
+
+    /** URL user information and sensitive query parameters are fully masked while safe URL details remain. */
+    public void userInfoAndSensitiveQueryParametersInUrlsAreMasked() {
+        String url = "https://url-user-secret:url-password-secret@example.test:8443/api"
+                + "?access_token=query-token-secret&api_key=query-key-secret&page=2";
+
+        assertThat(SecretMasker.mask(url))
+                .isEqualTo("https://****@example.test:8443/api?access_token=****&api_key=****&page=2")
+                .doesNotContain("url-user-secret", "url-password-secret", "query-token-secret", "query-key-secret");
+        assertThat(SecretMasker.mask("https://url-user-secret@example.test/path"))
+                .isEqualTo("https://****@example.test/path");
     }
 
     /** Ordinary text, the word token in prose and URLs with ports are not touched. */
