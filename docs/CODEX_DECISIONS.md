@@ -33,3 +33,9 @@ Append material decisions with their evidence and trade-offs. Do not record cred
 - **Decision:** Keep `mvnw` as LF and `mvnw.cmd` as CRLF with repository `.gitattributes` rules.
 - **Reason:** The Windows Git configuration has `core.autocrlf=true`; the POSIX wrapper must not be rewritten with CRLF when checked out on Windows and then executed in Linux CI.
 - **Verification:** Git records `mvnw` as executable (`100755`); wrapper scripts were exercised from Windows Command Prompt and Git Bash.
+
+## D-006 - Keep Compose services internal and limit host access
+
+- **Decision:** Publish the demo application on `127.0.0.1:8081`, leave H2 TCP 9093 available only on the Compose network, and publish Selenium Grid on `127.0.0.1:4444`.
+- **Evidence:** the test runner uses `demo-app:9093` and browsers use `demo-app:8081`; runtime integration passed with H2 and Grid available internally. Container inspection showed only loopback host bindings, and no host listener accepted connections on 9093.
+- **Trade-off:** local host tools can use the app and Grid through loopback, while external machines cannot reach those ports directly. Host-based H2 access is intentionally unavailable.

@@ -2,14 +2,14 @@
 
 Updated at each verified chunk. Preserve earlier evidence when updating this file.
 
-## Current batch: A — repository baseline and coding harness
+## Batch A record: repository baseline and coding harness
 
-- **Status:** C00 verified complete. The implementation commit is pushed and all required PR workflow jobs passed. The PR remains draft at the owner review gate.
+- **Status:** C00 verified complete and merged after owner review of PR #15. Batch B progress follows.
 - **Branch:** `codex/batch-a-baseline`, based on freshly fetched `origin/main`.
 - **Baseline SHA:** `9a415067fcce2bd4e658f37029775853936ab4da`.
 - **Implementation result SHA:** `ac89f577f78b16c248d0f65228de337fc2627088`.
 - **Commit / push:** `ac89f57` (`test(build): add verified Maven wrapper and C00 records`), pushed to `origin/codex/batch-a-baseline`.
-- **Draft PR:** [#15](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/15), targeting `main`.
+- **PR:** [#15](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/15), targeting `main`; merged after owner approval.
 - **GitHub Actions:** [CI run 39409762009](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39409762009) completed successfully for `ac89f577f78b16c248d0f65228de337fc2627088`: compile/unit quality gate, dependency review, Chrome smoke and Allure report all passed.
 
 ### Verified pre-change state
@@ -33,17 +33,30 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 - Local Maven wrapper tests use a task-specific temp wrapper cache and explicit `maven.repo.local` because of this sandbox's profile mapping; these paths are not committed.
 - Final C00 diff review and `git diff --cached --check` passed. The final artifact scan found no bearer credentials, URL userinfo, sensitive query values or JSON credential fields in local Allure results, logs or TestNG reports. The staged-file scan found no personal machine path, credential assignment or private key.
 - Docker Compose validation is **BLOCKED / NOT EXECUTED** because the Docker daemon is unavailable. C00 does not change Docker configuration; this is recorded for the later Docker security chunk.
-- C00 is complete: the branch is pushed, the draft PR exists and every applicable PR Actions job reached a successful terminal conclusion. Stop here for owner review; do not start Batch B before the owner gate.
+- C00 reached its owner review gate and was later merged after approval. Batch B began only after the owner confirmed the merge; see the C01 record below.
 
 ## Chunk ledger
 
 | Chunk | Status | Evidence / result |
 |---|---|---|
-| C00 | Verified complete | Commit `ac89f577f78b16c248d0f65228de337fc2627088`, draft PR #15, CI run `39409762009` green; 32 unit tests passed locally and in the quality gate. |
-| C01–C11 | Pending | Do not start until the specified batch dependency and owner review gate are satisfied. |
+| C00 | Verified complete and merged | Commit `ac89f577f78b16c248d0f65228de337fc2627088`, PR #15 merged; all recorded C00 CI checks passed. |
+| C01 | Local validation passed; GitHub Actions pending | Compose config and integration suite passed; see Batch B C01 record. |
+| C02 | In progress | URL-redaction change and regression tests are being validated separately; no C02 files are in the C01 commit. |
+| C03-C11 | Pending | Continue after Batch B is complete and the owner review gate is satisfied. |
 
 ## Blockers and required follow-up
 
-- Docker Compose service/network validation is **BLOCKED / NOT EXECUTED** until the Docker daemon is available.
+- At the C00 baseline, Docker Compose validation was blocked because the daemon was unavailable; C01 has since passed local Compose config and integration validation (see the Batch B record).
 - The saved GitHub CLI token was invalid, but the existing Git credential helper provided a valid credential without displaying it; the branch push, PR creation and Actions inspection all succeeded.
-- Batch B remains pending the owner's review/merge approval of PR #15. Do not advance to it before that gate.
+- At C00 completion Batch B was pending review of PR #15. The owner later confirmed the merge and Batch B is now active.
+
+## Batch B - C01 Docker network security (local validation complete; GitHub Actions pending)
+
+- **Starting point:** owner confirmed PR #15 was merged. `git fetch --prune origin` showed `origin/main` at `28cddd91e9d059e32550e438367ea9352dc656b7`; `codex/batch-b-security` was created from that commit with a clean worktree.
+- **Confirmed issue:** `docker/docker-compose.yml` published demo-app ports 8081 and H2 9093 on all host interfaces and published Selenium Grid 4444 on all host interfaces. Compose service-to-service traffic uses the internal network and `demo-app:9093`.
+- **Files changed for C01:** `docker/docker-compose.yml`, `docs/docker.md`.
+- **Change:** bind app 8081 and Grid 4444 to `127.0.0.1`; remove H2 host publication while preserving the internal service URL; update networking and troubleshooting docs.
+- **Validation:** `docker compose -f docker/docker-compose.yml config --quiet` passed. Parsed Compose JSON assertions confirmed app 8081 and Grid 4444 are loopback-bound and app 9093 has no host publication. Runtime container inspection confirmed the same mappings; host connection to 9093 was refused. Existing cross-layer integration tests successfully used `demo-app:9093` and Selenium Grid internally.
+- **Compose integration command:** `docker compose -f docker/docker-compose.yml up --build --abort-on-container-exit --exit-code-from tests`, with `SUITE=integration`, `BROWSER=chrome`, `THREADS=2`; result `COMPOSE_TEST_EXIT=0`. `automation/target/surefire-reports/TestSuite.txt`: 22 tests, 0 failures, 0 errors, 0 skipped. `docker compose -f docker/docker-compose.yml down --remove-orphans` cleanup result: `COMPOSE_CLEANUP_EXIT=0`; no project containers remained.
+- **Review:** `git diff --check` passed. No regression test was added because the existing Compose integration suite verifies service connectivity; the change is configuration-only. GitHub Actions and PR verification are pending the push.
+- **Next:** commit and push only C01 and its progress record on `codex/batch-b-security`; create/update the draft Batch B PR and inspect terminal Actions results. C02 remains separate and must not be committed with C01.
