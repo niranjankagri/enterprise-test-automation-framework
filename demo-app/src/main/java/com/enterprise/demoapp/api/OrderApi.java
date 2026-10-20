@@ -144,8 +144,8 @@ public final class OrderApi {
                 total = total.add(price.multiply(BigDecimal.valueOf(quantity)));
                 lines.add(new long[] {productId, quantity});
                 prices.add(price);
-                // Reserve the stock now
-                adjustStock(c, productId, -quantity);
+                // Reserve atomically; a competing order may have used the stock read above.
+                reserveStock(c, productId, quantity);
             }
             // The order header with the computed total
             long orderId;
@@ -228,12 +228,42 @@ public final class OrderApi {
         }
     }
 
-    /** Adds {@code delta} (negative to reserve) to a product's stock. */
+    /** Atomically reserves available stock or reports the current business conflict. */
+    private static void reserveStock(Connection c, long productId, int quantity) throws SQLException {
+        int affectedRows;
+        try (PreparedStatement ps = c.prepareStatement("UPDATE products SET stock = stock - ?"
+                + " WHERE id = ? AND active = TRUE AND stock >= ?")) {
+            ps.setInt(1, quantity);
+            ps.setLong(2, productId);
+            ps.setInt(3, quantity);
+            affectedRows = ps.executeUpdate();
+        }
+        if (affectedRows == 1) {
+            return;
+        }
+        if (affectedRows != 0) {
+            throw new SQLException("Expected to reserve one product row but updated " + affectedRows);
+        }
+
+        // The row may have changed while this transaction waited for another reservation.
+        Map<String, Object> current = ProductApi.find(c, productId);
+        if (!(Boolean) current.get("active")) {
+            throw new ApiException(409, "Product " + current.get("sku") + " is no longer sold");
+        }
+        int available = (Integer) current.get("stock");
+        throw new ApiException(409, "Insufficient stock for " + current.get("sku") + ": "
+                + available + " left, " + quantity + " requested");
+    }
+
+    /** Adds {@code delta} units to a product's stock and requires exactly one matching product. */
     private static void adjustStock(Connection c, long productId, int delta) throws SQLException {
         try (PreparedStatement ps = c.prepareStatement("UPDATE products SET stock = stock + ? WHERE id = ?")) {
             ps.setInt(1, delta);
             ps.setLong(2, productId);
-            ps.executeUpdate();
+            int affectedRows = ps.executeUpdate();
+            if (affectedRows != 1) {
+                throw new SQLException("Expected to update one product row but updated " + affectedRows);
+            }
         }
     }
 
