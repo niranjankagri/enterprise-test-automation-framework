@@ -5,6 +5,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
@@ -31,13 +33,32 @@ public final class ScreenshotUtils {
 
     /** PNG bytes of the current browser window, or {@code null} if no screenshot could be taken. */
     public static byte[] capture(WebDriver driver) {
+        Object masked = null;
         try {
+            if (driver instanceof JavascriptExecutor javascript) {
+                masked = javascript.executeScript(
+                        "return [...document.querySelectorAll('[data-sensitive],input[type=password]')].map(element => {"
+                                + "const property = 'value' in element ? 'value' : 'textContent';"
+                                + "const original = element[property]; element[property] = '[REDACTED]';"
+                                + "return {element, property, original}; });");
+            }
             // Every local and remote driver implements TakesScreenshot
             return ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
         } catch (RuntimeException e) {
             // Browser crashed or already quit: report it, do not hide the test's own failure
-            LOG.warn("Could not take a screenshot: {}", e.getMessage());
+            LOG.warn("Could not take a screenshot: {}", e.getClass().getSimpleName());
             return null;
+        } finally {
+            if (masked instanceof List<?> entries && driver instanceof JavascriptExecutor javascript) {
+                try {
+                    javascript.executeScript(
+                            "arguments[0].forEach(entry => { entry.element[entry.property] = entry.original; });",
+                            entries);
+                } catch (RuntimeException e) {
+                    LOG.warn("Could not restore sensitive page values after screenshot capture: {}",
+                            e.getClass().getSimpleName());
+                }
+            }
         }
     }
 
