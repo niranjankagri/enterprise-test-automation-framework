@@ -110,3 +110,17 @@ Append material decisions with their evidence and trade-offs. Do not record cred
 - **Reason:** The owner explicitly authorized autonomous completion of the remaining coverage/release scope in one PR, superseding the old Batch D stop checkpoint.
 - **Verification policy:** Establish clean-start suite/tooling baselines before implementation; keep each logical fix independently tested and committed on the same branch; only mark the PR ready after its required checks and final validation reach terminal status. Never merge, enable auto-merge or deploy.
 - **Trade-off:** The PR will be larger than earlier remediation PRs. The coverage matrix and progress log will link each requirement to its own suite and evidence to keep the review traceable.
+
+## D-017 - Serialize order lifecycle transitions and use a stable product lock order
+
+- **Decision:** Lock the order header while changing status or deleting it, condition the transition on its previous state, and verify affected-row counts. Restore stock only for the winning transition, locking order lines by ascending product ID.
+- **Reason:** Concurrent cancellation, deletion or cancellation-plus-deletion could each observe a placed order and restore the same stock twice. Overlapping orders with reversed line order could also acquire product locks in opposite orders.
+- **Verification:** H2 contention tests cover two cancellations, two deletions, a cancellation/deletion race and reversed line order. They assert bounded completion, final status/deletion, order lines and stock. Integration suite passed 28/28 at `7a7b69b`; the PR API/order run `39456674788` passed.
+- **Trade-off:** A losing lifecycle request receives the existing conflict/not-found response after the lock holder commits. Multi-product operations acquire locks in product-ID order, preserving the existing database and transaction design.
+
+## D-018 - Mask screenshot values temporarily and preserve browser failure behavior
+
+- **Decision:** Before screenshot capture, replace values in password inputs and explicitly marked `[data-sensitive]` elements with `[REDACTED]`; restore captured DOM values in `finally`. If capture or restore fails, log only the exception class and never replace the test's original failure with an evidence error.
+- **Reason:** Textual Allure redaction does not alter pixels already rendered in a screenshot. Synthetic evidence must show pixel masking while the active test page regains its original values afterward.
+- **Verification:** `ScreenshotUtilsTest.masksSensitivePageValuesForScreenshotAndRestoresThem` compares captured PNG pixels to a redacted-page reference and to the unredacted synthetic page, then checks the live DOM values were restored. The platform test passed in the 212-case Chrome full-suite run. This protects marked text and password fields only; screenshots are not universally pixel-redacted.
+- **Accessibility decision:** Give modal dialogs an accessible title, trap Tab navigation, close with Escape and return focus to the opener. Automated login/customer/checkout checks cover labels, visible focus and dialog behavior; no screen-reader conformance claim is made.

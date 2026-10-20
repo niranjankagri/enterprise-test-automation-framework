@@ -48,7 +48,9 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 | C06 | Verified complete | Commit `c54b77a816954c22de21a0ee3bf9e58966f87b9c`; local API 74/74; PR #18 CI run `39436856557` all jobs green. |
 | C07 | Verified complete | Commit `6ce37369fa4812409341f2bd34825830b3de4023`; local unit 41/41; PR #18 CI run `39439648609` all jobs green. |
 | C08 | Verified complete | Documentation commit `5284f992c369087f53fc510353a4d30ce4ebd4bc` and evidence commit `4588e482f19ebc019461fa7d55fa5fed958e3124`; PR Actions runs `39443489388` and `39444011311` passed all jobs. |
-| C09-C11 | Pending | Start only after Batch D PR #18 is merged by the owner. |
+| C09 | Verified complete | API, integration, UI, E2E, Allure evidence and PR run `39460227330` passed on `4e2f787210ba3b32ae5c16e4605d8f1931983b29`. |
+| C10 | Active | Add pre-merge DB/order execution, source analysis and measured JaCoCo reports; PR #19 remains draft. |
+| C11 | Pending | Final-source cross-browser/Grid/full validation and release-readiness review. |
 
 ## Blockers and required follow-up
 
@@ -161,7 +163,7 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 - **Coverage baseline:** created [TEST_COVERAGE_MATRIX.md](TEST_COVERAGE_MATRIX.md) with route/method/role inventory, business rules, UI/framework/security/deployment coverage, suite/CI mapping, statuses and current limitations. Java line/branch coverage remains unmeasured because no JaCoCo configuration exists.
 - **Commit / push:** `c54b77a816954c22de21a0ee3bf9e58966f87b9c` (`fix(orders): reject out-of-range quantities`), pushed to `origin/codex/batch-d-validation-docs`.
 - **Draft PR:** [#18](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/18), targeting `main`; stays draft through C07/C08 and the owner review gate.
-- **Next:** C07 strict boolean configuration. Do not start C09-C11/Batch E until PR #18 is merged by the owner.
+- **Historical next step at C06:** C07 strict boolean configuration. Batch E began only after PR #18 later merged; see the current Batch E record below.
 
 ## Batch D - C07 strict boolean configuration (verified complete)
 
@@ -202,4 +204,15 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 - **Workflow/security baseline:** Main run [39451162044](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39451162044) passed on the Batch D merge SHA. GitHub repo metadata reports secret scanning and push protection enabled, Dependabot security updates disabled, and CodeQL default setup not configured. No JaCoCo/Cobertura instrumentation or report is present in the POM/workflow inventory.
 - **Confirmed inventory gaps:** `DemoApp.java` declares 26 HTTP route/method pairs (25 protected); the existing tests cover representative cells but not a complete anonymous/viewer/admin matrix, including direct `/api/stats` and user GET-by-ID checks. The traceable expectations and baseline gaps are listed as API-ACL-00 through API-ACL-25 in `docs/TEST_COVERAGE_MATRIX.md`.
 - **Command note:** The initial unquoted PowerShell `-Dmaven.compiler.failOnWarning=true` invocation was split into a Maven lifecycle token and ran no tests. Re-running with quoted `-D` arguments produced the successful unit result recorded above.
-- **Current decision:** C09, C10 and C11 continue on this branch and one draft PR. No PR has been opened yet; the C09 baseline/inventory commit will establish the early review draft. Final readiness remains unverified.
+- **Current decision:** C09, C10 and C11 continue on this branch and one draft PR. PR #19 is open and draft. C09 local and PR Actions verification completed on `4e2f787`; C10 is active and final readiness remains unverified.
+
+## Batch E - C09 regression and coverage reliability (verified complete)
+
+- **Branch / PR:** `codex/batch-e-quality-release`; draft [PR #19](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/19), targeting `main`. PR #18 is merged.
+- **Route and API coverage:** `AuthorizationRouteMatrixTest` exercises all 25 protected route/method pairs with valid anonymous, VIEWER and ADMIN requests, plus the public login route. It checks success/denial statuses, JSON content types, structured 401/403 errors, bodyless 204 responses and persisted state for denied writes. `/api/stats`, user GET-by-ID, user response credential exclusion and role-change behavior are included. Two active sessions are verified before and after account deletion; malformed/unknown tokens, exact expiry and login/authentication deletion races remain covered.
+- **Order and database coverage:** duplicate product lines/exact stock, mixed-line rollback, deterministic scarce-stock reservation, reversed product lock order, concurrent cancellation, concurrent deletion and cancellation/deletion races assert final inventory and order rows. The UI cancellation journey now checks the order header, line and stock directly in H2 both before and after cancellation.
+- **UI/security coverage:** Chrome UI regressions cover deleted-account browser sessions, hostile HTML-shaped customer names, stale/inactive product checkout, rejected cart/order state, repeated-submit suppression, field labels, visible keyboard focus, modal labeling/Tab trapping/Escape/focus return, and synthetic screenshot pixel masking with page-value restoration. The screenshot check only verifies the marked synthetic values; no universal pixel redaction is claimed. A manual screen-reader audit was not performed.
+- **Implementation commits:** `7a7b69be3a198f9ca7f1ca5e11c8fb416e881776` adds API/order regressions and order lifecycle locking; `cae2f0e3fa9b5c4418e23f1755684586797b9261` adds UI, cross-layer and evidence coverage; `4e2f787210ba3b32ae5c16e4605d8f1931983b29` adds direct H2 assertions for UI cancellation.
+- **Local evidence:** on `7a7b69b`, API passed 78/78 and integration passed 28/28, each with Checkstyle 0 and zero failures/errors/skips. On `cae2f0e`, Chrome UI Surefire XML reports 59/59, zero failures/errors/skips. On the source committed as `4e2f78`, `mvnw.cmd -B -ntp test -Dsuite=e2e -Dheadless=true -Dmaven.compiler.failOnWarning=true` completed with **8 passed, 0 failures, 0 errors, 0 skipped; Checkstyle 0; exit 0**. The broader Chrome run earlier in C09 passed 212/212 before the final modal assertions; C11 will repeat full validation at the final source SHA.
+- **GitHub Actions:** [run 39456674788](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39456674788) passed for the API/order commit. [Run 39459538474](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39459538474) passed quality/Allure verification, dependency review, Chrome smoke, API regressions and Allure report for the UI commit. [Run 39460227330](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39460227330) passed all applicable jobs on `4e2f787`; C09 is verified complete.
+- **Known limits:** page loading/error-state coverage and a manual assistive-technology review remain backlog items. TestNG `-Dtest` filtering bypasses this repository's suite lifecycle; supported UI/E2E suite files are used for validation.
