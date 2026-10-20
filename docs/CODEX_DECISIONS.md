@@ -120,9 +120,9 @@ Append material decisions with their evidence and trade-offs. Do not record cred
 
 ## D-018 - Mask screenshot values temporarily and preserve browser failure behavior
 
-- **Decision:** Before screenshot capture, replace values in password inputs and explicitly marked `[data-sensitive]` elements with `[REDACTED]`; restore captured DOM values in `finally`. If capture or restore fails, log only the exception class and never replace the test's original failure with an evidence error.
-- **Reason:** Textual Allure redaction does not alter pixels already rendered in a screenshot. Synthetic evidence must show pixel masking while the active test page regains its original values afterward.
-- **Verification:** `ScreenshotUtilsTest.masksSensitivePageValuesForScreenshotAndRestoresThem` compares captured PNG pixels to a redacted-page reference and to the unredacted synthetic page, then checks the live DOM values were restored. The platform test passed in the 212-case Chrome full-suite run. This protects marked text and password fields only; screenshots are not universally pixel-redacted.
+- **Decision:** Add temporary opaque visual overlays over visible password inputs and explicitly marked `[data-sensitive]` elements before capture. Do not replace DOM nodes, alter their values or remove their descendants. Remove overlays in `finally`; omit the screenshot if masking, capture or restoration cannot be verified. Log exception classes only so browser diagnostics do not copy page content.
+- **Reason:** Textual Allure redaction does not alter pixels already rendered in a screenshot. Replacing `textContent` on a marked container can destroy nested controls and event handlers, so pixel protection must leave the page content intact.
+- **Verification:** `ScreenshotUtilsTest.masksSensitivePageWithReversibleOverlaysAndRestoresAfterCaptureFailure` checks overlay pixels, original container/control identity and markup, an interactive click handler during masking, restoration after successful and failed capture, and omission when masking setup fails. The test is in `platform`, `smoke` and `regression` groups so PR Chrome smoke and the nightly browser/Grid matrix exercise it. This protects only password and explicitly marked regions; unmarked sensitive pixels are not universally redacted.
 - **Accessibility decision:** Give modal dialogs an accessible title, trap Tab navigation, close with Escape and return focus to the opener. Automated login/customer/checkout checks cover labels, visible focus and dialog behavior; no screen-reader conformance claim is made.
 
 
@@ -160,3 +160,10 @@ Append material decisions with their evidence and trade-offs. Do not record cred
 - **Reason:** Allure parameter sanitization did not protect the built-in TestNG/Surefire retained result parameters. The final artifact scan confirmed raw negative-login passwords in those reports.
 - **Verification:** `TestDataTest.loginNegativeProviderMasksPasswordsInTestReports` checks every provider row remains a masked object; final unit/UI/full tests pass, and the retained Allure, Surefire and log scan found no checked demo or synthetic credential patterns. PR quality and nightly browser artifacts passed on source SHA `bc1c1ec87e6c7cb12c68fa6383a2f4134bfdd98e`.
 - **Trade-off:** The wrapper deliberately masks its string representation; tests that need to submit the password must explicitly access `value()` at the UI boundary.
+
+## D-024 - Require executed JaCoCo coverage in every production module
+
+- **Decision:** Require positive covered line and branch counts in each module report and in the designated production class (`OrderApi` for `demo-app`, `ApiClient` for `automation`). Add standard-library Python regressions for empty execution, module totals, and designated-class line/branch execution.
+- **Reason:** A report can list production classes and measurable missed counters while recording zero executed code; class presence alone does not prove coverage data belongs to the intended production path.
+- **Verification:** `python -B -m unittest discover -s scripts/tests -v` passed four verifier tests. The strengthened verifier accepted actual local JaCoCo reports generated from the Chrome smoke execution; PR and nightly coverage jobs now run the verifier regressions before checking their reports.
+- **Trade-off:** A module or designated class with no covered branch fails the gate even if lines ran. This is intentional for the current modules, whose designated classes contain branch decisions; no percentage threshold is introduced.
