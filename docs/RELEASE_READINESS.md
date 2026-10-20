@@ -2,11 +2,12 @@
 
 ## Current status
 
-**C09, C10 and C11 are verified complete. Implementation source `6b3fb1971278940df3b4f8882b470b47e4bd3452` passed PR CI [39477093094](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477093094), CodeQL [39477093115](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477093115) and nightly [39477175118](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477175118). PR #19 remains open and unmerged for owner review.** No deployment or release was performed.
+**C09, C10 and C11 are verified complete. Implementation source `6b3fb1971278940df3b4f8882b470b47e4bd3452` passed PR CI [39477093094](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477093094), CodeQL [39477093115](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477093115) and nightly [39477175118](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477175118). The documentation PR head `e6c7ed5dc18d110c81d27b730816477c63b4df0f` also passed PR CI [39479627074](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39479627074) and CodeQL [39479627060](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39479627060). PR #19 remains open and unmerged for owner review.** No deployment or release was performed.
 
 - Baseline: `22559e5ed2e908664bc45a02dd34f1c6644fc7a7` (PR #18 merge to `main`).
 - Final tested implementation source: `6b3fb1971278940df3b4f8882b470b47e4bd3452` (`codex/batch-e-quality-release`).
-- Final PR CI tested merge SHA: `20cd87bd4286347215a5491bbe90603e47ae2d4d`.
+- Verified documentation PR head: `e6c7ed5dc18d110c81d27b730816477c63b4df0f`; all required PR CI jobs and CodeQL passed on that head.
+- Final PR CI tested merge SHA: `20cd87bd4286347215a5491bbe90603e47ae2d4d` for the implementation-source coverage merge.
 - Pull request: [#19 - Batch E quality and release readiness](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/19).
 
 ## C09, C10, C11 and M1-M8 status
@@ -67,8 +68,9 @@ The final local full-run TestNG result records 213 passed, 0 failed and 0 skippe
 - PR CI [run 39477093094](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477093094) - all seven jobs passed: Dependency Review; quality/unit plus persisted Allure verifier; database/order integration; Chrome smoke; API regressions; merged Java coverage reports; Allure report.
 - CodeQL [run 39477093115](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477093115) - Analyze Java passed.
 - Nightly [run 39477175118](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477175118) - full Chrome, Firefox/Edge regressions, Docker/Selenium Grid, combined Allure report and cleanup all passed on the Batch E source SHA.
+- Documentation-head PR CI [run 39479627074](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39479627074) - all seven jobs passed on `e6c7ed5dc18d110c81d27b730816477c63b4df0f`; CodeQL [run 39479627060](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39479627060) passed on the same head.
 
-All three runs checked out the final implementation source revision or its PR merge commit. No earlier `main` or nightly run was substituted for final source evidence.
+The implementation-source PR CI/CodeQL/nightly runs checked out source `6b3fb1971278940df3b4f8882b470b47e4bd3452` or its PR merge commit; documentation-head PR CI and CodeQL checked out `e6c7ed5dc18d110c81d27b730816477c63b4df0f`. No earlier `main` or nightly run was substituted for final source evidence.
 
 ## Java line and branch coverage
 
