@@ -1,0 +1,8 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="Allure failure redaction">
+    <test name="Synthetic URL failure">
+        <classes>
+            <class name="com.enterprise.automation.tests.platform.AllureFailureRedactionTest"/>
+        </classes>
+    </test>
+</suite>

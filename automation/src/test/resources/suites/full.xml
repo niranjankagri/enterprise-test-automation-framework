@@ -14,6 +14,12 @@
         <listener class-name="com.enterprise.automation.tests.base.DemoAppLifecycle"/>
     </listeners>
     <test name="Full">
+        <groups>
+            <run>
+                <!-- This deliberately failing fixture runs only through its persisted-result verifier. -->
+                <exclude name="allure-failure-redaction"/>
+            </run>
+        </groups>
         <packages>
             <package name="com.enterprise.automation.tests.*"/>
         </packages>
