@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
  *   <li>{@code key=value} / {@code key: value} pairs with such a name (query strings, JDBC URLs, text);</li>
  *   <li>bearer tokens ({@code Bearer ****}), and the whole value of other credential headers
  *       ({@code Authorization: Basic}, {@code Cookie}, {@code Set-Cookie}, {@code X-Api-Key});</li>
- *   <li>passwords in URLs ({@code scheme://user:****@host}).</li>
+ *   <li>all URL user information ({@code scheme://****@host}), including usernames and passwords.</li>
  * </ul>
  */
 public final class SecretMasker {
@@ -39,8 +39,8 @@ public final class SecretMasker {
     private static final Pattern KEY_VALUE = Pattern.compile(
             "(?<![\"A-Za-z0-9_-])(" + SECRET_NAME + "\\s*[=:]\\s*+)(?![\\s\"]|Bearer\\s|\\*{4})([^\\s,;&\"'}\\]]+)",
             Pattern.CASE_INSENSITIVE);
-    // scheme://user:password@host
-    private static final Pattern URL_PASSWORD = Pattern.compile("(://[^/\\s:@]+:)[^@\\s/]+(@)");
+    // scheme://userinfo@host. Usernames can themselves be identifying or sensitive, so redact all user information.
+    private static final Pattern URL_USER_INFO = Pattern.compile("(://)[^/@\\s]+@");
 
     /** Static helpers only: no instances. */
     private SecretMasker() {
@@ -56,8 +56,10 @@ public final class SecretMasker {
         String masked = HEADER.matcher(text).replaceAll("$1" + MASK);
         masked = JSON_FIELD.matcher(masked).replaceAll("$1" + MASK + "$2");
         masked = BEARER.matcher(masked).replaceAll("$1" + MASK);
+        // Redact the URL authority before KEY_VALUE can interpret a username like "client-secret" as a field name.
+        masked = URL_USER_INFO.matcher(masked).replaceAll("$1" + MASK + "@");
         masked = KEY_VALUE.matcher(masked).replaceAll("$1" + MASK);
-        return URL_PASSWORD.matcher(masked).replaceAll("$1" + MASK + "$2");
+        return masked;
     }
 
     /** Whether a name (parameter, header, field) suggests a secret: password, token, secret, apiKey... */

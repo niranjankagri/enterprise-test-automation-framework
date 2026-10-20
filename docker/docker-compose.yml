@@ -25,8 +25,7 @@ services:
       dockerfile: docker/Dockerfile
       target: app
     ports:
-      - "8081:8081"
-      - "9093:9093"
+      - "127.0.0.1:8081:8081"
     healthcheck:
       test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8081'"]
       interval: 2s
@@ -35,7 +34,7 @@ services:
   selenium-hub:
     image: selenium/hub:${SELENIUM_IMAGE_TAG:-latest}
     ports:
-      - "4444:4444"
+      - "127.0.0.1:4444:4444"
     healthcheck:
       # Ready = at least one node registered and able to start sessions
       test: ["CMD-SHELL", "curl -s http://localhost:4444/status | grep -q '\"ready\": true'"]

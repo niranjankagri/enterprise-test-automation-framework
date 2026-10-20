@@ -57,12 +57,12 @@ flowchart LR
 
 | Service | Ports (host) | Ready when | Notes |
 |---|---|---|---|
-| `demo-app` | 8081, 9093 | TCP port 8081 accepts connections (healthcheck) | database reachable from other containers for the database checks |
-| `selenium-hub` | 4444 (Grid UI at `http://localhost:4444/ui`) | `/status` reports `"ready": true`, i.e. a node can start sessions | |
+| `demo-app` | `127.0.0.1:8081` | TCP port 8081 accepts connections (healthcheck) | H2 on 9093 is available to services on the Compose network; it is not published to the host |
+| `selenium-hub` | `127.0.0.1:4444` (Grid UI at `http://localhost:4444/ui`) | `/status` reports `"ready": true`, i.e. a node can start sessions | host access is limited to loopback |
 | `chrome`, `firefox`, `edge` | none | registered at the hub | 2 sessions each, `shm_size: 2gb` (browsers crash with Docker's default 64 MB `/dev/shm`) |
 | `tests` | none | starts after `demo-app` and `selenium-hub` are healthy | `ENV=qa` with URLs pointing at the `demo-app` service |
 
-The test runner overrides the application URLs: inside the Docker network the browsers reach the application as `http://demo-app:8081`, not `localhost` (in a node container, `localhost` is the node itself). `DB_URL=jdbc:h2:tcp://demo-app:9093/mem:shop` lets the database checks read the application's database.
+The test runner overrides the application URLs: inside the Docker network the browsers reach the application as `http://demo-app:8081`, not `localhost` (in a node container, `localhost` is the node itself). `DB_URL=jdbc:h2:tcp://demo-app:9093/mem:shop` lets the database checks read the application's database over the internal Compose network. H2's TCP port is not published on the host; the application and Grid UI host ports bind only to `127.0.0.1`.
 
 ## In CI
 
@@ -77,6 +77,6 @@ The nightly workflow runs the regression suite this way on Firefox with 4 thread
 | Chrome/Edge pages time out (`ERR_TIMED_OUT`, "Timed out receiving message from renderer") while API tests pass | the service name is a real top-level domain on the HSTS preload list (for example `app`), so the browser forces HTTPS | name services so they are not a TLD (this is why the service is `demo-app`) |
 | `SessionNotCreatedException` / tests wait long for a browser | no node for the browser, or all sessions busy | check `http://localhost:4444/ui`; more threads than node sessions queue (see [grid.md](grid.md#capacity-and-parallel-sessions)) |
 | Browser tabs crash in nodes | too little shared memory | keep `shm_size: 2gb` on the nodes |
-| Port 8081, 9093 or 4444 already in use | a local app or Grid is running | stop it, or remove the `ports:` mapping (only needed to look from the host) |
+| Port 8081 or 4444 already in use | a local app or Grid is running | stop it, or remove the loopback `ports:` mapping (only needed for host access) |
 | Database tests skipped | `DB_URL` not set | keep `DB_URL` in the `tests` service |
 | `permission denied` reading `automation/target` afterwards (Linux) | the test container runs as root and Allure 3 writes owner-only files | `sudo chown -R "$(id -u):$(id -g)" automation/target` (the nightly workflow does this before uploading) |
