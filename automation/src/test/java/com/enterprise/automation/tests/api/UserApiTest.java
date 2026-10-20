@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.enterprise.automation.api.ApiSession;
 import com.enterprise.automation.api.JsonMapper;
 import com.enterprise.automation.api.models.ErrorResponse;
+import com.enterprise.automation.api.models.LoginResponse;
 import com.enterprise.automation.api.models.UserRequest;
 import com.enterprise.automation.api.models.UserResponse;
 import com.enterprise.automation.config.Credentials;
@@ -18,6 +19,11 @@ import com.enterprise.automation.tests.base.BaseApiTest;
 import io.restassured.response.Response;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.testng.annotations.Test;
 
 /** {@code /api/users}: account management is admin-only, and roles take effect immediately. */
@@ -98,15 +104,82 @@ public class UserApiTest extends BaseApiTest {
         assertThat(error.message()).isEqualTo("You cannot delete your own account");
     }
 
-    /** A deleted user's credentials no longer work. */
+    /** Deletion revokes an active token and prevents another login. */
     public void deletedUserCannotSignIn() {
         UserData user = TestDataFactory.newUser("VIEWER");
-        // Created and deleted within the test (deleting is what is tested, so no clean-up)
         UserResponse created = admin().users().createUser(user);
+        registerUserCleanup(created);
+        String token = anonymous().auth().loginAs(new Credentials(user.username(), user.password())).token();
+        ApiSession userSession = ApiSession.withToken(token);
+        expectStatus(userSession.customers().list(null), 200);
 
         expectStatus(admin().users().delete(created.id()), 204);
 
-        // The old credentials no longer work
+        // The issued bearer token and old credentials both stop working
+        expectStatus(userSession.customers().list(null), 401);
         expectStatus(anonymous().auth().login(Map.of("username", user.username(), "password", user.password())), 401);
+    }
+
+    /** Login and token authentication racing deletion may finish first, but cannot remain valid afterward. */
+    @Test(groups = "regression")
+    public void concurrentLoginAndAuthenticationWithDeletionCannotPreserveAccess() throws Exception {
+        UserData user = TestDataFactory.newUser("VIEWER");
+        UserResponse created = admin().users().createUser(user);
+        registerUserCleanup(created);
+        String token = anonymous().auth().loginAs(new Credentials(user.username(), user.password())).token();
+        ApiSession userSession = ApiSession.withToken(token);
+        expectStatus(userSession.customers().list(null), 200);
+
+        CountDownLatch ready = new CountDownLatch(3);
+        CountDownLatch start = new CountDownLatch(1);
+        ExecutorService requests = Executors.newFixedThreadPool(3);
+        try {
+            Future<Response> authentication = requests.submit(() -> {
+                awaitConcurrentStart(ready, start);
+                return userSession.customers().list(null);
+            });
+            Future<Response> login = requests.submit(() -> {
+                awaitConcurrentStart(ready, start);
+                return anonymous().auth().login(Map.of("username", user.username(), "password", user.password()));
+            });
+            Future<Response> deletion = requests.submit(() -> {
+                awaitConcurrentStart(ready, start);
+                return admin().users().delete(created.id());
+            });
+            assertThat(ready.await(5, TimeUnit.SECONDS)).as("all requests are ready").isTrue();
+            start.countDown();
+
+            int authenticationStatus = authentication.get(10, TimeUnit.SECONDS).statusCode();
+            Response loginResponse = login.get(10, TimeUnit.SECONDS);
+            expectStatus(deletion.get(10, TimeUnit.SECONDS), 204);
+            assertThat(authenticationStatus).isIn(200, 401);
+            assertThat(loginResponse.statusCode()).isIn(200, 401);
+            if (loginResponse.statusCode() == 200) {
+                String racedToken = JsonMapper.fromJson(loginResponse.asString(), LoginResponse.class).token();
+                expectStatus(ApiSession.withToken(racedToken).customers().list(null), 401);
+            }
+            expectStatus(userSession.customers().list(null), 401);
+        } finally {
+            start.countDown();
+            requests.shutdownNow();
+        }
+    }
+
+    private void registerUserCleanup(UserResponse user) {
+        CleanupRegistry.register("delete user " + user.username(), () -> {
+            Response current = admin().users().get(user.id());
+            if (current.statusCode() == 200) {
+                assertThat(admin().users().delete(user.id()).statusCode()).isIn(204, 404);
+            } else {
+                assertThat(current.statusCode()).isEqualTo(404);
+            }
+        });
+    }
+
+    private static void awaitConcurrentStart(CountDownLatch ready, CountDownLatch start) throws InterruptedException {
+        ready.countDown();
+        if (!start.await(5, TimeUnit.SECONDS)) {
+            throw new IllegalStateException("Timed out waiting to race login/authentication with deletion");
+        }
     }
 }

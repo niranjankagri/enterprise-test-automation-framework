@@ -120,13 +120,13 @@ public final class UserApi {
     public Response delete(Request request) {
         long id = request.pathId("id");
         return Sql.run(database, c -> {
+            Map<String, Object> account = find(c, id);
             // Prevents locking yourself out
-            if (find(c, id).get("username").equals(request.username())) {
+            if (account.get("username").equals(request.username())) {
                 throw new ApiException(409, "You cannot delete your own account");
             }
-            try (PreparedStatement ps = c.prepareStatement("DELETE FROM app_users WHERE id = ?")) {
-                ps.setLong(1, id);
-                ps.executeUpdate();
+            if (auth.deleteUser(c, id, (String) account.get("username")) == 0) {
+                throw ApiException.notFound("User", id);
             }
             return Response.noContent();
         });
