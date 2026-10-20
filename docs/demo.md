@@ -5,7 +5,7 @@ A 5–10 minute walkthrough of the framework, and short answers to the questions
 ## Before the demo
 
 ```bash
-mvn -q clean test-compile                      # dependencies downloaded, code compiled
+./mvnw -q clean test-compile                   # dependencies downloaded, code compiled
 npx -y allure-commandline --version            # Allure CLI cached
 ```
 
@@ -16,11 +16,11 @@ Open in the IDE: `README.md`, `CustomerManagementTest`, `CustomerApiTest`, `UiAp
 | # | Minute | Show | Say |
 |---|---|---|---|
 | 1 | 0–1 | README architecture diagram | Tests → pages / API services / DB queries → components, `ApiClient`, `QueryExecutor`, waits → driver and configuration. Dependencies point down only; tests contain no Selenium, HTTP or SQL. |
-| 2 | 1–2 | `mvn clean test -Dsuite=smoke` (≈35 s) | The suite starts the application under test itself (`env=local`); 20 checks, 2 threads. |
+| 2 | 1–2 | `./mvnw clean test -Dsuite=smoke` | The suite starts the application under test itself (`env=local`); see the coverage matrix and CI run for the current test evidence. |
 | 3 | 2–3 | `CustomerManagementTest.adminCreatesACustomer` → `CustomerPage` → `TableComponent` | A UI test reads as business steps; locators exist once, in the page or component; waits are explicit. |
 | 4 | 3–4 | `CustomerApiTest.postCreatesACustomer` → `CustomerService` → `ApiClient` | Raw `Response` for negative tests, typed `createCustomer` for set-up; schema check; clean-up registered right after creation. |
 | 5 | 4–5 | `UiApiDatabaseTest.orderPlacedInTheUiIsConsistentInApiAndDatabase` | One order checked in three places: what the UI shows = what the API returns = what the database stores. |
-| 6 | 5–6 | `mvn clean test -Dthreads=4` (running in the background) | One browser per thread (`ThreadLocal`), unique data per test, per-thread clean-up and logs: 169 tests in ~150 s. |
+| 6 | 5–6 | `./mvnw clean test -Dthreads=4` (running in the background) | One browser per thread (`ThreadLocal`), unique data per test, per-thread clean-up and logs. Suite size varies and is not a measure of requirement coverage. |
 | 7 | 6–8 | `npx allure-commandline serve automation/target/allure-results`; a failed test (or the README screenshot) | Steps with durations, masked password, request/response with correlation id, DB rows, screenshot, URL, title, page source, browser console, the test's own log, the failure category. |
 | 8 | 8–9 | `docker/docker-compose.yml`, the nightly run on GitHub | App, Grid hub, Chrome/Firefox/Edge nodes and the test runner in one command; PR → main → nightly pipelines with evidence kept on failure. |
 | 9 | 9–10 | `docs/adr/README.md` | Every major choice is written down with options and trade-offs; pick one the interviewer cares about. |

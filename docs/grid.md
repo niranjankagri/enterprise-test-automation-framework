@@ -37,7 +37,7 @@ docker compose -f docker/docker-compose.yml up --build --abort-on-container-exit
 
 # 2. A one-machine Grid without Docker (browsers on this machine reach the local app as localhost)
 java -jar selenium-server-<version>.jar standalone --port 4444
-mvn clean test -Dexecution=remote -Dgrid.url=http://localhost:4444 -Dbrowser=firefox
+./mvnw clean test -Dexecution=remote -Dgrid.url=http://localhost:4444 -Dbrowser=firefox
 ```
 
 The Grid's own UI (`http://localhost:4444/ui`) shows nodes, free slots and running sessions. With the compose file it shows three nodes with 2 slots each:
@@ -55,14 +55,15 @@ Each node in `docker-compose.yml` offers 2 sessions (`SE_NODE_MAX_SESSIONS=2`), 
 
 For more parallelism, raise `SE_NODE_MAX_SESSIONS` (memory permitting) or scale a node: `docker compose -f docker/docker-compose.yml up --scale chrome=3 ...`. Parallel safety does not depend on the Grid: every test has its own driver, its own data and its own log/screenshot names ([parallel-execution.md](parallel-execution.md)).
 
-## Validated
+## CI execution paths
 
-| Run | Where | Result |
-|---|---|---|
-| Regression, Firefox, 4 threads, Docker Grid | nightly workflow | green (121/121) |
-| Smoke on Chrome, Edge and Firefox, 2 threads, `docker compose` (app + hub + nodes + tests) | local machine (Docker Desktop, WSL 2), 2026-10-07 | green (20/20 each) |
-| Smoke on Chrome, Firefox and Edge, 4 threads, Selenium standalone server 4.50 | local machine, 2026-10-07 | green (20/20 each) |
-| Full suite on a local browser, 4 threads | every local run / CI | green |
+| Workflow | Execution |
+|---|---|
+| Pull request | Chrome smoke and API regressions; results are uploaded for the Allure report. |
+| Main | Chrome UI suite followed by Edge smoke. |
+| Nightly | Full Chrome suite, Firefox and Edge regression, and a Docker + Selenium Grid regression run. |
+
+Workflow configuration defines these execution paths; each Actions run is the evidence for its source SHA. See [ci-cd.md](ci-cd.md) and [TEST_COVERAGE_MATRIX.md](TEST_COVERAGE_MATRIX.md). The matrix distinguishes requirement coverage from whether a mapped test has actually run. The Compose host-facing app and Grid ports bind to loopback; H2 remains internal to the Docker network ([docker.md](docker.md)).
 
 ## Troubleshooting
 

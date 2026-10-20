@@ -1,6 +1,6 @@
 # Pull-request pipeline: fast feedback before merging.
 # checkout -> Java -> Maven cache -> compile (warnings are errors) -> unit tests -> dependency check
-# -> smoke tests -> Allure report -> artifacts
+# -> API regression + smoke tests -> Allure report -> artifacts
 name: CI (pull request)
 
 on:
@@ -57,8 +57,17 @@ jobs:
       name: smoke-chrome
       suite: smoke
 
+  api:
+    name: API regressions
+    needs: quality
+    uses: ./.github/workflows/run-suite.yml
+    with:
+      name: api-regression
+      suite: api
+      threads: "2"
+
   report:
     name: Report
-    needs: [quality, smoke]
+    needs: [quality, api, smoke]
     if: always()
     uses: ./.github/workflows/allure-report.yml

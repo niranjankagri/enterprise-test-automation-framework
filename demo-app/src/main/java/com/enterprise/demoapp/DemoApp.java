@@ -15,6 +15,7 @@ import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.slf4j.Logger;
@@ -47,14 +48,19 @@ public final class DemoApp implements AutoCloseable {
 
         /** Defaults, overridable by environment variables (PORT, DB_TCP_PORT, ...). */
         public static Options fromEnvironment() {
+            return fromEnvironment(System.getenv());
+        }
+
+        /** Resolves start-up options from an environment map, allowing configuration to be tested without process state. */
+        public static Options fromEnvironment(Map<String, String> variables) {
             return new Options(
-                    intEnv("PORT", 8080),
-                    env("DB_NAME", "shop"),
-                    intEnv("DB_TCP_PORT", 9092),
-                    Boolean.parseBoolean(env("DB_ALLOW_REMOTE", "false")),
-                    intEnv("LATENCY_MS", 100),
-                    env("ADMIN_PASSWORD", "Admin@12345"),
-                    env("VIEWER_PASSWORD", "Viewer@12345"));
+                    intEnv(variables, "PORT", 8080),
+                    env(variables, "DB_NAME", "shop"),
+                    intEnv(variables, "DB_TCP_PORT", 9092),
+                    booleanEnv(variables, "DB_ALLOW_REMOTE", false),
+                    intEnv(variables, "LATENCY_MS", 100),
+                    env(variables, "ADMIN_PASSWORD", "Admin@12345"),
+                    env(variables, "VIEWER_PASSWORD", "Viewer@12345"));
         }
 
         /** Same options on another HTTP port (records are immutable: returns a copy). */
@@ -67,15 +73,27 @@ public final class DemoApp implements AutoCloseable {
             return new Options(port, dbName, newPort, dbAllowRemote, latencyMillis, adminPassword, viewerPassword);
         }
 
-        /** Environment variable, or {@code fallback} when unset or blank. */
-        private static String env(String name, String fallback) {
-            String value = System.getenv(name);
+        /** Environment value, or {@code fallback} when unset or blank. */
+        private static String env(Map<String, String> variables, String name, String fallback) {
+            String value = variables.get(name);
             return value == null || value.isBlank() ? fallback : value;
         }
 
         /** Numeric environment variable with a default. */
-        private static int intEnv(String name, int fallback) {
-            return Integer.parseInt(env(name, String.valueOf(fallback)));
+        private static int intEnv(Map<String, String> variables, String name, int fallback) {
+            return Integer.parseInt(env(variables, name, String.valueOf(fallback)));
+        }
+
+        /** Strict boolean environment variable; missing or blank values use the documented default. */
+        private static boolean booleanEnv(Map<String, String> variables, String name, boolean fallback) {
+            String value = env(variables, name, String.valueOf(fallback)).trim();
+            if ("true".equalsIgnoreCase(value)) {
+                return true;
+            }
+            if ("false".equalsIgnoreCase(value)) {
+                return false;
+            }
+            throw new IllegalStateException("Environment variable '" + name + "' must be true or false");
         }
     }
 

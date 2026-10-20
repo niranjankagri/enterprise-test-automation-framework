@@ -3,7 +3,7 @@
 ## Generate and open the report
 
 ```bash
-mvn clean test                                                        # writes automation/target/allure-results
+./mvnw clean test                                                     # writes automation/target/allure-results
 npx allure-commandline serve automation/target/allure-results         # build and open the report
 npx allure-commandline generate automation/target/allure-results -o automation/target/allure-report --clean
 ```

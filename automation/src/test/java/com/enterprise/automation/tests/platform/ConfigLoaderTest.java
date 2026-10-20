@@ -30,6 +30,7 @@ public class ConfigLoaderTest {
         assertThat(config.environment()).isEqualTo("local");
         assertThat(config.baseUrl()).hasToString("http://localhost:8080");
         assertThat(config.browser()).isEqualTo(BrowserType.CHROME);
+        assertThat(config.headless()).as("default.properties sets headless=false").isFalse();
         assertThat(config.execution()).isEqualTo(ExecutionMode.LOCAL);
         assertThat(config.explicitWait()).isEqualTo(Duration.ofSeconds(10));
         assertThat(config.appAutostart()).as("local starts the demo app").isTrue();
@@ -46,6 +47,7 @@ public class ConfigLoaderTest {
         assertThat(qa.environment()).isEqualTo("qa");
         assertThat(qa.baseUrl()).hasToString("http://localhost:8081");
         assertThat(qa.headless()).as("qa runs headless").isTrue();
+        assertThat(qa.appAutostart()).as("qa inherits app.autostart=false from defaults").isFalse();
         assertThat(qa.explicitWait()).as("qa overrides the default wait").isEqualTo(Duration.ofSeconds(15));
         assertThat(qa.windowWidth()).as("not set in qa: falls back to default").isEqualTo(1440);
     }
@@ -95,6 +97,53 @@ public class ConfigLoaderTest {
         assertThat(config.headless()).isTrue();
         assertThat(config.baseUrl()).hasToString("http://shop.test:9000");
         assertThat(config.apiBaseUrl()).hasToString("http://shop.test:9000/api");
+    }
+
+    /** Boolean values ignore surrounding whitespace and letter case. */
+    public void booleanValuesAreTrimmedAndCaseInsensitive() {
+        TestConfig config = load(Map.of("headless", "  TrUe  "), Map.of("APP_AUTOSTART", " fAlSe "));
+
+        assertThat(config.headless()).isTrue();
+        assertThat(config.appAutostart()).isFalse();
+    }
+
+    /** Boolean settings follow system property, environment variable, then environment-file precedence. */
+    public void booleanSettingsFollowConfigurationPrecedence() {
+        TestConfig fromFile = load(Map.of(), Map.of());
+        TestConfig fromEnvironment = load(Map.of(), Map.of("HEADLESS", "true", "APP_AUTOSTART", "false"));
+        TestConfig fromSystemProperty = load(Map.of("headless", "false", "app.autostart", "true"),
+                Map.of("HEADLESS", "true", "APP_AUTOSTART", "false"));
+
+        assertThat(fromFile.headless()).isFalse();
+        assertThat(fromFile.appAutostart()).isTrue();
+        assertThat(fromEnvironment.headless()).isTrue();
+        assertThat(fromEnvironment.appAutostart()).isFalse();
+        assertThat(fromSystemProperty.headless()).isFalse();
+        assertThat(fromSystemProperty.appAutostart()).isTrue();
+    }
+
+    /** An invalid headless value fails with a key-specific error that does not echo the supplied value. */
+    public void invalidHeadlessValueFailsClearlyWithoutEchoingIt() {
+        String headlessValue = "headless-synthetic-secret";
+
+        assertThatThrownBy(() -> load(Map.of("headless", headlessValue), Map.of()))
+                .isInstanceOf(IllegalStateException.class)
+                .satisfies(error -> {
+                    assertThat(error.getMessage()).contains("headless").contains("true or false")
+                            .doesNotContain(headlessValue);
+                });
+    }
+
+    /** An invalid autostart value fails with a key-specific error that does not echo the supplied value. */
+    public void invalidAutostartValueFailsClearlyWithoutEchoingIt() {
+        String autostartValue = "autostart-synthetic-secret";
+
+        assertThatThrownBy(() -> load(Map.of("app.autostart", autostartValue), Map.of()))
+                .isInstanceOf(IllegalStateException.class)
+                .satisfies(error -> {
+                    assertThat(error.getMessage()).contains("app.autostart").contains("true or false")
+                            .doesNotContain(autostartValue);
+                });
     }
 
     /** An unknown environment stops the run with the list of valid ones. */

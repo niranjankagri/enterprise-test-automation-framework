@@ -25,6 +25,8 @@ import java.util.Set;
  */
 public final class OrderApi {
 
+    private static final String QUANTITY_ERROR = "Quantity must be a whole number between 1 and " + Integer.MAX_VALUE;
+
     // For each status, the statuses an order may move to next
     private static final Map<String, Set<String>> TRANSITIONS = Map.of(
             "PLACED", Set.of("SHIPPED", "CANCELLED"),
@@ -106,9 +108,10 @@ public final class OrderApi {
                 if (item.get("productId") == null || !item.get("productId").isIntegralNumber()) {
                     v.error("items[" + i + "].productId", "Product is required");
                 }
-                if (item.get("quantity") == null || !item.get("quantity").isIntegralNumber()
-                        || item.get("quantity").intValue() < 1) {
-                    v.error("items[" + i + "].quantity", "Quantity must be at least 1");
+                JsonNode quantity = item.get("quantity");
+                if (quantity == null || !quantity.isIntegralNumber() || !quantity.canConvertToInt()
+                        || quantity.intValue() < 1) {
+                    v.error("items[" + i + "].quantity", QUANTITY_ERROR);
                 }
             }
         }

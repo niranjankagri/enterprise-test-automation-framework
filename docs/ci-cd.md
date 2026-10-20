@@ -7,9 +7,11 @@ GitHub Actions, in `.github/workflows`.
 ```mermaid
 flowchart LR
     subgraph PR["Pull request (ci.yml)"]
-        q1[Compile, warnings = errors<br/>Checkstyle, unit tests] --> s1[Smoke]
+        q1[Compile, warnings = errors<br/>Checkstyle, unit tests,<br/>persisted Allure failure verifier] --> s1[Chrome smoke]
+        q1 --> api1[API regressions]
         dr[Dependency review]
         s1 --> r1[Allure report]
+        api1 --> r1
     end
     subgraph Main["Push to main (regression.yml)"]
         b[Build, unit tests, app jar] --> a[API] --> u[UI] --> s2[Smoke on Edge] --> r2[Allure report]
@@ -26,13 +28,13 @@ flowchart LR
 
 | Workflow | Trigger | Jobs |
 |---|---|---|
-| `ci.yml` | pull request, manual | quality gate (compile with warnings as errors, Checkstyle, unit suite) → smoke; dependency review in parallel; report |
+| `ci.yml` | pull request, manual | quality gate (compile with warnings as errors, Checkstyle, unit suite, persisted Allure failure-redaction verifier) -> API regressions and Chrome smoke; dependency review for pull requests; report |
 | `regression.yml` | push to `main`, manual | build (+ app jar artifact) → API → UI → smoke on Edge → report |
 | `nightly.yml` | daily 02:00 UTC, manual | full suite on Chrome (4 threads), regression on Firefox and Edge, regression through `docker compose` + Selenium Grid; combined report |
-| `run-suite.yml` | reusable | one suite: Java 17 + Maven cache, `mvn test -Dsuite=... -Dbrowser=... -Dthreads=...`, results uploaded even on failure |
+| `run-suite.yml` | reusable | one suite: Java 17 + Maven cache, `./mvnw clean test -Dsuite=... -Dbrowser=... -Dthreads=...`, results uploaded even on failure |
 | `allure-report.yml` | reusable | downloads all `results-*` artifacts, merges Allure results, generates one report artifact |
 
-Shared steps live in the two reusable workflows, so the three pipelines differ only in what they run.
+Host-run Maven jobs use the checked-in Maven Wrapper. Docker image build and test commands use the pinned Maven container image. Shared steps live in the two reusable workflows, so the three pipelines differ in the suites and browsers they run.
 
 ## Quality gates
 

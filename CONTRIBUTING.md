@@ -4,7 +4,7 @@
 
 1. Create a branch from `main`.
 2. Make the change and add or update tests.
-3. Run `mvn clean test` locally; it must pass.
+3. Run the relevant suite with the checked-in Maven Wrapper: `./mvnw -B -ntp test -Dsuite=<suite>` on POSIX shells, `.\mvnw.cmd -B -ntp test '-Dsuite=<suite>'` in PowerShell, or `mvnw.cmd -B -ntp test -Dsuite=<suite>` in Command Prompt. A separate Maven installation is not required.
 4. Open a pull request. CI must be green before merging.
 
 ## Commit messages
