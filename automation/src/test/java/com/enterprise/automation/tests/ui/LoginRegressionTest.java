@@ -27,11 +27,12 @@ import org.testng.annotations.Test;
 @Test(groups = {"ui", "regression"})
 public class LoginRegressionTest extends BaseTest {
 
-    // One run per row of testdata/login-negative.csv; the password parameter is masked in logs and reports
+    // One run per row of testdata/login-negative.csv; the provider wraps the password in a report-safe value.
     @Test(dataProvider = "loginNegative", dataProviderClass = TestDataProviders.class)
-    public void signInIsRejected(String testCase, String username, String password, String expectedField,
+    public void signInIsRejected(String testCase, String username, TestDataProviders.SensitiveValue password,
+                                 String expectedField,
                                  String expectedMessage) {
-        LoginPage login = openLoginPage().attemptLogin(username, password);
+        LoginPage login = openLoginPage().attemptLogin(username, password.value());
 
         // "form" = banner from the API (401); a field name = client-side "required" message under that field
         String actual = "form".equals(expectedField) ? login.errorMessage() : login.fieldError(expectedField);

@@ -29,7 +29,22 @@ public final class TestDataProviders {
     /** {@code login-negative.csv}: case, username, password, expectedField, expectedMessage. */
     @DataProvider(name = "loginNegative")
     public static Object[][] loginNegative() {
-        return rows("testdata/login-negative.csv", "case", "username", "password", "expectedField", "expectedMessage");
+        Object[][] cases = rows("testdata/login-negative.csv", "case", "username", "password", "expectedField",
+                "expectedMessage");
+        for (Object[] testCase : cases) {
+            testCase[2] = new SensitiveValue((String) testCase[2]);
+        }
+        return cases;
+    }
+
+    /** A provider value that stays masked when TestNG writes it into retained result reports. */
+    public record SensitiveValue(String value) {
+
+        /** Never let a reporting or logging call print the wrapped value. */
+        @Override
+        public String toString() {
+            return "****";
+        }
     }
 
     /** {@code invalid-customers.csv}: case, field, label, value, error. */

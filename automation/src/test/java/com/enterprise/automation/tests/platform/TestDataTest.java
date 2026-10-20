@@ -10,6 +10,7 @@ import com.enterprise.automation.data.OrderData;
 import com.enterprise.automation.data.ProductData;
 import com.enterprise.automation.data.TestDataFactory;
 import com.enterprise.automation.data.UserData;
+import com.enterprise.automation.tests.base.TestDataProviders;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -83,6 +84,18 @@ public class TestDataTest {
                 .satisfies(r -> assertThat(r.get("error")).isEqualTo("Phone must contain 7-20 digits, spaces, +, - or ()"));
         assertThat(rows).filteredOn(r -> r.get("case").equals("email missing")).singleElement()
                 .satisfies(r -> assertThat(r.get("value")).isEmpty());
+    }
+
+    /** The login negative-case provider keeps every password masked in TestNG's retained report parameters. */
+    public void loginNegativeProviderMasksPasswordsInTestReports() {
+        Object[][] cases = TestDataProviders.loginNegative();
+
+        assertThat(cases.length).isEqualTo(5);
+        for (Object[] testCase : cases) {
+            assertThat(testCase[2]).isInstanceOf(TestDataProviders.SensitiveValue.class);
+            assertThat(testCase[2].toString()).isEqualTo("****");
+            assertThat(((TestDataProviders.SensitiveValue) testCase[2]).value()).isNotNull();
+        }
     }
 
     /** A missing file or an unknown SKU fails with its name in the message. */
