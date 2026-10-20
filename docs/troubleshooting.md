@@ -16,7 +16,7 @@ Start with the evidence: the Allure report (failure category, steps, screenshot,
 | `Clean-up failed (...)` warnings | the test already removed its data, or the app was unreachable | clean-ups never fail a test; make the clean-up idempotent (`deleteCustomerIfExists`) |
 | Checkstyle fails the build | a rule in `config/checkstyle.xml` (sleep, empty catch, unused import...) | fix the code; the message names the rule |
 | Every test class runs, listeners do not, `Connection refused` everywhere; warning `suiteXmlFiles ... not supported after 3.6.0` | Surefire 3.6+ ignores TestNG suite files | keep `maven-surefire-plugin.version` on 3.5.x (Dependabot is told to skip 3.6+) |
-| `warnings found and -Werror specified` in CI | a compiler warning (e.g. deprecated API) | run `mvn compile` without `-q` locally to see the warning |
+| `warnings found and -Werror specified` in CI | a compiler warning (e.g. deprecated API) | run `./mvnw compile` without `-q` locally to see the warning |
 | Allure report is empty | results not written / wrong folder | results are in `automation/target/allure-results`; run `npx allure-commandline serve automation/target/allure-results` |
 | `@Step` annotations have no effect | AspectJ weaver does not run on JDK 27 | use `Report.step(...)`; the framework does not use `@Step` |
 | Docker run: tests cannot reach the app | browsers run in node containers | inside compose use `http://demo-app:8081`, not `localhost` (already set in `docker-compose.yml`) |
@@ -24,7 +24,7 @@ Start with the evidence: the Allure report (failure category, steps, screenshot,
 ## Debugging a single test
 
 ```bash
-mvn test -Dsuite=ui -Dparallel=none -Dheadless=false
+./mvnw test -Dsuite=ui -Dparallel=none -Dheadless=false
 ```
 
-Run the suite that contains the test serially and with a visible browser; the log file then reads top to bottom, one test at a time. Do not use `-Dtest=...` with Maven: it bypasses the suite files, so the listeners (including the one that starts the application) do not run. In the IDE, run a suite file from `src/test/resources/suites` with the same `-D` options.
+Run the suite that contains the test serially and with a visible browser; the log file then reads top to bottom, one test at a time. Do not use `-Dtest=...` with Maven: it bypasses the suite files, so the listeners (including the one that starts the application where needed) do not run. In the IDE, run a suite file from `src/test/resources/suites` with the same `-D` options.

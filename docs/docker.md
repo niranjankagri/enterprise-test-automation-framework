@@ -72,7 +72,7 @@ The nightly workflow runs the regression suite this way on Firefox with 4 thread
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `tests` exits immediately with a build error | compilation or Checkstyle failed in the `build` stage | run `mvn -q test-compile` locally to see the error |
+| `tests` exits immediately with a build error | compilation or Checkstyle failed in the `build` stage | run `./mvnw -q test-compile` locally to see the error |
 | Tests cannot reach the application (`ERR_CONNECTION_REFUSED` in screenshots) | a URL points at `localhost` | inside compose use `http://demo-app:8081` (already set in `docker-compose.yml`) |
 | Chrome/Edge pages time out (`ERR_TIMED_OUT`, "Timed out receiving message from renderer") while API tests pass | the service name is a real top-level domain on the HSTS preload list (for example `app`), so the browser forces HTTPS | name services so they are not a TLD (this is why the service is `demo-app`) |
 | `SessionNotCreatedException` / tests wait long for a browser | no node for the browser, or all sessions busy | check `http://localhost:4444/ui`; more threads than node sessions queue (see [grid.md](grid.md#capacity-and-parallel-sessions)) |

@@ -3,23 +3,23 @@
 ## How to run
 
 ```bash
-mvn clean test                                   # full suite, parallel=classes, 2 threads (defaults)
-mvn clean test -Dthreads=4                       # 4 threads
-mvn clean test -Dparallel=none                   # serial, e.g. to debug one failure
-mvn clean test -Dsuite=regression -Dthreads=4    # any suite, any thread count
+./mvnw clean test                                   # full suite, parallel=classes, 2 threads (defaults)
+./mvnw clean test -Dthreads=4                       # 4 threads
+./mvnw clean test -Dparallel=none                   # serial, e.g. to debug one failure
+./mvnw clean test -Dsuite=regression -Dthreads=4    # any suite, any thread count
 ```
 
 Parallel mode and threads come from configuration (`parallel`, `threads`; also `PARALLEL`, `THREADS` environment variables) and are applied to every suite by `ExecutionSettingsListener`. The suite XML files only describe *what* runs.
 
-## Measured (local, headless Chrome, 158 tests)
+## Historical runtime observations
 
-| Mode | Wall time (Maven) | Tests |
-|---|---|---|
-| serial (`-Dparallel=none`) | ~242 s | 169 passed |
-| `classes`, 2 threads | ~171 s | 169 passed |
-| `classes`, 4 threads | ~148 s | 169 passed |
+| Mode | Wall time (Maven) |
+|---|---|
+| serial (`-Dparallel=none`) | ~242 s |
+| `classes`, 2 threads | ~171 s |
+| `classes`, 4 threads | ~148 s |
 
-Measured from a clean clone on a laptop (Chrome, headless), 2026-10-07; Maven start-up and compilation included.
+Measured from a clean clone on a laptop (Chrome, headless), 2026-10-07; Maven start-up and compilation included. These timings are historical and machine-dependent; test totals are omitted because suite contents change, and runtime is not a coverage measure.
 
 The gain flattens at 4 threads because parallelism is per class and the largest data-driven classes (customer management with 8 CSV cases, the 8-product catalogue) set the critical path. Splitting those classes, or more Grid capacity ([grid.md](grid.md)), shortens it further.
 
@@ -40,10 +40,10 @@ The gain flattens at 4 threads because parallelism is per class and the largest 
 
 Both modes are supported. With `parallel=methods` several threads run tests of the same class instance at the same time, so per-test state cannot live in plain fields: the two classes that set state in `@BeforeMethod` (`OrderApiTest`'s customer and products, `PurchaseJourneyTest`'s buyer) keep it in `ThreadLocal`s, which works because TestNG runs a `@BeforeMethod` on its test's thread. Shared fields set once in `@BeforeClass` (`ShopDatabase`) are read-only and safe in both modes.
 
-| Mode, 4 threads | Full suite, same session (2026-10-07) |
+| Mode, 4 threads | Wall time, same session (2026-10-07) |
 |---|---|
-| `methods` | 169/169 twice (~187 s, ~270 s) |
-| `classes` | 169/169 (~192 s) |
+| `methods` | ~187 s and ~270 s on two runs |
+| `classes` | ~192 s |
 
 `methods` gave no measurable gain here (timings vary with machine load, and every UI test starts its own browser in either mode), so `classes` stays the default: fewer threads touch one class's data at once, which keeps failures easier to read. Switch per run with `-Dparallel=methods`.
 

@@ -96,3 +96,10 @@ Append material decisions with their evidence and trade-offs. Do not record cred
 - **Reason:** `Boolean.parseBoolean` silently maps every value other than `true` to `false`. This can unexpectedly show a browser window, prevent local app startup, or silently disable the documented remote H2 connection.
 - **Verification:** Regression-first unit runs reproduced the invalid-value behavior for all three settings. The final unit suite passed 41/41 with Checkstyle 0; synthetic invalid strings were absent from generated Allure results, logs and Surefire reports. Actions run `39439648609` passed all jobs.
 - **Trade-off:** `DemoApp.Options.fromEnvironment(Map)` adds a testable map-based resolver; normal application startup continues to use `System.getenv()` through the existing no-argument method.
+
+## D-015 - Treat repository configuration as the source of truth for coverage documentation
+
+- **Decision:** Derive dependency versions, suite/group descriptions, CI execution paths and Compose networking guidance from the current POMs, suite XML, workflows and Compose file. Use the coverage matrix for requirement-level evidence; do not use a fixed test count as a coverage claim. Use the Maven Wrapper for host commands and preserve the container image's Maven command inside Docker.
+- **Reason:** Group overlap and data providers change the number of executed test cases, while a count does not establish that a requirement, route/role combination, branch or browser was covered.
+- **Verification:** Source comparisons and `git diff --check` passed; PR Actions validation for the documentation commit is pending.
+- **Trade-off:** Historical runtime observations may remain when dated and labeled as machine-dependent; stale case totals and unsupported claims are removed.

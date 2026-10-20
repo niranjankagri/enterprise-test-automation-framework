@@ -8,17 +8,17 @@
 
 ## Test pyramid in this project
 
-| Level | What it checks | Suite / group | Count (approx.) | Runs |
+| Level | What it checks | Suite / group | Runs |
 |---|---|---|---|---|
-| Unit (framework) | configuration rules, data generation, CSV/JSON readers, retry classification, secret masking, log components | `unit` | 32 | every build (quality gate) |
-| Platform | real browsers start with the configured settings, one per thread; screenshots | `platform` | 8 | full suite |
-| API | every endpoint and method, status codes, headers, payloads, schemas, authentication, authorization, validation, business rules, correlation id | `api` | 57 | main, nightly |
-| Database | schema, catalogue rows, parameter binding, assertions | `db` (`DatabaseLayerTest`; integration tests also carry `db`, 22 in the group) | 13 | nightly, integration |
-| Integration | API → DB (stored values, transactions, hashing); API → DB → UI and UI → API → DB | `integration` | 9 | nightly |
-| UI | sign-in, navigation, customer management, catalogue, checkout, roles | `ui` | 53 | main, nightly |
-| E2E | business journeys (order placement, cancellation) | `e2e` | 5 | nightly |
+| Unit (framework) | configuration rules, data generation, CSV/JSON readers, retry classification, secret masking, log components | `unit` | PR quality gate and main build |
+| Platform | real browsers start with the configured settings, one per thread; screenshots | `platform` | full and regression suites where group selection includes it |
+| API | route behavior, response contracts, authentication, authorization, validation and business rules | `api` | PR API regressions, main API, nightly full/regression |
+| Database | schema, catalogue rows, parameter binding and persistence assertions | `db` | integration suite and nightly full/regression |
+| Integration | API → DB (stored values, transactions, hashing); API → DB → UI and UI → API → DB | `integration` | integration suite and nightly full/regression |
+| UI | sign-in, navigation, customer management, catalogue, checkout and roles | `ui` | PR Chrome smoke, main UI, nightly full/regression |
+| E2E | business journeys (order placement, cancellation) | `e2e` | nightly full suite |
 
-Tests can belong to more than one group, so the rows overlap; the full suite runs 169 tests (verified from a clean clone).
+Group membership and suite selection overlap. This table describes layers and CI execution paths, not the set of requirements proven. The [coverage matrix](TEST_COVERAGE_MATRIX.md) tracks individual requirements, named tests, the last verified source SHA and limitations. Test totals vary with data providers and group selection; no coverage percentage is reported here.
 
 Most behaviour is covered at the API level (fast, precise); the UI covers what only the UI can show (forms, field errors, role-based controls, cart behaviour) and a few journeys. Cross-layer tests prove that the layers agree.
 
@@ -26,16 +26,16 @@ Most behaviour is covered at the API level (fast, precise); the UI covers what o
 
 | Group | Meaning | When |
 |---|---|---|
-| `smoke` | "is it up and usable?": login, navigation, catalogue, key API reads | every pull request, after deployment |
-| `sanity` | key happy paths and role checks | after deployment |
-| `regression` | complete functional coverage including negative and data-driven cases | main branch, nightly |
-| `security` | password hashing, secret masking | with regression |
+| `smoke` | "is it up and usable?": login, navigation, catalogue, key API reads | pull requests and main; useful after deployment |
+| `sanity` | key happy paths and role checks | available as a dedicated suite; no current workflow selects it |
+| `regression` | broader functional regression cases, including selected negative and data-driven cases; not complete functional coverage | nightly Firefox, Edge and Docker/Grid suites; overlapping tests can also be selected by Main UI/full suites |
+| `security` | a purpose tag for security-related tests such as password hashing and secret masking; not a standalone suite | selected only when a suite includes the test's layer or another group attached to it |
 
 ## Test design techniques
 
 - **Equivalence classes and boundaries**: invalid customer fields (missing, too long, wrong format) from `invalid-customers.csv`; quantity 0 vs 1; stock exactly enough vs one too many.
 - **State transitions**: order status flow PLACED → SHIPPED → DELIVERED, PLACED → CANCELLED, and the forbidden transitions.
-- **Roles and permissions**: every write as the read-only viewer must fail (UI controls hidden, API 403).
+- **Roles and permissions**: representative writes as the read-only viewer are checked (UI controls hidden, API 403); the full route × method × role matrix remains tracked as a coverage gap.
 - **Negative and robustness**: malformed JSON, wrong types, unknown ids, wrong HTTP methods, logged-out and invalid tokens.
 - **Data-driven**: the same CSV drives UI and API validation tests, so both layers enforce the same rules.
 - **Consistency across layers**: what the UI shows = what the API returns = what the database stores.
@@ -61,7 +61,7 @@ Every test creates what it needs with unique values and removes it afterwards ([
 
 ## Entry and exit criteria
 
-- **Pull request**: compiles without warnings, Checkstyle clean, unit and smoke green, no new high-severity vulnerable dependency.
+- **Pull request**: compiles without warnings, Checkstyle clean, unit tests and the persisted Allure failure-redaction verifier pass, API regressions and Chrome smoke pass, and dependency review finds no new high-severity vulnerable dependency.
 - **Main**: build, API, UI and smoke green.
 - **Release (nightly before release)**: full suite on Chrome and regression on Firefox and Edge green, Grid run green; failures triaged by report category.
 

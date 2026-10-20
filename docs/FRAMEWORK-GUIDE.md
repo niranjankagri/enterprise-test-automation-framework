@@ -48,26 +48,26 @@ A production-style test automation platform for a web application that has a **U
 | Area | Technology |
 |---|---|
 | Language / build | Java 17, Maven (multi-module) |
-| Test runner | TestNG 7.12 |
-| UI | Selenium 4.50 |
-| API | REST Assured 6, Jackson, JSON Schema validator |
+| Test runner | TestNG 7.12.0 |
+| UI | Selenium 4.51.0 |
+| API | REST Assured 6.2.0, Jackson 2.22.3, JSON Schema validator |
 | Database | JDBC, H2 |
 | Assertions | AssertJ |
 | Test data | Datafaker, JSON, CSV |
 | Logging | SLF4J + Logback |
-| Reporting | Allure 3 (allure-testng) |
+| Reporting | Allure 3.0.0 (allure-testng) |
 | Containers / CI | Docker, docker compose, Selenium Grid, GitHub Actions, Dependabot |
 
 ## 2. Quick start
 
-Requirements: JDK 17 or newer, Maven 3.9+, Chrome or Edge (Selenium Manager downloads drivers, and can download Firefox). Node.js only for the Allure command line.
+Requirements: JDK 17 or newer, Chrome or Edge (Selenium Manager downloads drivers, and can download Firefox). Node.js only for the Allure command line. The Maven Wrapper pins Maven 3.9.16, so a separate Maven installation is not required.
 
 ```bash
 git clone https://github.com/niranjankagri/enterprise-test-automation-framework.git
 cd enterprise-test-automation-framework
 
-mvn clean test                                   # full suite; starts the demo app; Chrome
-mvn clean test -Dsuite=smoke -Dheadless=true     # 20 fast checks
+./mvnw clean test                                   # full suite; starts the demo app; Chrome
+./mvnw clean test -Dsuite=smoke -Dheadless=true     # fast smoke group
 npx allure-commandline serve automation/target/allure-results   # open the report
 ```
 
@@ -76,11 +76,13 @@ Nothing else needs to be installed or started: for the default `local` environme
 Useful variations:
 
 ```bash
-mvn clean test -Dbrowser=firefox -Dthreads=4     # another browser, more threads
-mvn clean test -Dsuite=api                       # API only, no browser
-mvn clean test -Dparallel=none -Dheadless=false  # serial, visible browser (debugging)
-mvn clean test -Denv=qa                          # against an app started separately on port 8081
+./mvnw clean test -Dbrowser=firefox -Dthreads=4     # another browser, more threads
+./mvnw clean test -Dsuite=api                       # API group; local app starts when env=local
+./mvnw clean test -Dparallel=none -Dheadless=false  # serial, visible browser (debugging)
+./mvnw clean test -Denv=qa                          # against an app started separately on port 8081
 ```
+
+On Windows, use `mvnw.cmd` in Command Prompt or `.\mvnw.cmd` in PowerShell; quote each `-D` argument in PowerShell.
 
 ## 3. Repository layout
 
@@ -124,7 +126,7 @@ It is deliberately small and framework-free: the JDK's built-in HTTP server, pla
 ### 4.1 Running it on its own
 
 ```bash
-mvn -pl demo-app package
+./mvnw -pl demo-app package
 java -jar demo-app/target/demo-app.jar --port 8081 --db-port 9093
 ```
 
@@ -372,7 +374,7 @@ The registry is per thread; `BaseTest` / `BaseApiTest` run it after every test, 
 |---|---|---|
 | `BaseTest` | UI and cross-layer tests | a fresh browser per test (`@BeforeMethod`), clean-ups then browser quit (`@AfterMethod`), `config()`, `openLoginPage()`, `loginAsAdmin()`, `loginAsViewer()` |
 | `BaseApiTest` | API and API→DB tests | `admin()`, `viewer()`, `anonymous()` sessions, `config()`, clean-ups after each test |
-| `DemoAppLifecycle` | every suite (listener) | starts the demo app once when `app.autostart=true` |
+| `DemoAppLifecycle` | service-dependent suites | starts the demo app once when `app.autostart=true`; the pure `unit` suite does not register it |
 | `TestDataProviders` | data-driven tests | `loginNegative`, `invalidCustomers`, `catalogue`, `categories` |
 
 All set-up and tear-down methods use `alwaysRun = true`, so they also run in suites that select tests by group.
@@ -424,7 +426,7 @@ public class CustomerApiTest extends BaseApiTest {
 
 ## 13. The test suite: what is covered
 
-169 tests in the full suite (some data-driven methods run once per data row).
+The full suite selects all groups except the deliberately failing Allure redaction fixture, which runs only through its verifier. Group membership and data providers overlap, so test totals change; use [TEST_COVERAGE_MATRIX.md](TEST_COVERAGE_MATRIX.md) for requirement-to-test evidence rather than treating counts as coverage.
 
 | Class | Layer | What it proves |
 |---|---|---|
@@ -458,23 +460,23 @@ The test strategy behind this (pyramid, techniques, entry/exit criteria) is in [
 
 Suite files (`automation/src/test/resources/suites`) select **what** runs; `-Dsuite=<name>` picks one (default `full`).
 
-| Suite | Groups | Tests | Purpose |
-|---|---|---|---|
-| `full` | all | 169 | everything |
-| `unit` | `unit` | 32 | fast framework checks; first CI gate |
-| `smoke` | `smoke` | 20 | "is it up and usable"; pull-request gate |
-| `sanity` | `sanity` | 11 | key happy paths and role checks after a deployment |
-| `regression` | `regression` | 121 | complete functional coverage |
-| `api` | `api` | 57 | API only |
-| `ui` | `ui` | 53 | browser tests |
-| `integration` | `integration`, `db` | 22 | database and cross-layer |
-| `e2e` | `e2e` | 5 | business journeys |
+| Suite | Groups selected | Purpose |
+|---|---|---|
+| `full` | all except `allure-failure-redaction` | Broad suite across all groups. |
+| `unit` | `unit` | Framework checks; deliberately omits `DemoAppLifecycle`, so no app or browser is needed. |
+| `smoke` | `smoke` | Fast usability and critical-path checks; also runs in PR CI. |
+| `sanity` | `sanity` | Targeted happy-path and role checks. |
+| `regression` | `regression` | Broader functional regression cases; not a claim of complete coverage. |
+| `api` | `api` | API tests. |
+| `ui` | `ui` | Browser tests. |
+| `integration` | `integration`, `db` | Database and cross-layer tests; these groups overlap with other suites. |
+| `e2e` | `e2e` | Business journeys. |
 
-Every suite declares the same listeners: `ExecutionSettingsListener`, `RetryTransformer`, `TestLogContextListener`, `FailureDiagnosticsListener`, `ReportEvidenceListener`, `ExecutionMetadataListener`, `DemoAppLifecycle`. Do not run single tests with Maven's `-Dtest=...`: it bypasses the suite files and therefore the listeners.
+Suite XML files are authoritative for group selection. Most suites register `DemoAppLifecycle`; the pure `unit` suite deliberately does not. Other listeners are shared across the suites. Do not run single tests with Maven's `-Dtest=...`: it bypasses the suite files and their listeners.
 
 ### 14.2 Parallel execution
 
-**How** tests run comes from configuration: `ExecutionSettingsListener` applies `parallel` and `threads` to whichever suite runs. The default mode is `classes` (a class runs on one thread; classes run in parallel); `methods` is also supported and validated (per-test state in `ThreadLocal`s). Isolation that makes this safe: one browser per thread, unique data, per-thread clean-ups, immutable configuration, a stateless API client, a connection per query, and assertions that ignore other tests' data. Measured (169 tests, clean clone): full suite ~242 s serial, ~171 s with 2 threads, ~148 s with 4. Details: [parallel-execution.md](parallel-execution.md).
+**How** tests run comes from configuration: `ExecutionSettingsListener` applies `parallel` and `threads` to whichever suite runs. The default mode is `classes` (a class runs on one thread; classes run in parallel); `methods` is also supported and validated (per-test state in `ThreadLocal`s). Isolation that makes this safe: one browser per thread, unique data, per-thread clean-ups, immutable configuration, a stateless API client, a connection per query, and assertions that ignore other tests' data. Historical runtime measurements are in [parallel-execution.md](parallel-execution.md); runtime and suite contents vary.
 
 ### 14.3 Retries
 
@@ -531,14 +533,14 @@ SUITE=regression BROWSER=firefox THREADS=4 docker compose -f docker/docker-compo
 
 - `docker/Dockerfile` has three stages from one build: `build` (compiles once; POMs and `config/` copied before sources for layer caching), `app` (the demo app on a JRE image; port 8081, database port 9093 open to other containers) and `tests` (`mvn test`, `ENV=qa`, `EXECUTION=remote`, suite via the command).
 - `docker/docker-compose.yml` runs the app (health-checked), a Selenium hub (healthy only when a node can start sessions), Chrome, Firefox and Edge nodes (2 sessions each), and the tests, which wait for both health checks. Inside the network browsers reach the app as `http://demo-app:8081`, so `BASE_URL`, `API_BASE_URL` and `DB_URL` are overridden there. `--exit-code-from tests` makes failed tests fail the command; results land in `automation/target` on the host.
-- Without Docker, any Grid works: `java -jar selenium-server-<version>.jar standalone`, then `mvn test -Dexecution=remote -Dgrid.url=http://localhost:4444 -Dbrowser=firefox`.
+- Without Docker, any Grid works: `java -jar selenium-server-<version>.jar standalone`, then `./mvnw test -Dexecution=remote -Dgrid.url=http://localhost:4444 -Dbrowser=firefox`.
 - Details: [docker.md](docker.md) (variables, stages, services, troubleshooting) and [grid.md](grid.md) (driver selection, configuration, capacity and queueing, troubleshooting).
 
 ## 18. CI/CD
 
 | Workflow | Trigger | Jobs |
 |---|---|---|
-| `ci.yml` | pull request, manual | quality gate (compile with warnings as errors, Checkstyle, unit suite) → smoke; dependency review; Allure report |
+| `ci.yml` | pull request, manual | quality gate (compile with warnings as errors, Checkstyle, unit suite, persisted Allure failure-redaction verifier) -> API regressions and Chrome smoke; dependency review; Allure report |
 | `regression.yml` ("Main") | push to `main`, manual | build (+ app jar artifact) → API (4 threads) → UI (4 threads) → smoke on Edge → report |
 | `nightly.yml` | 02:00 UTC daily, manual | full suite on Chrome, regression on Firefox (4 threads) and Edge (2 threads), regression on Docker + Grid → report |
 | `run-suite.yml` | reusable | one suite on Java 17 with Maven cache; uploads results even when tests fail |
@@ -590,10 +592,10 @@ More detail and the listener hook points: [framework-design.md](framework-design
 | Clicks ignored on Chrome after signing in | keep the password-manager preferences in `BrowserOptionsFactory` |
 | Number input does not change on Firefox | use the End + Backspace pattern of `CheckoutPage.setQuantity` |
 | Passes alone, fails in parallel | shared state or assertions on shared lists; keep `parallel=classes` and assert on own data |
-| Checkstyle or `-Werror` failure | fix the reported rule/warning (`mvn compile` without `-q` shows warnings) |
+| Checkstyle or `-Werror` failure | fix the reported rule/warning (`./mvnw compile` without `-q` shows warnings) |
 | Empty Allure report | results are in `automation/target/allure-results` |
 
-Full table: [troubleshooting.md](troubleshooting.md). To debug: `mvn test -Dsuite=ui -Dparallel=none -Dheadless=false` and read `automation/target/logs/automation.log` top to bottom.
+Full table: [troubleshooting.md](troubleshooting.md). To debug: `./mvnw test -Dsuite=ui -Dparallel=none -Dheadless=false` and read `automation/target/logs/automation.log` top to bottom.
 
 ## 22. Design decisions in brief
 

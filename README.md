@@ -2,7 +2,7 @@
 
 [![Main](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/workflows/regression.yml/badge.svg)](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/workflows/regression.yml)
 [![Nightly regression](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/workflows/nightly.yml/badge.svg)](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/workflows/nightly.yml)
-![Java 17](https://img.shields.io/badge/Java-17-blue) ![Selenium 4](https://img.shields.io/badge/Selenium-4.50-green) ![TestNG](https://img.shields.io/badge/TestNG-7.12-orange) ![REST Assured](https://img.shields.io/badge/REST%20Assured-6.0-brightgreen) ![Allure](https://img.shields.io/badge/Allure-3-yellow) ![Docker](https://img.shields.io/badge/Docker-Selenium%20Grid-blue)
+![Java 17](https://img.shields.io/badge/Java-17-blue) ![Selenium 4](https://img.shields.io/badge/Selenium-4.51.0-green) ![TestNG](https://img.shields.io/badge/TestNG-7.12.0-orange) ![REST Assured](https://img.shields.io/badge/REST%20Assured-6.2.0-brightgreen) ![Allure](https://img.shields.io/badge/Allure-3.0.0-yellow) ![Docker](https://img.shields.io/badge/Docker-Selenium%20Grid-blue)
 
 ## Overview
 
@@ -49,14 +49,14 @@ Layers depend downwards only; tests contain no Selenium, HTTP or SQL. Full descr
 | Area | Tools |
 |---|---|
 | Language / build | Java 17, Maven (multi-module) |
-| Test runner | TestNG 7.12 (groups, suites, listeners, data providers) |
-| UI | Selenium 4.50 (local, Selenium Grid) |
-| API | REST Assured 6, Jackson, JSON Schema validation |
+| Test runner | TestNG 7.12.0 (groups, suites, listeners, data providers) |
+| UI | Selenium 4.51.0 (local, Selenium Grid) |
+| API | REST Assured 6.2.0, Jackson, JSON Schema validation |
 | Database | JDBC (H2), parameterized queries |
 | Assertions | AssertJ |
 | Test data | Datafaker, JSON and CSV files |
 | Logging | SLF4J + Logback (per-thread, per-test context) |
-| Reporting | Allure 3 (allure-testng) |
+| Reporting | Allure 3.0.0 (allure-testng) |
 | Containers | Docker, docker compose, Selenium Grid (hub + Chrome/Firefox/Edge nodes) |
 | CI/CD | GitHub Actions, Dependabot, dependency review, Checkstyle |
 
@@ -106,7 +106,7 @@ CustomerResponse created = ApiSession.admin().customers().createCustomer(TestDat
 ErrorResponse error = ApiAssertions.error(expectStatus(ApiSession.viewer().customers().create(body), 403));
 ```
 
-Covers GET/POST/PUT/PATCH/DELETE, 200/201/204/400/401/403/404/405/409, headers, payloads, authentication, authorization, validation and business rules (stock, order status flow).
+Mapped API tests exercise examples across GET/POST/PUT/PATCH/DELETE, response statuses, headers, payloads, authentication, authorization, validation and business rules (stock, order status flow). See the [coverage matrix](docs/TEST_COVERAGE_MATRIX.md) for route-level evidence and known gaps.
 
 ## Database validation
 
@@ -140,7 +140,7 @@ Boolean values are trimmed and case-insensitive, but must be exactly `true` or `
 
 ## Parallel execution
 
-`mvn test -Dthreads=4`. One browser per thread, unique data, per-thread clean-up and logs. Full suite (169 tests, clean clone): ~242 s serial, ~171 s with 2 threads, ~148 s with 4. Details: [docs/parallel-execution.md](docs/parallel-execution.md).
+`./mvnw test -Dthreads=4`. One browser per thread, unique data, per-thread clean-up and logs. Historical timing observations are documented in [docs/parallel-execution.md](docs/parallel-execution.md); runtimes vary by machine and suite contents, and are not a coverage measure.
 
 ## Retry strategy
 
@@ -157,7 +157,7 @@ Allure: every UI action, API call (request/response attached) and SQL query is a
 Report of a smoke run with one deliberately failing check (a demo test, not part of the suites): overview with environment, executor and failure category, and the failed test with every step (password typed as `****`), the assertion and the evidence attachments.
 
 <p>
-  <img src="docs/images/report-overview.png" alt="Allure overview: 21 tests, environment, categories, executor" width="62%">
+  <img src="docs/images/report-overview.png" alt="Allure overview with environment, categories and executor" width="62%">
   <img src="docs/images/report-failed-test.png" alt="Failed UI test: assertion, steps, screenshot, URL, title, page source, browser console, test log" width="30%">
 </p>
 
@@ -171,7 +171,7 @@ Application, Selenium hub, Chrome/Firefox/Edge nodes and the test runner; `SUITE
 
 ## Selenium Grid
 
-`mvn test -Dexecution=remote -Dgrid.url=http://<grid>:4444 -Dbrowser=firefox`: the same browser options as local runs. Verified with the Docker Grid (nightly) and a local Selenium standalone server. [docs/grid.md](docs/grid.md).
+`./mvnw test -Dexecution=remote -Dgrid.url=http://localhost:4444 -Dbrowser=firefox`: the same browser options as local runs. Set `GRID_URL` to the address your test process can reach. [docs/grid.md](docs/grid.md).
 
 ## Cloud execution
 
@@ -181,7 +181,7 @@ Not implemented by decision: `-Dexecution=cloud` fails fast with a clear message
 
 | Pipeline | Trigger | Runs |
 |---|---|---|
-| CI | pull request | compile (warnings = errors), Checkstyle, unit tests → smoke; dependency review; report |
+| CI | pull request | compile (warnings = errors), Checkstyle, Allure failure verifier, unit tests → API regressions and Chrome smoke; dependency review; report |
 | Main | push to main | build → API → UI → smoke on Edge → report |
 | Nightly | daily + manual | full suite (Chrome), regression (Firefox, Edge), regression on Docker + Grid → report |
 
@@ -199,7 +199,7 @@ No real credentials in code or Git (scan of all files and the full history); the
 
 ## Running tests
 
-Requirements: JDK 17+, Chrome/Edge (Selenium Manager can download Firefox), and Node.js for the Allure CLI. The checked-in Maven Wrapper pins Maven 3.9.16: use `./mvnw` in macOS/Linux/Git Bash or `mvnw.cmd` in Windows Command Prompt; a separate Maven installation is not required.
+Requirements: JDK 17+, Chrome/Edge (Selenium Manager can download Firefox), and Node.js for the Allure CLI. The checked-in Maven Wrapper pins Maven 3.9.16: use `./mvnw` in macOS/Linux/Git Bash, `mvnw.cmd` in Windows Command Prompt, or `.\mvnw.cmd` in PowerShell; a separate Maven installation is not required.
 
 ```bash
 ./mvnw clean test                                   # full suite, local app, Chrome
@@ -209,20 +209,23 @@ Requirements: JDK 17+, Chrome/Edge (Selenium Manager can download Firefox), and 
 npx allure-commandline serve automation/target/allure-results
 ```
 
-On Windows Command Prompt, replace `./mvnw` with `mvnw.cmd` in the Maven commands above.
+In PowerShell, use `.\mvnw.cmd` and quote each Maven `-D` argument, for example `.\mvnw.cmd clean test '-Dsuite=smoke' '-Dheadless=true'`. In Windows Command Prompt, use `mvnw.cmd`.
 
 ## Test suites
 
-| Suite | Content | Tests |
-|---|---|---|
-| `full` (default) | everything | 169 |
-| `unit` | framework unit tests | 32 |
-| `smoke` | fast "is it usable" checks | 20 |
-| `sanity` | key happy paths and role checks | 11 |
-| `regression` | complete functional coverage | 121 |
-| `api` / `ui` | one layer | 57 / 53 |
-| `integration` | database and cross-layer | 22 |
-| `e2e` | business journeys | 5 |
+| Suite | What it selects |
+|---|---|
+| `full` (default) | All test groups except the deliberately failing Allure redaction fixture, which runs only through its verifier. |
+| `unit` | Framework and configuration tests; the suite does not start the application or use a browser. |
+| `smoke` | Fast usability and critical-path checks tagged `smoke`. |
+| `sanity` | Targeted happy-path and role checks tagged `sanity`. |
+| `regression` | Broader API, UI, database and journey tests tagged `regression`; this group is not a claim of complete functional coverage. |
+| `api` | API tests tagged `api`. |
+| `ui` | Browser tests tagged `ui`. |
+| `integration` | Tests tagged `integration` and `db`, including API/database and cross-layer checks. |
+| `e2e` | Business journeys tagged `e2e`. |
+
+Suite XML files select TestNG groups, which can overlap. Test totals change as tests and data providers change; they are execution evidence, not a coverage measure. The current requirement and test mapping is in [docs/TEST_COVERAGE_MATRIX.md](docs/TEST_COVERAGE_MATRIX.md).
 
 ## Reports
 

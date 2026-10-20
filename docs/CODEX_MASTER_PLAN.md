@@ -62,8 +62,8 @@ Docker/Grid, Actions, Checkstyle and project documentation were added in the ori
 
 ## Current execution checkpoint
 
-- PR #17 (Batch C) was merged by the owner; Batch D started from fetched `origin/main` at `91b62f9f501b49f22ca1411e21deb7f9ab0670d4` on `codex/batch-d-validation-docs`.
+- PR #17 (Batch C) was merged by the owner; Batch D started from `origin/main` at `91b62f9f501b49f22ca1411e21deb7f9ab0670d4`. After Dependabot PR #14 advanced main to `9ffe710242c04200e219626b3497c69ee4c98e75`, the feature branch merged that main commit as `324c9a1baab28d404b926909c473038aa753694a`; PR run `39441537561` passed all applicable jobs.
 - C06 is implemented and verified on `c54b77a816954c22de21a0ee3bf9e58966f87b9c`: overflow quantities are rejected without state changes, the API suite passed 74/74 locally, and PR Actions run `39436856557` passed all jobs.
 - C07 is implemented and verified on `6ce37369fa4812409341f2bd34825830b3de4023`: framework booleans and `DB_ALLOW_REMOTE` reject invalid text; the unit suite passed 41/41 locally and PR Actions run `39439648609` passed all jobs.
-- PR #18 is the active draft Batch D review request. C08 documentation consistency remains pending. Do not begin Batch E until PR #18 is merged by the owner.
+- PR #18 is the active draft Batch D review request. C08 documentation edits are in progress; verify the final documentation commit with local review and PR Actions before the owner review gate. Do not begin Batch E until PR #18 is merged by the owner.
 - The traceable coverage snapshot is `docs/TEST_COVERAGE_MATRIX.md`. It separates requirement/route coverage, executed suites, Java line/branch coverage, browser evidence and known gaps; no coverage percentages are reported without a defined denominator.
