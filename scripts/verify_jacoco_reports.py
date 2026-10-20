@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Validate module-specific JaCoCo reports and print actual line/branch counts."""
+"""Validate module-specific JaCoCo reports and print executed line/branch counts."""
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 import sys
 import xml.etree.ElementTree as ET
@@ -14,12 +15,11 @@ REPORTS = {
 }
 
 
-def counters(report: ET.Element) -> dict[str, tuple[int, int]]:
-    totals: dict[str, list[int]] = {}
-    for counter in report.findall("counter"):
-        kind = counter.attrib["type"]
-        totals[kind] = [int(counter.attrib["covered"]), int(counter.attrib["missed"])]
-    return {kind: (values[0], values[1]) for kind, values in totals.items()}
+def counters(node: ET.Element) -> dict[str, tuple[int, int]]:
+    return {
+        counter.attrib["type"]: (int(counter.attrib["covered"]), int(counter.attrib["missed"]))
+        for counter in node.findall("counter")
+    }
 
 
 def percentage(covered: int, missed: int) -> str:
@@ -27,32 +27,61 @@ def percentage(covered: int, missed: int) -> str:
     return f"{100 * covered / total:.1f}%" if total else "n/a"
 
 
-def main() -> int:
-    for module, (path, required_class) in REPORTS.items():
+def verify_reports(reports: Mapping[str, tuple[Path, str]]) -> int:
+    for module, (path, required_class) in reports.items():
         if not path.is_file():
             print(f"Missing JaCoCo XML report: {path}", file=sys.stderr)
             return 1
-        root = ET.parse(path).getroot()
-        classes = {node.attrib.get("name") for node in root.findall(".//class")}
+        try:
+            root = ET.parse(path).getroot()
+            report_counters = counters(root)
+            classes = {node.attrib.get("name"): node for node in root.findall(".//class")}
+            class_counters = counters(classes[required_class]) if required_class in classes else {}
+        except (ET.ParseError, OSError, KeyError, ValueError) as error:
+            print(f"Invalid JaCoCo XML report for {module}: {error.__class__.__name__}", file=sys.stderr)
+            return 1
+
         if required_class not in classes:
             print(f"Expected production class {required_class} is absent from {module} report", file=sys.stderr)
             return 1
-        report_counters = counters(root)
-        for required_counter in ("LINE", "BRANCH"):
-            if required_counter not in report_counters:
-                print(f"{module} report has no {required_counter} counter", file=sys.stderr)
+
+        for counter_type in ("LINE", "BRANCH"):
+            if counter_type not in report_counters:
+                print(f"{module} report has no {counter_type} counter", file=sys.stderr)
                 return 1
+            covered, missed = report_counters[counter_type]
+            if covered + missed == 0:
+                print(f"{module} report has no measurable production {counter_type.lower()} data", file=sys.stderr)
+                return 1
+            if covered == 0:
+                print(f"{module} report has no executed production {counter_type.lower()} coverage", file=sys.stderr)
+                return 1
+
+            if counter_type not in class_counters:
+                print(f"Designated production class {required_class} has no {counter_type} counter", file=sys.stderr)
+                return 1
+            class_covered, class_missed = class_counters[counter_type]
+            if class_covered + class_missed == 0:
+                print(f"Designated production class {required_class} has no measurable {counter_type.lower()} data",
+                      file=sys.stderr)
+                return 1
+            if class_covered == 0:
+                print(f"Designated production class {required_class} has no executed {counter_type.lower()} coverage",
+                      file=sys.stderr)
+                return 1
+
         line_covered, line_missed = report_counters["LINE"]
         branch_covered, branch_missed = report_counters["BRANCH"]
-        if line_covered + line_missed == 0 or branch_covered + branch_missed == 0:
-            print(f"{module} report has no measurable production {required_counter.lower()} data", file=sys.stderr)
-            return 1
         print(
             f"{module}: {len(classes)} classes; lines {line_covered}/{line_covered + line_missed} "
             f"({percentage(line_covered, line_missed)}); branches {branch_covered}/"
             f"{branch_covered + branch_missed} ({percentage(branch_covered, branch_missed)})"
         )
     return 0
+
+
+def main() -> int:
+    return verify_reports(REPORTS)
 
 
 if __name__ == "__main__":

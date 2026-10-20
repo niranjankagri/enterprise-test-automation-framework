@@ -118,6 +118,8 @@ jobs:
           cp target/jacoco-merged.exec automation/target/jacoco.exec
           ./mvnw -B -ntp -pl demo-app org.jacoco:jacoco-maven-plugin:0.8.15:report
           ./mvnw -B -ntp -pl automation org.jacoco:jacoco-maven-plugin:0.8.15:report
+      - name: Test JaCoCo report verifier
+        run: python3 -m unittest discover -s scripts/tests -v
       - name: Verify measured production classes and summarize line/branch counts
         run: python3 scripts/verify_jacoco_reports.py
       - name: Upload Java coverage reports
