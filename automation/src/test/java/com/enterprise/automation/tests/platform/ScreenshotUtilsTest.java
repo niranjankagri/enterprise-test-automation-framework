@@ -25,7 +25,7 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
 /** The failure-screenshot mechanism produces a real PNG file and never throws. */
-@Test(groups = {"platform", "smoke"})
+@Test(groups = {"platform", "smoke", "regression"})
 public class ScreenshotUtilsTest {
 
     private static final byte[] PNG_SIGNATURE = {(byte) 0x89, 'P', 'N', 'G'};
