@@ -47,7 +47,7 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 | C05 | Verified complete | Commit `37bc70e050e5f344f2374234eccf956097a1b103`; local unit suite 35/35 passed with no app/H2 listeners; Actions run `39424239632` passed all jobs. |
 | C06 | Verified complete | Commit `c54b77a816954c22de21a0ee3bf9e58966f87b9c`; local API 74/74; PR #18 CI run `39436856557` all jobs green. |
 | C07 | Verified complete | Commit `6ce37369fa4812409341f2bd34825830b3de4023`; local unit 41/41; PR #18 CI run `39439648609` all jobs green. |
-| C08 | In progress | Verified current POM, suite, workflow and Compose descriptions; C08 documentation PR checks are pending. |
+| C08 | Verified complete | Documentation commit `5284f992c369087f53fc510353a4d30ce4ebd4bc`; PR Actions run `39443489388` passed all jobs. |
 | C09-C11 | Pending | Start only after Batch D PR #18 is merged by the owner. |
 
 ## Blockers and required follow-up
@@ -179,13 +179,14 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 - **Draft PR:** [#18](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/18) remains draft and targets `main`.
 - **Next:** C08 documentation consistency on this Batch D branch. Do not start Batch E until PR #18 is merged by the owner.
 
-## Batch D - C08 documentation consistency (local review complete; PR validation pending)
+## Batch D - C08 documentation consistency (verified complete)
 
 - **Starting point:** clean feature branch `codex/batch-d-validation-docs`, synchronized with merged `origin/main` at `9ffe710242c04200e219626b3497c69ee4c98e75` through feature merge commit `324c9a1baab28d404b926909c473038aa753694a`; PR #17 was confirmed merged and PR #18 remains the active draft.
 - **Source comparison:** root POM, TestNG suite XML, PR/Main/Nightly/reusable workflow files, and Compose service bindings were inspected before changing descriptions. Current pinned versions include Selenium 4.51.0, REST Assured 6.2.0, TestNG 7.12.0, Jackson 2.22.3 and Allure 3.0.0. Compose maps app 8081 and Grid 4444 to loopback; H2 9093 is internal only.
 - **Changes:** README, contributing, framework guide, test strategy, demo, Docker, Grid, CI/CD, reporting, parallel execution and troubleshooting documentation now use Maven Wrapper for host commands, describe the actual suite/group and workflow selection, remove static run totals as coverage claims, and point to the traceable coverage matrix. Docker-container commands retain the Maven executable from the pinned image.
 - **Coverage records:** the matrix now records the merged-main synchronization and passing Main/PR workflow evidence. Fixed suite descriptions and documented current gaps; no coverage percentage was introduced.
-- **Local verification:** `git diff --check` passed. Manual/source searches confirmed no stale Selenium 4.50/REST Assured 6.0 claims or bare host Maven examples remain; `mvn` examples are limited to the Docker image/container context. Documentation-only changes do not alter Java or suite behavior.
+- **Local verification:** `git diff --check` and staged `git diff --cached --check` passed. Source searches confirmed documented versions match the POM, stale Selenium 4.50/REST Assured 6.0 claims and fixed suite totals were removed, and bare `mvn` commands remain only in Docker image/container instructions. No Java or suite behavior changed, so no local Java tests were run for this documentation-only chunk.
 - **C07 CI record correction:** normal pull-request runs `39440416577` for `ec850806` and `39441011461` for `8719ce9` passed. Manual dispatches `39440483111` and `39441014548` were redundant; their Dependency review jobs were skipped because that job runs only for `pull_request` events.
-- **C08 GitHub Actions:** pending for the C08 documentation commit; mark verified only after the normal PR event is complete and every applicable job is green.
-- **Next:** await C08 PR validation, then update the matrix, master checkpoint, decision log and Desktop memory with the resulting evidence. Keep PR #18 draft at the owner review gate; do not start Batch E.
+- **Implementation commit / push:** `5284f992c369087f53fc510353a4d30ce4ebd4bc` (`docs(batch-d): align coverage and setup guidance`) pushed to `origin/codex/batch-d-validation-docs`.
+- **C08 GitHub Actions:** [run 39443489388](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39443489388) completed successfully on the implementation commit. Compile/unit and persisted Allure failure-redaction verifier, Dependency review, API regressions, Chrome smoke and combined Allure report all passed.
+- **Review gate:** Batch D C06-C08 is verified complete. Keep PR #18 unmerged; the final progress/matrix update is documentation-only and remains subject to the normal PR checks. Once those are green, mark PR #18 ready for owner review. Do not start Batch E.

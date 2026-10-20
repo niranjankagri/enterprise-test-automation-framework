@@ -101,5 +101,5 @@ Append material decisions with their evidence and trade-offs. Do not record cred
 
 - **Decision:** Derive dependency versions, suite/group descriptions, CI execution paths and Compose networking guidance from the current POMs, suite XML, workflows and Compose file. Use the coverage matrix for requirement-level evidence; do not use a fixed test count as a coverage claim. Use the Maven Wrapper for host commands and preserve the container image's Maven command inside Docker.
 - **Reason:** Group overlap and data providers change the number of executed test cases, while a count does not establish that a requirement, route/role combination, branch or browser was covered.
-- **Verification:** Source comparisons and `git diff --check` passed; PR Actions validation for the documentation commit is pending.
+- **Verification:** Root POM, suite XML, workflows and Compose bindings were compared with the updated documentation; `git diff --check` passed. PR Actions run `39443489388` passed all jobs on documentation commit `5284f992c369087f53fc510353a4d30ce4ebd4bc`.
 - **Trade-off:** Historical runtime observations may remain when dated and labeled as machine-dependent; stale case totals and unsupported claims are removed.
