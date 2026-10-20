@@ -35,6 +35,12 @@ Do not build a later batch on unmerged work unless the owner explicitly authoriz
 | C10 — CI/CD and security validation | Review workflow triggers, permissions, dependency strategy, artifacts, secrets and scanning. | Required build/test/Docker/report jobs execute; least privilege and artifact handling are justified; no required checks are bypassed. |
 | C11 — final review and release readiness | Independently compare cumulative changes to all eight audit findings and M1–M8 capabilities. | Each finding is fixed or clearly unresolved; feasible full checks and CI evidence are recorded; docs and backlog are accurate; PR remains unmerged for owner review. |
 
+## Current Batch E checkpoint
+
+- **C09 - VERIFIED COMPLETE:** coverage inventory expanded and high-risk API authorization, order concurrency, UI/cross-layer, framework and evidence gaps were addressed with named tests in `docs/TEST_COVERAGE_MATRIX.md`.
+- **C10 - VERIFIED COMPLETE:** PR #19 CI, integration/order gate, extended CodeQL workflow and same-revision module-specific JaCoCo reporting passed on branch head `62427b353eb6aba3cc96b3371473c80a0f83b6a5`; tested merge SHA `3cede33dffde81c9459a57ff914248571bf14329`. See `docs/CODEX_PROGRESS.md` and `docs/RELEASE_READINESS.md`.
+- **C11 - ACTIVE:** run final-source suites, browser matrix, Docker/Selenium Grid, persisted Allure verification and source/dependency checks; audit M1-M8 and original findings; update final coverage and limitations. Keep PR #19 draft until required checks terminate successfully; never merge or deploy.
+
 ## Original M1–M8 capability mapping
 
 The project memory records the original implementation sequence as M1–M10. This table preserves the original first eight milestone boundaries; C00–C11 are remediation chunks, not replacement milestone numbers. Verify capabilities against current source and tests at C11.

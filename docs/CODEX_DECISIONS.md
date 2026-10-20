@@ -124,3 +124,25 @@ Append material decisions with their evidence and trade-offs. Do not record cred
 - **Reason:** Textual Allure redaction does not alter pixels already rendered in a screenshot. Synthetic evidence must show pixel masking while the active test page regains its original values afterward.
 - **Verification:** `ScreenshotUtilsTest.masksSensitivePageValuesForScreenshotAndRestoresThem` compares captured PNG pixels to a redacted-page reference and to the unredacted synthetic page, then checks the live DOM values were restored. The platform test passed in the 212-case Chrome full-suite run. This protects marked text and password fields only; screenshots are not universally pixel-redacted.
 - **Accessibility decision:** Give modal dialogs an accessible title, trap Tab navigation, close with Escape and return focus to the opener. Automated login/customer/checkout checks cover labels, visible focus and dialog behavior; no screen-reader conformance claim is made.
+
+
+## D-019 - Measure Java coverage by module and tested source revision
+
+- **Decision:** Pin JaCoCo 0.8.15, instrument the automation test JVM and both production modules, merge only non-empty artifacts whose manifests identify the same workflow source SHA, then publish separate `demo-app` and `automation` XML/HTML reports. Preserve separate external-container collection for nightly Grid execution.
+- **Reason:** The framework JVM executes demo-app classes during API/integration tests, while the Grid app container is a separate JVM. Treating them as one execution source would miss code or risk mixing revisions.
+- **Verification:** PR CI run `39463151404` verified four same-SHA inputs and real production classes. The tested merge SHA `3cede33dffde81c9459a57ff914248571bf14329` measured demo-app lines 912/975 and branches 262/334; automation lines 1171/1449 and branches 224/378. The report verifier rejects absent classes or empty counters.
+- **Trade-off:** No threshold is set before the requirement denominator and baseline are reviewed. Percentages describe executed production code only and do not imply requirement or browser coverage.
+
+## D-020 - Run CodeQL in the repository workflow with fork-safe upload
+
+- **Decision:** Add a pinned-major CodeQL v4 advanced workflow for Java/Kotlin, extended queries, manual Maven compilation, least-scoped analysis permissions, and avoid result upload for fork pull requests.
+- **Reason:** Repository metadata showed CodeQL default setup was not configured. The workflow makes source analysis part of this PR without changing repository settings or exposing a write token to fork code.
+- **Verification:** CodeQL run `39463151680` completed successfully on branch head `62427b353eb6aba3cc96b3371473c80a0f83b6a5`.
+- **Trade-off:** GitHub native secret scanning and push protection are enabled, but their alerts are not a downloadable Actions artifact. Dependabot security updates remain disabled by repository configuration; no settings were changed.
+
+## D-021 - Keep nightly container coverage separate from test-JVM coverage
+
+- **Decision:** Copy the same pinned JaCoCo agent into the demo-app runtime image and attach it only in the Docker/Grid nightly workflow; collect the app process data separately from automation test JVM data, then validate and report module execution on matching source revisions.
+- **Reason:** CI API/integration tests may cover in-process app classes, but a Grid container runs the app in another JVM and cannot write to the automation workspace without an explicit bind mount and agent destination.
+- **Verification:** Docker image build and Compose configuration passed locally; the PR coverage workflow passed. Runtime container coverage remains a C11 nightly verification requirement.
+- **Trade-off:** The coverage merge is valid only for artifacts produced from the same source revision and compatible JaCoCo format; nightly container execution is reported separately from PR coverage.
