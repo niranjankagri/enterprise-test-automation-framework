@@ -23,6 +23,8 @@ RUN mvn -B -q -DskipTests package \
 FROM eclipse-temurin:17-jre AS app
 WORKDIR /app
 COPY --from=build /workspace/demo-app/target/demo-app.jar ./demo-app.jar
+# Keep this runtime agent version aligned with jacoco-maven-plugin.version in the parent POM.
+COPY --from=build /root/.m2/repository/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar ./jacocoagent.jar
 # Inside containers: qa-style ports, database reachable from the test container
 ENV PORT=8081 \
     DB_TCP_PORT=9093 \

@@ -1,6 +1,6 @@
 # Pull-request pipeline: fast feedback before merging.
 # checkout -> Java -> Maven cache -> compile (warnings are errors) -> unit tests -> dependency check
-# -> API regression + smoke tests -> Allure report -> artifacts
+# -> API, database/order and smoke regressions -> coverage + Allure reports -> artifacts
 name: CI (pull request)
 
 on:
@@ -30,6 +30,19 @@ jobs:
         run: python3 scripts/verify_allure_failure_redaction.py
       - name: Compile with warnings as errors and run unit tests
         run: ./mvnw -B -ntp clean test -Dsuite=unit -Dmaven.compiler.failOnWarning=true
+      - name: Record tested source revision for coverage
+        if: success()
+        run: printf '%s\n' "$GITHUB_SHA" > automation/target/coverage-source.sha
+      - name: Upload JaCoCo execution data
+        if: success()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-unit
+          path: |
+            automation/target/jacoco.exec
+            automation/target/coverage-source.sha
+          if-no-files-found: error
+          retention-days: 30
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v7
@@ -66,8 +79,61 @@ jobs:
       suite: api
       threads: "2"
 
+  integration:
+    name: Database/order integration
+    needs: quality
+    uses: ./.github/workflows/run-suite.yml
+    with:
+      name: integration
+      suite: integration
+      threads: "2"
+
+  coverage:
+    name: Merge Java coverage reports
+    needs: [quality, api, integration, smoke]
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - name: Compile both production modules
+        run: ./mvnw -B -ntp clean package -DskipTests -Dmaven.compiler.failOnWarning=true
+      - name: Download same-run suite coverage inputs
+        uses: actions/download-artifact@v8
+        with:
+          pattern: coverage-*
+          path: target/coverage-input
+      - name: Verify source revisions and execution data
+        run: python3 scripts/verify_coverage_inputs.py target/coverage-input "$GITHUB_SHA" 4
+      - name: Merge execution data
+        run: ./mvnw -B -ntp -N -Dcoverage.merge=true org.jacoco:jacoco-maven-plugin:0.8.15:merge@merge-coverage-artifacts
+      - name: Generate separate module reports
+        run: |
+          cp target/jacoco-merged.exec demo-app/target/jacoco.exec
+          cp target/jacoco-merged.exec automation/target/jacoco.exec
+          ./mvnw -B -ntp -pl demo-app org.jacoco:jacoco-maven-plugin:0.8.15:report
+          ./mvnw -B -ntp -pl automation org.jacoco:jacoco-maven-plugin:0.8.15:report
+      - name: Verify measured production classes and summarize line/branch counts
+        run: python3 scripts/verify_jacoco_reports.py
+      - name: Upload Java coverage reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: java-coverage-reports
+          path: |
+            demo-app/target/site/jacoco
+            automation/target/site/jacoco
+            target/jacoco-merged.exec
+          if-no-files-found: warn
+          retention-days: 30
+
   report:
     name: Report
-    needs: [quality, api, smoke]
+    needs: [quality, api, integration, smoke]
     if: always()
     uses: ./.github/workflows/allure-report.yml
