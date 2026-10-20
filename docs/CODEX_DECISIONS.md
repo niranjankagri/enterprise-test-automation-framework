@@ -53,3 +53,31 @@ Append material decisions with their evidence and trade-offs. Do not record cred
 - **Reason:** The TestNG Allure adapter records an uncaught test method exception directly on the top-level result. Sanitizing only `Report.step` cannot protect this separate output path.
 - **Verification:** A dedicated runner executes a real synthetic `IllegalStateException` failure, then checks the final persisted `*-result.json` after TestNG and Maven finish. It confirms the failed TestNG case and exception type remain, the Allure test and step messages remain useful in redacted form, and the synthetic username, password and query token are absent.
 - **Trade-off:** Allure status details are sanitized immediately before persistence; the original throwable and TestNG failure result remain unchanged. The intentionally failing fixture is excluded from the general `full` suite and run by its dedicated verifier.
+
+## D-009 - Coordinate account deletion with session lifecycle
+
+- **Decision:** Use a fair read/write lock inside each `AuthService`. Login and token authentication share read access; account deletion holds write access while deleting the row and removing every session for that username.
+- **Reason:** A token map removal performed after an uncoordinated database delete can miss a concurrent login that registers its token afterward. The shared lock makes the delete/revoke operation exclusive with both login and authentication while retaining concurrent read-side requests.
+- **Verification:** API regression tests confirm a token works before deletion and is rejected afterward, deleted credentials cannot log in again, and a latch-started login/authentication/delete race leaves no usable token. A deterministic adjustable-clock test confirms 401 at the exact expiry deadline. PR #17 Actions run `39421373220` passed all jobs.
+- **Trade-off:** A deletion briefly blocks logins and auth checks for all accounts handled by that `AuthService` instance. An HTTP request already authorized before deletion can finish in flight; requests authenticated after deletion completes are rejected.
+
+## D-010 - Inject the auth clock for deterministic expiry tests
+
+- **Decision:** Keep system UTC and the existing one-hour token lifetime as `AuthService` production defaults, and allow an explicit `Clock` and `Duration` to be supplied to the service constructor.
+- **Reason:** Expiry should be tested at the deadline without sleeping or introducing time-based flakiness. The same `Clock` now controls issuance and validation.
+- **Verification:** `AuthServiceExpiryTest` advances an adjustable clock from before the deadline to the exact deadline and observes 200 then 401 through the router's HTTP boundary.
+- **Trade-off:** The constructor adds an injection seam, while normal application startup continues to use the existing one-argument constructor and unchanged defaults.
+
+## D-011 - Reserve order stock with a conditional update
+
+- **Decision:** Decrement inventory with one conditional SQL update that requires `active = TRUE` and `stock >= quantity`; require exactly one affected row. Treat a zero-row result as a current-state `409` conflict and check affected rows when restoring stock.
+- **Reason:** The prior read-check-update sequence allowed two orders to observe the same inventory and both succeed. The conditional update serializes at the product row and rechecks available stock after waiting, while staying within the existing SQL transaction and error conventions.
+- **Verification:** A deterministic H2 contention test locks the shared product row until both API requests reach their reservation updates. It reproduced two successful responses before the fix and then passed with one `201`, one `409`, nonnegative final stock, one order, and rollback of the losing order's earlier line reservation. Local integration suite and Actions run `39423169979` passed.
+- **Trade-off:** A competing order may now receive `409` after initially passing the friendly stock read; the response reports the current remaining units. The existing transaction remains responsible for rolling back all prior order work.
+
+## D-012 - Keep the pure unit suite independent of application lifecycle
+
+- **Decision:** Do not register `DemoAppLifecycle` in `unit.xml`; retain the listener in suites that exercise API, UI, database or cross-layer behavior. Guard the unit suite configuration with an offline regression test.
+- **Reason:** The unit suite selects framework-only tests and should not start the demo application or H2 based on the local environment's `app.autostart=true` setting.
+- **Verification:** Before the change the 34-test unit suite passed but started the app and H2. After the change, 35 tests passed with both ports closed before and after, no application process running, and local `app.autostart=true`. Actions run `39424239632` passed all jobs.
+- **Trade-off:** Suites that call API, UI or database services continue to use the existing lifecycle listener and startup behavior; only the unit suite omits it.

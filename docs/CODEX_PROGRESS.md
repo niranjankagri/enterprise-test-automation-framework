@@ -42,7 +42,10 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 | C00 | Verified complete and merged | Commit `ac89f577f78b16c248d0f65228de337fc2627088`, PR #15 merged; all recorded C00 CI checks passed. |
 | C01 | Verified complete | Commit `8a4e579fbce015098c22a55413fe78781432aac5`; local Compose integration passed and CI run `39414072615` passed all jobs. |
 | C02 | Verified complete | Commit `6d6c8b8b4af2e60fc363b9ac4e525bc38df42d59`; local suite and artifact scan passed; CI run `39415956405` passed all jobs. |
-| C03-C11 | Pending | Continue after Batch B is complete and the owner review gate is satisfied. |
+| C03 | Verified complete | Commit `ed2fb00507caaeaed9b4428f15bdc509aef34b76`; local API suite 59/59 passed; Actions run `39421373220` green; PR #17 draft. |
+| C04 | Verified complete | Commit `1636105725d97f605290bfe3a6f924afa1c5fa93`; local integration 23/23 passed; Actions run `39423169979` passed all jobs. |
+| C05 | Verified complete | Commit `37bc70e050e5f344f2374234eccf956097a1b103`; local unit suite 35/35 passed with no app/H2 listeners; Actions run `39424239632` passed all jobs. |
+| C06-C11 | Pending | Batch C is at the PR #17 owner review gate; do not start Batch D until approval and merge. |
 
 ## Blockers and required follow-up
 
@@ -89,3 +92,47 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 - **GitHub Actions:** [run 39419116576](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39419116576) completed successfully on `aa9166e3c63f49afa77fb0414e1ef435af065001`: verifier, quality gate, dependency review, Chrome smoke and Allure report all passed.
 - **Draft PR:** [#16](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/16) remains open and draft, targeting `main`.
 - **Review gate:** PR #16 remains draft; do not merge without owner review.
+
+## Batch C - C03 session revocation on user deletion (verified complete)
+
+- **Starting point:** after the owner confirmed PR #16 merged, `git fetch --prune origin` placed `origin/main` at `e4b2f7a9118030906d6c6a0c0f886f6b7c60d10a`. The clean `codex/batch-c-correctness` branch was created from that SHA.
+- **Confirmed issue:** `UserApi.delete` removed the `app_users` row without touching the in-memory `AuthService.sessions` map. Existing tests only verified that later login failed; they did not check active bearer-token revocation, expiry boundary behavior or delete/auth races.
+- **Change:** coordinate login and token checks with deletion under a fair read/write lock. Login and authentication can share read access; deletion exclusively removes the row and the user's sessions, preventing a concurrent login from leaving a usable token. Expiration uses an injected clock and rejects tokens at the deadline; production defaults remain system UTC and one hour.
+- **Regression coverage:** `UserApiTest` verifies an issued token works before deletion, fails after deletion, and cannot be recreated through login. A latch-started race runs token authentication, fresh login and deletion concurrently, then checks every returned token fails after deletion. `AuthServiceExpiryTest` uses an adjustable clock and a loopback HTTP server to verify success before expiry and 401 exactly at expiry. Cleanup tolerates the account already being deleted.
+- **Files changed:** `demo-app/src/main/java/com/enterprise/demoapp/auth/AuthService.java`, `demo-app/src/main/java/com/enterprise/demoapp/api/UserApi.java`, `automation/src/test/java/com/enterprise/automation/tests/api/UserApiTest.java`, `automation/src/test/java/com/enterprise/automation/tests/api/AuthServiceExpiryTest.java`.
+- **Pre-change baseline:** `mvnw.cmd -B -ntp test -Dsuite=api -Dmaven.compiler.failOnWarning=true` passed with **57 tests, 0 failures, 0 errors, 0 skipped; Checkstyle 0 violations; exit 0**.
+- **Post-change local validation:** the same command passed with **59 tests, 0 failures, 0 errors, 0 skipped; Checkstyle 0 violations; exit 0**. Both modules compiled with Java release 17 and compiler warnings treated as errors. `git diff --check` passed; the application and H2 ports were closed after the suite.
+- **Self-review:** the lifecycle lock protects the required session operations, and the tests use only synthetic test credentials. An HTTP request that passed authentication before deletion may finish in flight; all authentication checks after deletion completes reject the deleted account's tokens.
+- **Implementation commit / push:** `ed2fb00507caaeaed9b4428f15bdc509aef34b76` (`fix(auth): revoke sessions when users are deleted`), pushed to `origin/codex/batch-c-correctness`.
+- **Draft PR:** [#17](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/17), targeting `main`.
+- **GitHub Actions:** [run 39421373220](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39421373220) passed all jobs on the implementation commit: quality gate (including the Allure failure-redaction verifier), dependency review, Chrome smoke and Allure report.
+- **Next at the C03 gate:** proceed to C04 atomic stock reservation on the same Batch C branch; keep PR #17 draft and stop after C05 for owner review. C04 evidence follows below.
+
+## Batch C - C04 atomic order stock reservation (verified complete)
+
+- **Starting point:** clean `codex/batch-c-correctness` at C03 progress commit `9ceca4c0ff3614fb989e7450e56ada79d5d94b48`; no unrelated working-tree changes.
+- **Confirmed issue:** `OrderApi.create` read stock, checked it in Java, then issued an unconditional decrement. `adjustStock` ignored the affected-row count. The existing transaction already rolled back runtime exceptions, but no test forced competing reservations to overlap.
+- **Regression reproduction:** the pre-change integration baseline passed **22 tests, 0 failures, 0 errors, 0 skipped**. After adding the contention regression, the same suite deterministically failed with both competing requests returning `201` where one must be rejected; this reproduced the oversell defect before the fix.
+- **Change:** reserve with `UPDATE products SET stock = stock - ? WHERE id = ? AND active = TRUE AND stock >= ?`; require exactly one affected row. If another reservation changed the row, reload it and return the existing `409` inactive/insufficient-stock behavior. Stock restoration also checks for exactly one affected product row. Any rejected reservation throws inside the existing transaction, rolling back earlier lines and order writes.
+- **Regression coverage:** `OrderReservationConcurrencyTest` creates two orders with independent first lines and one shared limited-stock product. It holds the shared product row with a JDBC transaction, observes both reservation updates blocked in H2 session metadata, then releases the lock. It verifies one `201`, one `409`, final shared stock 1 from 3, one order header, the winner's first-line stock decrement, and rollback of the loser's first-line decrement. No sleeps or dependencies were added.
+- **Files changed:** `demo-app/src/main/java/com/enterprise/demoapp/api/OrderApi.java`, `automation/src/test/java/com/enterprise/automation/tests/integration/OrderReservationConcurrencyTest.java`.
+- **Local validation:** `mvnw.cmd -B -ntp test -Dsuite=integration -Dmaven.compiler.failOnWarning=true` passed: **23 tests, 0 failures, 0 errors, 0 skipped; Checkstyle 0 violations; exit 0**. Java compilation used release 17 with warnings as errors. `git diff --check` passed; no listeners remained on ports 8080 or 9092 after test completion.
+- **Self-review:** the conditional SQL is the final guard even when the earlier read becomes stale; zero affected rows are distinguished from unexpected multi-row effects. The rejected request follows the existing API conflict convention, and the integration test confirms transaction rollback and cleanup. No real credentials or sensitive data were added.
+- **Implementation commit / push:** `1636105725d97f605290bfe3a6f924afa1c5fa93` (`fix(orders): reserve stock atomically under contention`), pushed to `origin/codex/batch-c-correctness`.
+- **GitHub Actions:** [run 39423169979](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39423169979) passed all jobs for the implementation commit: quality gate (including Allure failure redaction), dependency review, Chrome smoke and Allure report.
+- **Draft PR:** [#17](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/17) remains open and draft, targeting `main`.
+- **Next at the C04 gate:** proceed to C05 pure unit-suite isolation on the same branch; stop for owner review after C05 and do not start Batch D. C05 evidence follows below.
+
+## Batch C - C05 pure unit-suite isolation (verified complete)
+
+- **Starting point:** clean `codex/batch-c-correctness` at C04 progress commit `f020a63745207ae26fffd261b8c03e3017cbfb86`; no unrelated working-tree changes.
+- **Confirmed issue:** `unit.xml` registered `DemoAppLifecycle`. With local `app.autostart=true`, the unit suite started the application and H2 on ports 8080 and 9092 even though its 34 pre-change tests used only framework utilities and configuration. No API, UI, database or integration test was tagged `unit`.
+- **Change:** remove `DemoAppLifecycle` only from `unit.xml`; keep it registered in API, UI, integration, smoke, regression, sanity, E2E and full suites. Add `UnitSuiteIsolationTest`, which asserts the suite still selects the `unit` group and does not register the application lifecycle listener.
+- **Files changed:** `automation/src/test/resources/suites/unit.xml`, `automation/src/test/java/com/enterprise/automation/tests/platform/UnitSuiteIsolationTest.java`.
+- **Baseline validation:** `mvnw.cmd -B -ntp test -Dsuite=unit -Dmaven.compiler.failOnWarning=true` passed with **34 tests, 0 failures, 0 errors, 0 skipped; Checkstyle 0; exit 0**, but the log confirmed application and H2 startup.
+- **Post-change validation:** the same command passed with **35 tests, 0 failures, 0 errors, 0 skipped; Checkstyle 0; exit 0**. The run started with ports 8080 and 9092 closed and no application running while local config retained `app.autostart=true`; no app startup occurred and both ports remained closed afterward. Java compilation used release 17 with warnings as errors. `git diff --check` passed.
+- **Self-review:** no service-dependent tests were moved or weakened; current API/database/UI tests already use the appropriate suites and remain there. Other suites retain application startup. The new unit assertion is offline and reads the packaged TestNG suite resource only.
+- **Implementation commit / push:** `37bc70e050e5f344f2374234eccf956097a1b103` (`fix(unit): remove app startup from unit suite`), pushed to `origin/codex/batch-c-correctness`.
+- **GitHub Actions:** [run 39424239632](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39424239632) passed all jobs on the implementation commit: quality gate (including Allure failure redaction), dependency review, Chrome smoke and Allure report.
+- **Draft PR:** [#17](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/17) remains open and draft, targeting `main`.
+- **Next:** stop at the Batch C owner review gate; do not merge PR #17 or begin Batch D without the owner's approval.

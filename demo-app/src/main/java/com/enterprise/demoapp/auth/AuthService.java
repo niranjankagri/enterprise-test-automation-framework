@@ -13,14 +13,17 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Login and bearer tokens.
@@ -38,12 +41,26 @@ public final class AuthService {
     private final Database database;
     // Active tokens -> who they belong to; concurrent because requests run on many threads
     private final Map<String, Session> sessions = new ConcurrentHashMap<>();
+    // Login/authentication may run together; deletion excludes both until the row and sessions are removed.
+    private final ReentrantReadWriteLock accountLifecycle = new ReentrantReadWriteLock(true);
+    private final Clock clock;
+    private final Duration tokenLifetime;
     // Cryptographically strong randomness for salts
     private final SecureRandom random = new SecureRandom();
 
     /** Users and tokens live in this database. */
     public AuthService(Database database) {
+        this(database, Clock.systemUTC(), TOKEN_LIFETIME);
+    }
+
+    /** Allows deterministic expiry checks while keeping production defaults explicit. */
+    public AuthService(Database database, Clock clock, Duration tokenLifetime) {
         this.database = database;
+        this.clock = Objects.requireNonNull(clock, "clock");
+        this.tokenLifetime = Objects.requireNonNull(tokenLifetime, "tokenLifetime");
+        if (tokenLifetime.isZero() || tokenLifetime.isNegative()) {
+            throw new IllegalArgumentException("Token lifetime must be positive");
+        }
     }
 
     /** Creates a user with a salted password hash (used for the seeded demo accounts and the users API). */
@@ -89,39 +106,44 @@ public final class AuthService {
             throw ApiException.validation(missing);
         }
 
-        // Look the account up by username
-        try (Connection c = database.connect();
-             PreparedStatement ps = c.prepareStatement(
-                     "SELECT password_hash, salt, full_name, role FROM app_users WHERE username = ?")) {
-            ps.setString(1, username);
-            try (ResultSet rs = ps.executeQuery()) {
-                // Same message for unknown user and wrong password: do not reveal which usernames exist
-                if (!rs.next() || !MessageDigest.isEqual(
-                        rs.getString("password_hash").getBytes(StandardCharsets.UTF_8),
-                        hash(rs.getString("salt"), password).getBytes(StandardCharsets.UTF_8))) {
-                    throw new ApiException(401, "Invalid username or password");
-                }
-                // A random, unguessable 64-character token (two UUIDs without dashes)
-                String token = UUID.randomUUID().toString().replace("-", "")
-                        + UUID.randomUUID().toString().replace("-", "");
-                // Remember who the token belongs to and until when it is valid
-                Session session = new Session(username, rs.getString("full_name"), rs.getString("role"),
-                        Instant.now().plus(TOKEN_LIFETIME));
-                sessions.put(token, session);
+        accountLifecycle.readLock().lock();
+        try {
+            // Keep the account lookup and token registration together relative to user deletion.
+            try (Connection c = database.connect();
+                 PreparedStatement ps = c.prepareStatement(
+                         "SELECT password_hash, salt, full_name, role FROM app_users WHERE username = ?")) {
+                ps.setString(1, username);
+                try (ResultSet rs = ps.executeQuery()) {
+                    // Same message for unknown user and wrong password: do not reveal which usernames exist
+                    if (!rs.next() || !MessageDigest.isEqual(
+                            rs.getString("password_hash").getBytes(StandardCharsets.UTF_8),
+                            hash(rs.getString("salt"), password).getBytes(StandardCharsets.UTF_8))) {
+                        throw new ApiException(401, "Invalid username or password");
+                    }
+                    // A random, unguessable 64-character token (two UUIDs without dashes)
+                    String token = UUID.randomUUID().toString().replace("-", "")
+                            + UUID.randomUUID().toString().replace("-", "");
+                    // Remember who the token belongs to and until when it is valid
+                    Session session = new Session(username, rs.getString("full_name"), rs.getString("role"),
+                            clock.instant().plus(tokenLifetime));
+                    sessions.put(token, session);
 
-                // Login response: the token plus the user's display data for the UI header
-                Map<String, Object> result = new LinkedHashMap<>();
-                result.put("token", token);
-                result.put("tokenType", "Bearer");
-                result.put("expiresIn", TOKEN_LIFETIME.toSeconds());
-                result.put("username", username);
-                result.put("fullName", session.fullName());
-                result.put("role", session.role());
-                return Response.ok(result);
+                    // Login response: the token plus the user's display data for the UI header
+                    Map<String, Object> result = new LinkedHashMap<>();
+                    result.put("token", token);
+                    result.put("tokenType", "Bearer");
+                    result.put("expiresIn", tokenLifetime.toSeconds());
+                    result.put("username", username);
+                    result.put("fullName", session.fullName());
+                    result.put("role", session.role());
+                    return Response.ok(result);
+                }
+            } catch (SQLException e) {
+                // A database failure is a server error (500), not a login failure
+                throw new IllegalStateException(e);
             }
-        } catch (SQLException e) {
-            // A database failure is a server error (500), not a login failure
-            throw new IllegalStateException(e);
+        } finally {
+            accountLifecycle.readLock().unlock();
         }
     }
 
@@ -129,25 +151,50 @@ public final class AuthService {
     public Response logout(Request request) {
         // The router already verified the header is "Bearer <token>"; forget that token
         String header = request.header("Authorization");
-        sessions.remove(header.substring(7).trim());
+        accountLifecycle.readLock().lock();
+        try {
+            sessions.remove(header.substring(7).trim());
+        } finally {
+            accountLifecycle.readLock().unlock();
+        }
         return Response.noContent();
     }
 
     /** Router hook: valid, unexpired token → request is signed in. */
     public boolean authenticate(String token, Request request) {
-        // Unknown or logged-out token
-        Session session = sessions.get(token);
-        if (session == null) {
-            return false;
+        accountLifecycle.readLock().lock();
+        try {
+            // Unknown or logged-out token
+            Session session = sessions.get(token);
+            if (session == null) {
+                return false;
+            }
+            // Expired at or before the deadline: remove it so the map does not grow forever
+            if (!session.expiresAt().isAfter(clock.instant())) {
+                sessions.remove(token, session);
+                return false;
+            }
+            // Valid: tell the request who is calling (used for roles and /users/me)
+            request.signIn(session.username(), session.role());
+            return true;
+        } finally {
+            accountLifecycle.readLock().unlock();
         }
-        // Expired token: remove it so the map does not grow forever
-        if (session.expiresAt().isBefore(Instant.now())) {
-            sessions.remove(token);
-            return false;
+    }
+
+    /** Deletes an account and revokes its sessions under the same lock used by login/authentication. */
+    public int deleteUser(Connection connection, long id, String username) throws SQLException {
+        accountLifecycle.writeLock().lock();
+        try (PreparedStatement ps = connection.prepareStatement("DELETE FROM app_users WHERE id = ?")) {
+            ps.setLong(1, id);
+            int deleted = ps.executeUpdate();
+            if (deleted > 0) {
+                sessions.entrySet().removeIf(entry -> entry.getValue().username().equals(username));
+            }
+            return deleted;
+        } finally {
+            accountLifecycle.writeLock().unlock();
         }
-        // Valid: tell the request who is calling (used for roles and /users/me)
-        request.signIn(session.username(), session.role());
-        return true;
     }
 
     /** A JSON text field, or {@code null} when it is absent, null or blank. */
