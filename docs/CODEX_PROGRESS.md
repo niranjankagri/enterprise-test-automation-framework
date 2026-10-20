@@ -43,7 +43,8 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 | C01 | Verified complete | Commit `8a4e579fbce015098c22a55413fe78781432aac5`; local Compose integration passed and CI run `39414072615` passed all jobs. |
 | C02 | Verified complete | Commit `6d6c8b8b4af2e60fc363b9ac4e525bc38df42d59`; local suite and artifact scan passed; CI run `39415956405` passed all jobs. |
 | C03 | Verified complete | Commit `ed2fb00507caaeaed9b4428f15bdc509aef34b76`; local API suite 59/59 passed; Actions run `39421373220` green; PR #17 draft. |
-| C04-C11 | Pending | Continue C04 after C03's implementation and progress-record CI gates passed. |
+| C04 | Verified complete | Commit `1636105725d97f605290bfe3a6f924afa1c5fa93`; local integration 23/23 passed; Actions run `39423169979` passed all jobs. |
+| C05-C11 | Pending | Proceed to C05 after C04 implementation CI passed; retain the PR #17 owner review gate after C05. |
 
 ## Blockers and required follow-up
 
@@ -104,4 +105,19 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 - **Implementation commit / push:** `ed2fb00507caaeaed9b4428f15bdc509aef34b76` (`fix(auth): revoke sessions when users are deleted`), pushed to `origin/codex/batch-c-correctness`.
 - **Draft PR:** [#17](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/17), targeting `main`.
 - **GitHub Actions:** [run 39421373220](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39421373220) passed all jobs on the implementation commit: quality gate (including the Allure failure-redaction verifier), dependency review, Chrome smoke and Allure report.
-- **Next:** proceed to C04 atomic stock reservation on the same Batch C branch; keep PR #17 draft and stop after C05 for owner review.
+- **Next at the C03 gate:** proceed to C04 atomic stock reservation on the same Batch C branch; keep PR #17 draft and stop after C05 for owner review. C04 evidence follows below.
+
+## Batch C - C04 atomic order stock reservation (verified complete)
+
+- **Starting point:** clean `codex/batch-c-correctness` at C03 progress commit `9ceca4c0ff3614fb989e7450e56ada79d5d94b48`; no unrelated working-tree changes.
+- **Confirmed issue:** `OrderApi.create` read stock, checked it in Java, then issued an unconditional decrement. `adjustStock` ignored the affected-row count. The existing transaction already rolled back runtime exceptions, but no test forced competing reservations to overlap.
+- **Regression reproduction:** the pre-change integration baseline passed **22 tests, 0 failures, 0 errors, 0 skipped**. After adding the contention regression, the same suite deterministically failed with both competing requests returning `201` where one must be rejected; this reproduced the oversell defect before the fix.
+- **Change:** reserve with `UPDATE products SET stock = stock - ? WHERE id = ? AND active = TRUE AND stock >= ?`; require exactly one affected row. If another reservation changed the row, reload it and return the existing `409` inactive/insufficient-stock behavior. Stock restoration also checks for exactly one affected product row. Any rejected reservation throws inside the existing transaction, rolling back earlier lines and order writes.
+- **Regression coverage:** `OrderReservationConcurrencyTest` creates two orders with independent first lines and one shared limited-stock product. It holds the shared product row with a JDBC transaction, observes both reservation updates blocked in H2 session metadata, then releases the lock. It verifies one `201`, one `409`, final shared stock 1 from 3, one order header, the winner's first-line stock decrement, and rollback of the loser's first-line decrement. No sleeps or dependencies were added.
+- **Files changed:** `demo-app/src/main/java/com/enterprise/demoapp/api/OrderApi.java`, `automation/src/test/java/com/enterprise/automation/tests/integration/OrderReservationConcurrencyTest.java`.
+- **Local validation:** `mvnw.cmd -B -ntp test -Dsuite=integration -Dmaven.compiler.failOnWarning=true` passed: **23 tests, 0 failures, 0 errors, 0 skipped; Checkstyle 0 violations; exit 0**. Java compilation used release 17 with warnings as errors. `git diff --check` passed; no listeners remained on ports 8080 or 9092 after test completion.
+- **Self-review:** the conditional SQL is the final guard even when the earlier read becomes stale; zero affected rows are distinguished from unexpected multi-row effects. The rejected request follows the existing API conflict convention, and the integration test confirms transaction rollback and cleanup. No real credentials or sensitive data were added.
+- **Implementation commit / push:** `1636105725d97f605290bfe3a6f924afa1c5fa93` (`fix(orders): reserve stock atomically under contention`), pushed to `origin/codex/batch-c-correctness`.
+- **GitHub Actions:** [run 39423169979](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39423169979) passed all jobs for the implementation commit: quality gate (including Allure failure redaction), dependency review, Chrome smoke and Allure report.
+- **Draft PR:** [#17](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/17) remains open and draft, targeting `main`.
+- **Next:** proceed to C05 pure unit-suite isolation on the same branch; stop for owner review after C05 and do not start Batch D.
