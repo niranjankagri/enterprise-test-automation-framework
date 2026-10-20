@@ -46,3 +46,10 @@ Append material decisions with their evidence and trade-offs. Do not record cred
 - **Reason:** API filters, UI navigation and failure listeners all send their evidence through `Report`, but Allure's normal failure handling stored the original exception details before text attachments could be sanitized. URL usernames can also be sensitive independently of passwords.
 - **Verification:** synthetic API/UI regression coverage inspected active Allure metadata and persisted attachments, asserted exception identity preservation, and scanned 89 text artifacts with no synthetic-secret matches.
 - **Trade-off:** complete URL userinfo is hidden, while hosts, ports, paths and nonsensitive query values remain visible for diagnosis. Allure step lifecycle handling is explicit so exception metadata can be sanitized before it is stored.
+
+## D-008 - Sanitize final Allure test and step failure details
+
+- **Decision:** Register a `TestLifecycleListener` that masks `StatusDetails` on the top-level test and recursively nested steps at `beforeTestWrite`.
+- **Reason:** The TestNG Allure adapter records an uncaught test method exception directly on the top-level result. Sanitizing only `Report.step` cannot protect this separate output path.
+- **Verification:** A dedicated runner executes a real synthetic `IllegalStateException` failure, then checks the final persisted `*-result.json` after TestNG and Maven finish. It confirms the failed TestNG case and exception type remain, the Allure test and step messages remain useful in redacted form, and the synthetic username, password and query token are absent.
+- **Trade-off:** Allure status details are sanitized immediately before persistence; the original throwable and TestNG failure result remain unchanged. The intentionally failing fixture is excluded from the general `full` suite and run by its dedicated verifier.

@@ -78,3 +78,14 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 - **Draft PR:** [#16](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/16), targeting `main`.
 - **Memory record:** C02 evidence was appended to the same Desktop `MEMORY.md`; its original byte prefix was verified intact.
 - **Next:** pause at the Batch B owner review gate. Keep PR #16 in draft; start Batch C only after the owner approves/merges Batch B.
+
+### C02 pre-merge addendum - test-level Allure failure details
+
+- **Confirmed gap:** `Report` already sanitized step failure details, but Allure TestNG copied an uncaught test exception into top-level `TestResult.statusDetails` and wrote it without passing through that step boundary.
+- **Change:** register `AllureFailureRedactionListener` with the Allure lifecycle and mask message, trace, actual and expected fields on the test result and all nested steps immediately before Allure persists the result. The listener changes report metadata only; it does not alter `ITestResult` or the thrown exception.
+- **Regression:** a dedicated suite runs one intentionally failing TestNG test with synthetic URL username, password and `access_token` value. The verifier waits for Maven/TestNG to finish, checks Surefire recorded exactly one `IllegalStateException` failure, reads the final `*-result.json`, checks the preserved redacted test and step messages, and rejects any synthetic values in that JSON. `full.xml` excludes only this dedicated fixture group so nightly runs stay meaningful.
+- **Validation:** `python scripts/verify_allure_failure_redaction.py` passed on Windows and in CI; it observed the TestNG failure and Allure status `broken`, confirmed test-level and step-level details were retained in redacted form, then removed generated artifacts. `mvnw.cmd -B -ntp clean test -Dsuite=unit -Dmaven.compiler.failOnWarning=true` passed: 34 passed, 0 failed, 0 errors, 0 skipped; Checkstyle 0; exit 0. Staged and working-tree `git diff --check` passed.
+- **Implementation commit / push:** `aa9166e3c63f49afa77fb0414e1ef435af065001` (`fix(reporting): redact test-level Allure failures`), pushed to `origin/codex/batch-b-security`.
+- **GitHub Actions:** [run 39419116576](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39419116576) completed successfully on `aa9166e3c63f49afa77fb0414e1ef435af065001`: verifier, quality gate, dependency review, Chrome smoke and Allure report all passed.
+- **Draft PR:** [#16](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/16) remains open and draft, targeting `main`.
+- **Review gate:** PR #16 remains draft; do not merge without owner review.
