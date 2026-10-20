@@ -47,7 +47,7 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 | C05 | Verified complete | Commit `37bc70e050e5f344f2374234eccf956097a1b103`; local unit suite 35/35 passed with no app/H2 listeners; Actions run `39424239632` passed all jobs. |
 | C06 | Verified complete | Commit `c54b77a816954c22de21a0ee3bf9e58966f87b9c`; local API 74/74; PR #18 CI run `39436856557` all jobs green. |
 | C07 | Verified complete | Commit `6ce37369fa4812409341f2bd34825830b3de4023`; local unit 41/41; PR #18 CI run `39439648609` all jobs green. |
-| C08 | Verified complete | Documentation commit `5284f992c369087f53fc510353a4d30ce4ebd4bc`; PR Actions run `39443489388` passed all jobs. |
+| C08 | Verified complete | Documentation commit `5284f992c369087f53fc510353a4d30ce4ebd4bc` and evidence commit `4588e482f19ebc019461fa7d55fa5fed958e3124`; PR Actions runs `39443489388` and `39444011311` passed all jobs. |
 | C09-C11 | Pending | Start only after Batch D PR #18 is merged by the owner. |
 
 ## Blockers and required follow-up
@@ -189,4 +189,5 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 - **C07 CI record correction:** normal pull-request runs `39440416577` for `ec850806` and `39441011461` for `8719ce9` passed. Manual dispatches `39440483111` and `39441014548` were redundant; their Dependency review jobs were skipped because that job runs only for `pull_request` events.
 - **Implementation commit / push:** `5284f992c369087f53fc510353a4d30ce4ebd4bc` (`docs(batch-d): align coverage and setup guidance`) pushed to `origin/codex/batch-d-validation-docs`.
 - **C08 GitHub Actions:** [run 39443489388](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39443489388) completed successfully on the implementation commit. Compile/unit and persisted Allure failure-redaction verifier, Dependency review, API regressions, Chrome smoke and combined Allure report all passed.
-- **Review gate:** Batch D C06-C08 is verified complete. Keep PR #18 unmerged; the final progress/matrix update is documentation-only and remains subject to the normal PR checks. Once those are green, mark PR #18 ready for owner review. Do not start Batch E.
+- **Progress / matrix commit:** `4588e482f19ebc019461fa7d55fa5fed958e3124` (`docs(progress): record Batch D C08 evidence`) records the C08 checks and corrected CI history. Latest PR run [39444011311](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39444011311) on this commit also passed all five jobs.
+- **Review gate:** Batch D C06-C08 is verified complete. PR #18 is marked ready for owner review, open and unmerged. Do not merge or start Batch E until the owner approves the review gate.
