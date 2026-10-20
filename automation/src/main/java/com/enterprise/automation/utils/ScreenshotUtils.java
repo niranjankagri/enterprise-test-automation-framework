@@ -16,8 +16,9 @@ import org.slf4j.LoggerFactory;
 /**
  * Saves browser screenshots, e.g. at the moment a test fails.
  *
- * <p>Taking a screenshot must never hide the real failure: if the browser is already gone, the
- * problem is logged and {@code null} is returned instead of throwing.
+ * <p>Taking a screenshot must never hide the real failure. The page DOM is left intact while
+ * temporary overlays cover marked and password content; evidence is omitted if masking, capture,
+ * or restoration cannot be verified.
  */
 public final class ScreenshotUtils {
 
@@ -27,39 +28,140 @@ public final class ScreenshotUtils {
     // Millisecond timestamp: parallel failures of the same test never overwrite each other
     private static final DateTimeFormatter STAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSS");
 
+    private static final String INSTALL_MASKS = """
+            const marker = "data-codex-screenshot-mask-overlay";
+            const targets = [...document.querySelectorAll("[data-sensitive], input[type='password']")];
+            const overlays = [];
+            try {
+              for (const target of targets) {
+                const rect = target.getBoundingClientRect();
+                const left = Math.max(0, rect.left);
+                const top = Math.max(0, rect.top);
+                const right = Math.min(window.innerWidth, rect.right);
+                const bottom = Math.min(window.innerHeight, rect.bottom);
+                if (right <= left || bottom <= top) continue;
+
+                const overlay = document.createElement("div");
+                overlay.setAttribute(marker, "true");
+                overlay.setAttribute("aria-hidden", "true");
+                for (const [name, value] of Object.entries({
+                  position: "fixed", left: `${rect.left}px`, top: `${rect.top}px`,
+                  width: `${rect.width}px`, height: `${rect.height}px`,
+                  "z-index": "2147483647", display: "flex", "align-items": "center",
+                  "justify-content": "center", "box-sizing": "border-box", overflow: "hidden",
+                  margin: "0", padding: "2px", border: "2px solid #b00020",
+                  background: "#fff", color: "#000", opacity: "1", visibility: "visible",
+                  "pointer-events": "none", transform: "none", "font-family": "sans-serif",
+                  "font-size": "14px", "font-weight": "bold", "line-height": "normal",
+                  "white-space": "nowrap"
+                })) {
+                  overlay.style.setProperty(name, value, "important");
+                }
+                overlay.textContent = "[REDACTED]";
+                overlays.push(overlay);
+                document.documentElement.appendChild(overlay);
+
+                const x = (left + right) / 2;
+                const y = (top + bottom) / 2;
+                overlay.style.setProperty("pointer-events", "auto", "important");
+                const hit = document.elementFromPoint(x, y);
+                overlay.style.setProperty("pointer-events", "none", "important");
+                if (!hit || !hit.hasAttribute(marker)) {
+                  throw new Error("Screenshot masking overlay does not cover sensitive content");
+                }
+              }
+              return overlays;
+            } catch (error) {
+              let cleanupFailed = false;
+              for (const overlay of overlays) {
+                try {
+                  if (overlay.isConnected) overlay.parentNode.removeChild(overlay);
+                } catch (cleanupError) {
+                  cleanupFailed = true;
+                }
+              }
+              if (cleanupFailed) {
+                throw new Error("Could not clean up partial screenshot masks");
+              }
+              throw error;
+            }
+            """;
+
+    private static final String REMOVE_MASKS = """
+            let restored = true;
+            for (const overlay of arguments[0]) {
+              try {
+                if (overlay.isConnected) overlay.parentNode.removeChild(overlay);
+              } catch (error) {
+                restored = false;
+              }
+              if (overlay.isConnected) restored = false;
+            }
+            return restored;
+            """;
+
+    private static final String REMOVE_ALL_MASKS = """
+            let restored = true;
+            for (const overlay of document.querySelectorAll("[data-codex-screenshot-mask-overlay]")) {
+              try {
+                if (overlay.isConnected) overlay.parentNode.removeChild(overlay);
+              } catch (error) {
+                restored = false;
+              }
+              if (overlay.isConnected) restored = false;
+            }
+            return restored;
+            """;
+
     // Static helpers only
     private ScreenshotUtils() {
     }
 
-    /** PNG bytes of the current browser window, or {@code null} if no screenshot could be taken. */
+    /** PNG bytes with sensitive regions covered, or {@code null} if protection/capture fails. */
     public static byte[] capture(WebDriver driver) {
-        Object masked = null;
+        if (!(driver instanceof JavascriptExecutor javascript) || !(driver instanceof TakesScreenshot screenshotDriver)) {
+            LOG.warn("Could not protect sensitive page content for screenshot capture");
+            return null;
+        }
+
+        List<?> overlays = null;
+        byte[] screenshot = null;
+        boolean restored = false;
         try {
-            if (driver instanceof JavascriptExecutor javascript) {
-                masked = javascript.executeScript(
-                        "return [...document.querySelectorAll('[data-sensitive],input[type=password]')].map(element => {"
-                                + "const property = 'value' in element ? 'value' : 'textContent';"
-                                + "const original = element[property]; element[property] = '[REDACTED]';"
-                                + "return {element, property, original}; });");
+            Object result = javascript.executeScript(INSTALL_MASKS);
+            if (!(result instanceof List<?> installedOverlays)) {
+                LOG.warn("Could not verify sensitive page masking for screenshot capture");
+                try {
+                    boolean cleaned = Boolean.TRUE.equals(javascript.executeScript(REMOVE_ALL_MASKS));
+                    if (!cleaned) {
+                        LOG.warn("Could not remove unverified sensitive page overlays");
+                    }
+                } catch (RuntimeException cleanupException) {
+                    LOG.warn("Could not remove unverified sensitive page overlays: {}",
+                            cleanupException.getClass().getSimpleName());
+                }
+                throw new IllegalStateException("Screenshot masking did not return its overlay handles");
             }
-            // Every local and remote driver implements TakesScreenshot
-            return ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
+            overlays = installedOverlays;
+            screenshot = screenshotDriver.getScreenshotAs(OutputType.BYTES);
         } catch (RuntimeException e) {
             // Browser crashed or already quit: report it, do not hide the test's own failure
             LOG.warn("Could not take a screenshot: {}", e.getClass().getSimpleName());
-            return null;
         } finally {
-            if (masked instanceof List<?> entries && driver instanceof JavascriptExecutor javascript) {
+            if (overlays != null) {
                 try {
-                    javascript.executeScript(
-                            "arguments[0].forEach(entry => { entry.element[entry.property] = entry.original; });",
-                            entries);
+                    restored = Boolean.TRUE.equals(javascript.executeScript(REMOVE_MASKS, overlays));
                 } catch (RuntimeException e) {
-                    LOG.warn("Could not restore sensitive page values after screenshot capture: {}",
+                    LOG.warn("Could not remove sensitive page overlays after screenshot capture: {}",
                             e.getClass().getSimpleName());
                 }
             }
         }
+        if (!restored) {
+            LOG.warn("Screenshot masking/restoration was not verified; omitting screenshot");
+            return null;
+        }
+        return screenshot;
     }
 
     /** Saves a screenshot to {@code target/screenshots/<name>-<timestamp>.png}; returns its path or {@code null}. */
