@@ -9,7 +9,7 @@
 ## Test pyramid in this project
 
 | Level | What it checks | Suite / group | Runs |
-|---|---|---|---|---|
+|---|---|---|---|
 | Unit (framework) | configuration rules, data generation, CSV/JSON readers, retry classification, secret masking, log components | `unit` | PR quality gate and main build |
 | Platform | real browsers start with the configured settings, one per thread; screenshots | `platform` | full and regression suites where group selection includes it |
 | API | route behavior, response contracts, authentication, authorization, validation and business rules | `api` | PR API regressions, main API, nightly full/regression |

@@ -98,7 +98,7 @@ Suites overlap by group and data-provider invocation. Counts are execution evide
 
 ## Next baseline actions
 
-1. Complete C07/C08 and update this matrix with their verified test evidence.
-2. In C09, finish the protected route × method × role map, inspect all skipped/unexecuted groups, and add focused high-risk cases where inspection confirms gaps.
+1. C07 and C08 are complete; their verified test and documentation evidence is recorded in this matrix and `docs/CODEX_PROGRESS.md`.
+2. C09 is next: finish the protected route × method × role map, inspect all skipped/unexecuted groups, and add focused high-risk cases where inspection confirms gaps.
 3. In C10, review repository-level scanning settings, CI artifact retention and job dependencies, and decide the JaCoCo module/execution-data design before adding instrumentation.
 4. Do not introduce coverage thresholds until the requirement denominator and measured line/branch baseline are defined.
