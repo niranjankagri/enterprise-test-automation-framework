@@ -38,6 +38,26 @@ public final class TestDataProviders {
         return rows("testdata/invalid-customers.csv", "case", "field", "label", "value", "error");
     }
 
+    /** Missing, null, non-integer, unexpected-type, and out-of-range order quantities. */
+    @DataProvider(name = "invalidQuantities")
+    public static Object[][] invalidQuantities() {
+        return new Object[][] {
+            {"missing", null},
+            {"null", "null"},
+            {"zero", "0"},
+            {"negative", "-1"},
+            {"minimum int", "-2147483648"},
+            {"fraction", "1.5"},
+            {"numeric string", "\"2\""},
+            {"malformed string", "\"abc\""},
+            {"boolean", "true"},
+            {"object", "{}"},
+            {"array", "[]"},
+            {"above int maximum", "2147483648"},
+            {"would wrap to positive int", "4294967297"}
+        };
+    }
+
     /** {@code products.json}: SKU and product, one row per catalogue product. */
     @DataProvider(name = "catalogue")
     public static Object[][] catalogue() {

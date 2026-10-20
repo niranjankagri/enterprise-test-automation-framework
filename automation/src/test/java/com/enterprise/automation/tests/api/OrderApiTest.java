@@ -16,6 +16,7 @@ import com.enterprise.automation.api.services.OrderService;
 import com.enterprise.automation.data.CleanupRegistry;
 import com.enterprise.automation.data.TestDataFactory;
 import com.enterprise.automation.tests.base.BaseApiTest;
+import com.enterprise.automation.tests.base.TestDataProviders;
 import io.restassured.response.Response;
 import java.math.BigDecimal;
 import java.util.List;
@@ -81,6 +82,17 @@ public class OrderApiTest extends BaseApiTest {
         OrderResponse order = orders().placeOrder(request);
         CleanupRegistry.register("delete order " + order.id(), () -> orders().deleteOrder(order.id()));
         return order;
+    }
+
+    /** Rejected-order assertion that registers cleanup if a regression unexpectedly creates an order. */
+    private ErrorResponse expectInvalidOrder(String body) {
+        Response response = orders().create(body);
+        if (response.statusCode() == 201) {
+            OrderResponse unexpectedOrder = JsonMapper.fromJson(response.asString(), OrderResponse.class);
+            CleanupRegistry.register("delete unexpected order " + unexpectedOrder.id(),
+                    () -> orders().deleteOrder(unexpectedOrder.id()));
+        }
+        return error(expectStatus(response, 400));
     }
 
     /** Current stock of a product, read fresh through the API. */
@@ -170,7 +182,47 @@ public class OrderApiTest extends BaseApiTest {
         // Quantity 0: the error names the line by index
         ErrorResponse zero = error(expectStatus(orders().create(
                 OrderRequest.of(customer().id(), item(product().id(), 0))), 400));
-        assertThat(zero.fieldErrors()).containsEntry("items[0].quantity", "Quantity must be at least 1");
+        assertThat(zero.fieldErrors()).containsEntry("items[0].quantity",
+                "Quantity must be a whole number between 1 and 2147483647");
+    }
+
+    /** Invalid JSON quantity shapes and out-of-range integers are rejected without changing state. */
+    @Test(dataProvider = "invalidQuantities", dataProviderClass = TestDataProviders.class)
+    public void invalidQuantitiesAreRejectedWithoutChangingState(String caseName, String quantityJson) {
+        String quantityField = quantityJson == null ? "" : ",\"quantity\":" + quantityJson;
+        String item = "{\"productId\":" + product().id() + quantityField + "}";
+        String body = "{\"customerId\":" + customer().id() + ",\"items\":[" + item + "]}";
+
+        ErrorResponse error = expectInvalidOrder(body);
+
+        assertThat(error.fieldErrors()).as(caseName).containsEntry("items[0].quantity",
+                "Quantity must be a whole number between 1 and 2147483647");
+        assertThat(stockOf(product())).as(caseName + " leaves inventory unchanged").isEqualTo(5);
+        assertThat(orders().ordersOf(customer().id())).as(caseName + " creates no order").isEmpty();
+    }
+
+    /** The largest supported positive quantity parses, then fails only the stock business rule. */
+    public void maximumSupportedQuantityIsAStockConflict() {
+        ErrorResponse error = error(expectStatus(orders().create(OrderRequest.of(
+                customer().id(), item(product().id(), Integer.MAX_VALUE))), 409));
+
+        assertThat(error.message()).contains("5 left, 2147483647 requested");
+        assertThat(stockOf(product())).isEqualTo(5);
+        assertThat(orders().ordersOf(customer().id())).isEmpty();
+    }
+
+    /** A valid earlier line is not reserved when a later line has an overflowing quantity. */
+    public void overflowingQuantityInMixedOrderRollsBackEveryLine() {
+        String body = "{\"customerId\":" + customer().id() + ",\"items\":["
+                + "{\"productId\":" + otherProduct().id() + ",\"quantity\":1},"
+                + "{\"productId\":" + product().id() + ",\"quantity\":4294967297}]}";
+
+        ErrorResponse error = expectInvalidOrder(body);
+
+        assertThat(error.fieldErrors()).containsKey("items[1].quantity");
+        assertThat(stockOf(otherProduct())).as("the valid first line is rolled back").isEqualTo(3);
+        assertThat(stockOf(product())).isEqualTo(5);
+        assertThat(orders().ordersOf(customer().id())).isEmpty();
     }
 
     /** An unknown customer or product is 404 and reserves nothing. */
