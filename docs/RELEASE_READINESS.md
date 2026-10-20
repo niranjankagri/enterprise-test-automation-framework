@@ -1,53 +1,113 @@
-# Release Readiness — Batch E
+# Release Readiness - Batch E
 
 ## Current status
 
-**IN PROGRESS — NOT READY FOR RELEASE OR MERGE.** This record is for owner review of C09–C11. The current tested starting implementation is `22559e5ed2e908664bc45a02dd34f1c6644fc7a7` (merged PR #18, 2026-10-20). Final implementation SHA and CI evidence will be recorded after completion.
+**C09, C10 and C11 are verified complete. The final documentation commit must pass PR CI/CodeQL before PR #19 is marked ready for owner review; it remains unmerged.** No deployment or release was performed.
 
-## Baseline environment and executions
+- Baseline: `22559e5ed2e908664bc45a02dd34f1c6644fc7a7` (PR #18 merge to `main`).
+- Final tested implementation source: `bc1c1ec87e6c7cb12c68fa6383a2f4134bfdd98e` (`codex/batch-e-quality-release`).
+- Final PR CI tested merge SHA: `fdaaab3817c2690d092a80731ef520da00a71ffe`.
+- Pull request: [#19 - Batch E quality and release readiness](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/19).
 
-| Check | Command | Result on baseline SHA | Notes |
-|---|---|---|---|
-| Pure unit suite | `./mvnw -B -ntp clean test -Dsuite=unit -Dmaven.compiler.failOnWarning=true` (Windows: quote `-D` arguments in PowerShell) | 41 passed, 0 failed, 0 errors, 0 skipped; Checkstyle 0 | Local JDK 27, project bytecode target 17. |
-| API suite | `./mvnw -B -ntp test -Dsuite=api -Dmaven.compiler.failOnWarning=true` | 74 passed, 0 failed, 0 errors, 0 skipped; Checkstyle 0 | App/H2 started and stopped by suite lifecycle. |
-| Integration/DB/cross-layer suite | `./mvnw -B -ntp test -Dsuite=integration -Dmaven.compiler.failOnWarning=true` | 23 passed, 0 failed, 0 errors, 0 skipped; Checkstyle 0 | Includes browser-backed API/UI/DB checks and order contention. |
-| Persisted Allure failure verifier | `python scripts/verify_allure_failure_redaction.py` | Passed | Final synthetic failing TestNG result inspected; test-level and step-level details were redacted while failure was preserved. |
-| Docker Compose configuration | `docker compose -f docker/docker-compose.yml config --quiet` | Passed | Docker Engine 29.8.2 available; runtime deployment checks remain pending final revision. |
-
-The initial unquoted PowerShell invocation of the unit command was rejected by Maven before tests ran; the quoted property invocation above is the successful baseline. No Java coverage instrumentation exists in the starting POMs/workflows.
-
-## C09, C10, C11 and M1–M8 status
+## C09, C10, C11 and M1-M8 status
 
 | Scope | Status | Evidence |
 |---|---|---|
-| C09 — coverage inventory and regression reliability | IN PROGRESS | Baseline suites and route declarations inspected; see `TEST_COVERAGE_MATRIX.md`. |
-| C10 — CI, security scans and Java coverage | PENDING | CI jobs, repository settings and Compose inspected; no JaCoCo report exists at baseline. |
-| C11 — final audit and release readiness | PENDING | Requires final revision validation and final evidence links. |
-| M1 — Maven foundation / Java build identity | PENDING FINAL RECHECK | Existing two-module POMs and Java 17 target; baseline Maven compile passed. |
-| M2 — configuration and browser/driver foundation | PENDING FINAL RECHECK | Existing configuration, browser factories and platform tests. |
-| M3 — application, page/component model and UI journeys | PENDING FINAL RECHECK | Existing demo app and Selenium suites; baseline integration suite passed. |
-| M4 — test data, UI journeys and cleanup | PENDING FINAL RECHECK | Existing providers, unique data and cleanup registry; negative/parallel cleanup review in progress. |
-| M5 — REST Assured APIs, auth and business rules | PENDING FINAL RECHECK | Baseline API suite passed; route × role matrix and high-risk business gaps in progress. |
-| M6 — H2/JDBC and cross-layer integration | PENDING FINAL RECHECK | Baseline integration suite passed; broader race/constraint evidence pending. |
-| M7 — TestNG suites, parallel execution and retries | PENDING FINAL RECHECK | Unit isolation exists; lifecycle, parallelism and retry behavior need final audit. |
-| M8 — Allure, logs and sensitive evidence | PENDING FINAL RECHECK | Baseline persisted-failure redaction verifier passed; screenshot pixel limitation remains under review. |
+| C09 - regression and coverage reliability | VERIFIED | The route/method/principal inventory, business rules, UI journeys, framework behavior and security evidence are mapped in `TEST_COVERAGE_MATRIX.md`; high-risk gaps received targeted regressions. |
+| C10 - CI/CD, security validation and Java coverage | VERIFIED | PR quality, dependency review, API, integration/order, Chrome smoke, coverage merge, report and CodeQL jobs passed; JaCoCo reports contain production classes and same-revision execution data. |
+| C11 - final review and release readiness | VERIFIED | Final full Chrome, serial integration, persisted Allure verifier, branch nightly browser/Grid, coverage and cleanup checks passed. |
+| M1 - Maven foundation / Java build identity | VERIFIED | Two-module Java 17-target build compiled with warnings-as-errors; Maven Wrapper used for final local suites. |
+| M2 - configuration and browser/driver foundation | VERIFIED | Configuration tests and deterministic browser setup/cleanup failure regression passed; Chrome, Firefox, Edge and Grid ran. |
+| M3 - app, page/component model and UI journeys | VERIFIED | Existing ShopEase and page/component architecture retained; full Chrome and nightly browser/Grid regressions passed. |
+| M4 - test data, UI journeys and cleanup | VERIFIED | Test data, cleanup, UI/API/DB journeys and report-safe login parameter tests passed; no app/H2 listeners remained after local runs. |
+| M5 - REST Assured APIs, auth and business rules | VERIFIED | 26 route/method declarations, protected access matrix, auth revocation, validation and order rules have explicit evidence. |
+| M6 - H2/JDBC and cross-layer integration | VERIFIED | Integration suite passed in parallel and serial modes; stock contention, transaction rollback and UI/API/DB journeys passed. |
+| M7 - TestNG suites, parallel execution and retries | VERIFIED | Unit/API/full/serial suites passed; TestNG reported zero skipped; the deliberate Allure failure fixture is isolated and verified separately. |
+| M8 - Allure, logs and sensitive evidence | VERIFIED | Final persisted synthetic failure kept its original exception and redacted test/step details; retained runtime reports had no checked credential matches. Pixel protection remains limited to marked/password values. |
 
-## Coverage, security and limitations
+### Original audit findings C01-C08
 
-- Requirement, authorization, execution, Java line/branch and browser coverage are separate dimensions; no percentages are reported until denominators and instrumentation are verified.
-- Repository secret scanning and push protection report enabled through GitHub repository metadata. CodeQL default setup is not configured; workflow scanning decision and execution evidence are pending.
-- Browser matrix, Docker/Selenium Grid runtime, final CI, JaCoCo metrics, accessible-page automated checks, source scanning, residual skips and final blockers are pending.
+| Finding | Status | Current evidence |
+|---|---|---|
+| C01 - Docker network security | VERIFIED | Compose binds app/Grid host ports to loopback, does not publish H2, and nightly Docker/Grid app-to-H2 and Grid checks passed with cleanup. |
+| C02 - Allure URL redaction | VERIFIED | API/UI URL evidence and final test/step failure details are sanitized; the isolated synthetic failure verifier passed locally and in PR CI. |
+| C03 - Session revocation on deletion | VERIFIED | User deletion revokes all active sessions, deleted users cannot log in, exact expiry and login/deletion races have regressions. |
+| C04 - Atomic stock reservation | VERIFIED | Conditional reservations, affected-row checks, transaction rollback, deterministic contention and order lifecycle races passed integration regressions. |
+| C05 - Pure unit-suite isolation | VERIFIED | Unit suite excludes application lifecycle; `UnitSuiteIsolationTest` passes, and local unit execution requires no app/H2 listener. |
+| C06 - Quantity range validation | VERIFIED | Invalid shapes and overflow are rejected; mixed-line rollback and unchanged stock/order state are asserted. |
+| C07 - Strict boolean configuration | VERIFIED | Valid normalization/defaults/precedence and invalid key-specific diagnostics are tested without echoing secret values. |
+| C08 - Documentation consistency | VERIFIED | README, suite commands, Java/dependency versions, Maven Wrapper and Docker/network guidance were checked against source/configuration. |
+
+Docker, Selenium Grid and GitHub Actions are verified cross-cutting capabilities; see the run evidence below.
+
+## Commands and validation results
+
+All commands below ran on the final implementation source SHA unless noted. Maven commands used the repository wrapper, Java 27 runtime and Java 17 target. Every Maven suite reported Checkstyle with zero violations.
+
+| Execution | Command / source | Result |
+|---|---|---|
+| Unit | `.\mvnw.cmd -B -ntp clean test '-Dsuite=unit' '-Dmaven.compiler.failOnWarning=true'` | 43 passed, 0 failures, 0 errors, 0 skipped; local. |
+| API | PR job `API regressions` | 78 passed, 0 failures, 0 errors, 0 skipped; final PR CI. |
+| Integration and DB | PR job `Database/order integration`; local serial command below | 28 passed, 0 failures, 0 errors, 0 skipped in each execution. Parallel integration passed in PR CI; serial local run passed with one thread. |
+| UI | `.\mvnw.cmd -B -ntp clean test '-Dsuite=ui' '-Dheadless=true' '-Dmaven.compiler.failOnWarning=true'` | 59 passed, 0 failures, 0 errors, 0 skipped; local. |
+| Full Chrome | `.\mvnw.cmd -B -ntp clean test '-Dsuite=full' '-Dheadless=true' '-Dmaven.compiler.failOnWarning=true'` | 213 passed, 0 failures, 0 errors, 0 skipped; local class-parallel run. |
+| PR Chrome smoke | PR job `Smoke / smoke-chrome` | 20 passed, 0 failures, 0 errors, 0 skipped. |
+| Nightly browser results | Run [39470084784](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39470084784) | Full Chrome 213/213; Firefox 154/154; Edge 154/154; Selenium Grid Firefox 154/154. All Allure results passed; 0 failed, broken or skipped. Chrome/Firefox/Edge Surefire reports each show 0 failures, errors, skips and flakes. |
+| Allure failure verifier | `python scripts/verify_allure_failure_redaction.py` and PR quality job | Passed. TestNG retained the synthetic `IllegalStateException`; finalized result was broken and test-level/step-level details were redacted. |
+| Compose configuration | `docker compose -f docker/docker-compose.yml config --quiet` | Passed locally. Nightly Docker/Grid job started the platform, validated app/Grid tests and external coverage, then stopped containers successfully. |
+| Post-run cleanup | `Get-NetTCPConnection -State Listen -LocalPort 8080,9092`; `docker compose -f docker/docker-compose.yml ps --all` | No app/H2 listeners and no running Compose services after final full Chrome run. |
+| Diff hygiene | `git diff --check` | Passed before final documentation commit; final docs-only diff is checked before push. |
+
+The final local full-run TestNG result records 213 passed, 0 failed and 0 skipped. Surefire has 213 testcase elements representing 210 distinct method names because parameterized invocations share method names; its flake count is 0. The dedicated Allure failure fixture is excluded from `full.xml` and verified separately. The full Maven/TestNG summary remains 213 passed.
+
+## GitHub Actions evidence
+
+- PR CI [run 39469980822](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39469980822) - all seven jobs passed: Dependency Review; quality/unit plus persisted Allure verifier; database/order integration; Chrome smoke; API regressions; merged Java coverage reports; Allure report.
+- CodeQL [run 39469980683](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39469980683) - Analyze Java passed.
+- Nightly [run 39470084784](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39470084784) - full Chrome, Firefox/Edge regressions, Docker/Selenium Grid, combined Allure report and cleanup all passed on the Batch E source SHA.
+
+All three runs checked out the final implementation source revision or its PR merge commit. No earlier `main` or nightly run was substituted for final source evidence.
+
+## Java line and branch coverage
+
+JaCoCo 0.8.15 reports production classes only. These are executed Java code metrics, not requirement, endpoint or browser coverage. No threshold is imposed. The PR test-JVM reports and separate nightly Grid/container capture are not combined across revisions or processes.
+
+| Source and execution | Module | Production classes | Lines covered / total | Branches covered / total |
+|---|---|---:|---:|---:|
+| PR merge SHA `fdaaab3817c2690d092a80731ef520da00a71ffe`; four non-empty same-SHA inputs | `demo-app` | 24 | 912 / 975 (93.5%) | 266 / 334 (79.6%) |
+| PR merge SHA `fdaaab3817c2690d092a80731ef520da00a71ffe`; four non-empty same-SHA inputs | `automation` | 100 | 1178 / 1455 (81.0%) | 224 / 378 (59.3%) |
+| Nightly Grid source SHA `bc1c1ec87e6c7cb12c68fa6383a2f4134bfdd98e`; separate process capture | `demo-app` | 24 | 912 / 975 (93.5%) | 266 / 334 (79.6%) |
+| Nightly Grid source SHA `bc1c1ec87e6c7cb12c68fa6383a2f4134bfdd98e`; separate process capture | `automation` | 100 | 1144 / 1455 (78.6%) | 210 / 378 (55.6%) |
+
+In-process `demo-app` execution is captured by the automation agent; Docker/Grid app-container coverage is collected separately. These reports describe the execution paths above and should not be presented as repository-wide functional coverage percentages.
+
+## Requirement, authorization and browser coverage gaps
+
+- The API table enumerates the 26 implemented method/route declarations: public login plus 25 protected route/method pairs. `AuthorizationRouteMatrixTest` exercises each protected pair as anonymous, VIEWER and ADMIN with valid request fixtures, including `/api/stats` and user GET-by-ID. Denied writes compare persisted state. No protected route/method cell remains unmapped.
+- User list/detail credential omission, multiple-session deletion revocation, malformed/unknown/expired/logout tokens, exact expiry, role promotion, deletion/login race, order validation/rollback, exact-stock contention, duplicate lines, cancellation races and API/UI/database consistency have named tests in the matrix.
+- Requirement coverage is not expressed as a percentage because this repository has no complete independent product-requirements denominator. Browser execution is reported as suite evidence, not as a percentage of all possible browser behavior.
+- Remaining test limitations: unsupported media-type behavior has no defined API contract; direct exhaustive foreign-key violation cases are not covered; UI loading/network-error states are not a separately modeled contract; manual screen-reader/assistive-technology review was not performed; screenshot masking applies only to password and explicitly marked values and does not guarantee universal pixel redaction.
+
+## Security findings and remaining blockers
+
+- CodeQL workflow passed; current open CodeQL alerts: 0. Current native secret-scanning alerts: 0. Repository secret scanning and push protection are enabled. Dependabot security updates are disabled at the repository setting; CodeQL default setup is not configured because the advanced workflow runs analysis. No GitHub settings were modified.
+- A retained-artifact pattern scan found no checked demo/synthetic credentials in Allure result JSON, Surefire results or runtime logs. Two matches in the broad artifact scan were the static demo seed credential shown in generated JaCoCo `DemoApp.java.html` source listings; that source is already part of the demo repository. No runtime evidence contained those values.
+- There are no blocked required checks. The limitations above are scoped test/security follow-ups, not failed release gates. PR #19 remains unmerged for owner review.
 
 ## Owner full-suite review commands
 
-Windows PowerShell:
+Windows PowerShell, from the checked-out Batch E branch:
 
 ```powershell
 .\mvnw.cmd -B -ntp clean test '-Dsuite=unit' '-Dmaven.compiler.failOnWarning=true'
-.\mvnw.cmd -B -ntp test '-Dsuite=api' '-Dmaven.compiler.failOnWarning=true'
-.\mvnw.cmd -B -ntp test '-Dsuite=integration' '-Dmaven.compiler.failOnWarning=true'
-.\mvnw.cmd -B -ntp test '-Dsuite=full' '-Dparallel=classes' '-Dthreads=4' '-Dmaven.compiler.failOnWarning=true'
+.\mvnw.cmd -B -ntp clean test '-Dsuite=api' '-Dmaven.compiler.failOnWarning=true'
+.\mvnw.cmd -B -ntp clean test '-Dsuite=integration' '-Dmaven.compiler.failOnWarning=true'
+.\mvnw.cmd -B -ntp clean test '-Dsuite=integration' '-Dparallel=none' '-Dthreads=1' '-Dmaven.compiler.failOnWarning=true'
+.\mvnw.cmd -B -ntp clean test '-Dsuite=ui' '-Dheadless=true' '-Dmaven.compiler.failOnWarning=true'
+.\mvnw.cmd -B -ntp clean test '-Dsuite=full' '-Dheadless=true' '-Dmaven.compiler.failOnWarning=true'
+python scripts/verify_allure_failure_redaction.py
 docker compose -f docker/docker-compose.yml config --quiet
+gh workflow run "Nightly regression" --ref codex/batch-e-quality-release
 ```
 
-These commands will be revised to include validated coverage and browser/Grid execution paths before the final handoff.
+The nightly workflow uses the branch's existing Chrome/Firefox/Edge and Docker/Selenium Grid provisioning, produces separate coverage inputs and always runs container cleanup. Review the current workflow results before treating any local rerun as a replacement for final CI evidence.

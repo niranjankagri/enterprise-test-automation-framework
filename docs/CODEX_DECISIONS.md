@@ -137,12 +137,26 @@ Append material decisions with their evidence and trade-offs. Do not record cred
 
 - **Decision:** Add a pinned-major CodeQL v4 advanced workflow for Java/Kotlin, extended queries, manual Maven compilation, least-scoped analysis permissions, and avoid result upload for fork pull requests.
 - **Reason:** Repository metadata showed CodeQL default setup was not configured. The workflow makes source analysis part of this PR without changing repository settings or exposing a write token to fork code.
-- **Verification:** CodeQL run `39463151680` completed successfully on branch head `62427b353eb6aba3cc96b3371473c80a0f83b6a5`.
+- **Verification:** C10 CodeQL run `39463151680` passed on `62427b353eb6aba3cc96b3371473c80a0f83b6a5`; final C11 run [39469980683](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39469980683) also passed on the final source, with zero open CodeQL alerts.
 - **Trade-off:** GitHub native secret scanning and push protection are enabled, but their alerts are not a downloadable Actions artifact. Dependabot security updates remain disabled by repository configuration; no settings were changed.
 
 ## D-021 - Keep nightly container coverage separate from test-JVM coverage
 
 - **Decision:** Copy the same pinned JaCoCo agent into the demo-app runtime image and attach it only in the Docker/Grid nightly workflow; collect the app process data separately from automation test JVM data, then validate and report module execution on matching source revisions.
 - **Reason:** CI API/integration tests may cover in-process app classes, but a Grid container runs the app in another JVM and cannot write to the automation workspace without an explicit bind mount and agent destination.
-- **Verification:** Docker image build and Compose configuration passed locally; the PR coverage workflow passed. Runtime container coverage remains a C11 nightly verification requirement.
+- **Verification:** Docker image build and Compose configuration passed locally; PR coverage passed; final nightly run [39470084784](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39470084784) validated separate Grid/container coverage on source SHA `bc1c1ec87e6c7cb12c68fa6383a2f4134bfdd98e` and stopped the containers successfully.
 - **Trade-off:** The coverage merge is valid only for artifacts produced from the same source revision and compatible JaCoCo format; nightly container execution is reported separately from PR coverage.
+
+## D-022 - Preserve the browser setup exception if cleanup also fails
+
+- **Decision:** When driver configuration fails, retain that setup exception as the thrown failure. Attempt `quit()` and add any cleanup exception as suppressed rather than replacing the original failure.
+- **Reason:** A browser setup error is the actionable cause; a failing quit must not obscure it or make diagnostics misclassify the failure.
+- **Verification:** `DriverFactoryTest.setupFailureRemainsPrimaryWhenQuitAlsoFails` uses a deterministic `WebDriver` proxy whose configuration and quit methods both fail. The unit suite passed 43/43 and the final full suite passed 213/213 at source SHA `bc1c1ec87e6c7cb12c68fa6383a2f4134bfdd98e`; PR CI passed on merge SHA `fdaaab3817c2690d092a80731ef520da00a71ffe`.
+- **Trade-off:** Cleanup remains best-effort after setup failure; the original cause stays primary and the cleanup failure remains available as suppressed diagnostic evidence.
+
+## D-023 - Mask password values in TestNG's retained provider parameters
+
+- **Decision:** Wrap the negative-login provider's password column in `SensitiveValue`, whose `toString()` returns a fixed mask. Unwrap only at the UI call site so the application still receives the original test value.
+- **Reason:** Allure parameter sanitization did not protect the built-in TestNG/Surefire retained result parameters. The final artifact scan confirmed raw negative-login passwords in those reports.
+- **Verification:** `TestDataTest.loginNegativeProviderMasksPasswordsInTestReports` checks every provider row remains a masked object; final unit/UI/full tests pass, and the retained Allure, Surefire and log scan found no checked demo or synthetic credential patterns. PR quality and nightly browser artifacts passed on source SHA `bc1c1ec87e6c7cb12c68fa6383a2f4134bfdd98e`.
+- **Trade-off:** The wrapper deliberately masks its string representation; tests that need to submit the password must explicitly access `value()` at the UI boundary.
