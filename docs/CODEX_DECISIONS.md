@@ -74,3 +74,10 @@ Append material decisions with their evidence and trade-offs. Do not record cred
 - **Reason:** The prior read-check-update sequence allowed two orders to observe the same inventory and both succeed. The conditional update serializes at the product row and rechecks available stock after waiting, while staying within the existing SQL transaction and error conventions.
 - **Verification:** A deterministic H2 contention test locks the shared product row until both API requests reach their reservation updates. It reproduced two successful responses before the fix and then passed with one `201`, one `409`, nonnegative final stock, one order, and rollback of the losing order's earlier line reservation. Local integration suite and Actions run `39423169979` passed.
 - **Trade-off:** A competing order may now receive `409` after initially passing the friendly stock read; the response reports the current remaining units. The existing transaction remains responsible for rolling back all prior order work.
+
+## D-012 - Keep the pure unit suite independent of application lifecycle
+
+- **Decision:** Do not register `DemoAppLifecycle` in `unit.xml`; retain the listener in suites that exercise API, UI, database or cross-layer behavior. Guard the unit suite configuration with an offline regression test.
+- **Reason:** The unit suite selects framework-only tests and should not start the demo application or H2 based on the local environment's `app.autostart=true` setting.
+- **Verification:** Before the change the 34-test unit suite passed but started the app and H2. After the change, 35 tests passed with both ports closed before and after, no application process running, and local `app.autostart=true`. Actions run `39424239632` passed all jobs.
+- **Trade-off:** Suites that call API, UI or database services continue to use the existing lifecycle listener and startup behavior; only the unit suite omits it.

@@ -44,7 +44,8 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 | C02 | Verified complete | Commit `6d6c8b8b4af2e60fc363b9ac4e525bc38df42d59`; local suite and artifact scan passed; CI run `39415956405` passed all jobs. |
 | C03 | Verified complete | Commit `ed2fb00507caaeaed9b4428f15bdc509aef34b76`; local API suite 59/59 passed; Actions run `39421373220` green; PR #17 draft. |
 | C04 | Verified complete | Commit `1636105725d97f605290bfe3a6f924afa1c5fa93`; local integration 23/23 passed; Actions run `39423169979` passed all jobs. |
-| C05-C11 | Pending | Proceed to C05 after C04 implementation CI passed; retain the PR #17 owner review gate after C05. |
+| C05 | Verified complete | Commit `37bc70e050e5f344f2374234eccf956097a1b103`; local unit suite 35/35 passed with no app/H2 listeners; Actions run `39424239632` passed all jobs. |
+| C06-C11 | Pending | Batch C is at the PR #17 owner review gate; do not start Batch D until approval and merge. |
 
 ## Blockers and required follow-up
 
@@ -120,4 +121,18 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 - **Implementation commit / push:** `1636105725d97f605290bfe3a6f924afa1c5fa93` (`fix(orders): reserve stock atomically under contention`), pushed to `origin/codex/batch-c-correctness`.
 - **GitHub Actions:** [run 39423169979](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39423169979) passed all jobs for the implementation commit: quality gate (including Allure failure redaction), dependency review, Chrome smoke and Allure report.
 - **Draft PR:** [#17](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/17) remains open and draft, targeting `main`.
-- **Next:** proceed to C05 pure unit-suite isolation on the same branch; stop for owner review after C05 and do not start Batch D.
+- **Next at the C04 gate:** proceed to C05 pure unit-suite isolation on the same branch; stop for owner review after C05 and do not start Batch D. C05 evidence follows below.
+
+## Batch C - C05 pure unit-suite isolation (verified complete)
+
+- **Starting point:** clean `codex/batch-c-correctness` at C04 progress commit `f020a63745207ae26fffd261b8c03e3017cbfb86`; no unrelated working-tree changes.
+- **Confirmed issue:** `unit.xml` registered `DemoAppLifecycle`. With local `app.autostart=true`, the unit suite started the application and H2 on ports 8080 and 9092 even though its 34 pre-change tests used only framework utilities and configuration. No API, UI, database or integration test was tagged `unit`.
+- **Change:** remove `DemoAppLifecycle` only from `unit.xml`; keep it registered in API, UI, integration, smoke, regression, sanity, E2E and full suites. Add `UnitSuiteIsolationTest`, which asserts the suite still selects the `unit` group and does not register the application lifecycle listener.
+- **Files changed:** `automation/src/test/resources/suites/unit.xml`, `automation/src/test/java/com/enterprise/automation/tests/platform/UnitSuiteIsolationTest.java`.
+- **Baseline validation:** `mvnw.cmd -B -ntp test -Dsuite=unit -Dmaven.compiler.failOnWarning=true` passed with **34 tests, 0 failures, 0 errors, 0 skipped; Checkstyle 0; exit 0**, but the log confirmed application and H2 startup.
+- **Post-change validation:** the same command passed with **35 tests, 0 failures, 0 errors, 0 skipped; Checkstyle 0; exit 0**. The run started with ports 8080 and 9092 closed and no application running while local config retained `app.autostart=true`; no app startup occurred and both ports remained closed afterward. Java compilation used release 17 with warnings as errors. `git diff --check` passed.
+- **Self-review:** no service-dependent tests were moved or weakened; current API/database/UI tests already use the appropriate suites and remain there. Other suites retain application startup. The new unit assertion is offline and reads the packaged TestNG suite resource only.
+- **Implementation commit / push:** `37bc70e050e5f344f2374234eccf956097a1b103` (`fix(unit): remove app startup from unit suite`), pushed to `origin/codex/batch-c-correctness`.
+- **GitHub Actions:** [run 39424239632](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39424239632) passed all jobs on the implementation commit: quality gate (including Allure failure redaction), dependency review, Chrome smoke and Allure report.
+- **Draft PR:** [#17](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/17) remains open and draft, targeting `main`.
+- **Next:** stop at the Batch C owner review gate; do not merge PR #17 or begin Batch D without the owner's approval.
