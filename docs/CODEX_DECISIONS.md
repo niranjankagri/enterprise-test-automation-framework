@@ -81,3 +81,11 @@ Append material decisions with their evidence and trade-offs. Do not record cred
 - **Reason:** The unit suite selects framework-only tests and should not start the demo application or H2 based on the local environment's `app.autostart=true` setting.
 - **Verification:** Before the change the 34-test unit suite passed but started the app and H2. After the change, 35 tests passed with both ports closed before and after, no application process running, and local `app.autostart=true`. Actions run `39424239632` passed all jobs.
 - **Trade-off:** Suites that call API, UI or database services continue to use the existing lifecycle listener and startup behavior; only the unit suite omits it.
+
+## D-013 - Validate order quantities before narrowing numeric values
+
+- **Decision:** Accept only integral JSON values that fit in the supported Java `int` range and are greater than zero. Return the existing client validation response before writing order or stock records when the value is invalid.
+- **Reason:** `JsonNode.intValue()` narrows larger integers. A value such as `4294967297` therefore became `1` and was accepted, including in a mixed-line order.
+- **Verification:** Regression tests reproduced two accepted orders before the fix. After the fix, the API suite passed 74 tests with no failures, errors or skips; mixed-line rollback and unchanged inventory/order state are asserted. PR Actions run `39436856557` passed the API, quality, dependency review, Chrome smoke and report jobs.
+- **CI decision:** Add the existing API suite as a PR job and require it before combined report generation. This makes order API regressions execute on every PR without adding a new framework or duplicating existing tests.
+- **Trade-off:** A quantity at `Integer.MAX_VALUE` is a valid positive integer, but receives the existing insufficient-stock conflict when inventory is lower. This keeps numeric validation separate from available-stock business rules.

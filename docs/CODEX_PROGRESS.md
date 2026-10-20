@@ -45,7 +45,9 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 | C03 | Verified complete | Commit `ed2fb00507caaeaed9b4428f15bdc509aef34b76`; local API suite 59/59 passed; Actions run `39421373220` green; PR #17 draft. |
 | C04 | Verified complete | Commit `1636105725d97f605290bfe3a6f924afa1c5fa93`; local integration 23/23 passed; Actions run `39423169979` passed all jobs. |
 | C05 | Verified complete | Commit `37bc70e050e5f344f2374234eccf956097a1b103`; local unit suite 35/35 passed with no app/H2 listeners; Actions run `39424239632` passed all jobs. |
-| C06-C11 | Pending | Batch C is at the PR #17 owner review gate; do not start Batch D until approval and merge. |
+| C06 | Verified complete | Commit `c54b77a816954c22de21a0ee3bf9e58966f87b9c`; local API 74/74; PR #18 CI run `39436856557` all jobs green. |
+| C07-C08 | Pending | Batch D PR #18 is draft; strict booleans and documentation consistency remain. |
+| C09-C11 | Pending | Start only after Batch D PR #18 is merged by the owner. |
 
 ## Blockers and required follow-up
 
@@ -136,3 +138,25 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 - **GitHub Actions:** [run 39424239632](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39424239632) passed all jobs on the implementation commit: quality gate (including Allure failure redaction), dependency review, Chrome smoke and Allure report.
 - **Draft PR:** [#17](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/17) remains open and draft, targeting `main`.
 - **Next:** stop at the Batch C owner review gate; do not merge PR #17 or begin Batch D without the owner's approval.
+
+### Batch C merge addendum
+
+- PR #17 was merged on 2026-10-20. Fresh `origin/main` is merge commit `91b62f9f501b49f22ca1411e21deb7f9ab0670d4`, which contains Batch C head `9e9873fd59ef6c2f6f852e816e16df75b3a95abc`.
+- Main workflow run `39434454941` completed successfully on the merge commit: build/unit, API, UI, Edge smoke and Allure report.
+- Batch D branch `codex/batch-d-validation-docs` was created from that fetched `origin/main`; draft PR #18 targets `main`.
+
+## Batch D - C06 order quantity validation (verified complete)
+
+- **Starting point:** after confirming PR #17 merged, fetched `origin/main` at `91b62f9f501b49f22ca1411e21deb7f9ab0670d4`; clean branch `codex/batch-d-validation-docs` created from that commit.
+- **Confirmed defect:** `OrderApi.create` checked `quantity.intValue() < 1` without checking whether the JSON integer fit an `int`. A request quantity of `4294967297` narrowed to `1`, was accepted with HTTP 201, decremented stock and created an order. A mixed valid/overflowing request also persisted both lines.
+- **Regression reproduction:** after adding the tests but before the code fix, `mvnw.cmd -B -ntp test -Dsuite=api -Dmaven.compiler.failOnWarning=true` failed with 2 failures out of 72 tests. Both showed an expected 400 but actual 201 for `4294967297`; one failure also exposed cleanup risk for an unexpectedly accepted order. The new helper registers that order for cleanup before asserting.
+- **Change:** require an integral JSON value that `canConvertToInt()` and is at least 1; return a key-specific 400 field error describing the supported range. `Integer.MAX_VALUE` remains a valid quantity and receives the existing 409 insufficient-stock response when inventory is smaller. Added PR API regression job and included it in the Allure report dependencies so order API regressions execute before merge.
+- **Regression coverage:** missing, null, zero, negative, `Integer.MIN_VALUE`, fractional, numeric/malformed strings, boolean/object/array, `Integer.MAX_VALUE + 1`, and a value that wraps to a positive `int`; invalid requests assert inventory and order state are unchanged. A mixed valid/overflowing order asserts no earlier line reservation survives. The maximum supported quantity is validated separately as a stock conflict.
+- **Files changed:** `demo-app/src/main/java/com/enterprise/demoapp/api/OrderApi.java`, `automation/src/test/java/com/enterprise/automation/tests/api/OrderApiTest.java`, `automation/src/test/java/com/enterprise/automation/tests/base/TestDataProviders.java`, `.github/workflows/ci.yml`.
+- **Baseline:** before implementation, `mvnw.cmd -B -ntp test -Dsuite=api -Dmaven.compiler.failOnWarning=true` passed 59 tests and the unit suite passed 35 tests on base SHA `91b62f9`. The intentionally failing regression run reproduced the defect as described above.
+- **Local verification:** `mvnw.cmd -B -ntp test -Dsuite=api -Dmaven.compiler.failOnWarning=true -Dbase.url=http://localhost:18080 -Dapi.base.url=http://localhost:18080/api -Ddb.url=jdbc:h2:tcp://localhost:19092/mem:shop` (PowerShell arguments quoted as `-D...`) passed: **74 passed, 0 failures, 0 errors, 0 skipped; Checkstyle 0; exit 0**. Compiler warnings were treated as errors, release target 17. An earlier rerun could not start H2 because port 9092 was occupied and ran zero tests; switching to isolated loopback ports 18080/19092 resolved it. The final run closed its app/database ports and recorded no cleanup warnings. `git diff --check` and staged diff checks passed.
+- **Workflow validation:** local PyYAML was unavailable. GitHub Actions successfully parsed and executed the changed workflow. Run [39436856557](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39436856557) passed all jobs on `c54b77a816954c22de21a0ee3bf9e58966f87b9c`: quality + persisted Allure verifier, dependency review, API regressions (74/74), Chrome smoke and Allure report.
+- **Coverage baseline:** created [TEST_COVERAGE_MATRIX.md](TEST_COVERAGE_MATRIX.md) with route/method/role inventory, business rules, UI/framework/security/deployment coverage, suite/CI mapping, statuses and current limitations. Java line/branch coverage remains unmeasured because no JaCoCo configuration exists.
+- **Commit / push:** `c54b77a816954c22de21a0ee3bf9e58966f87b9c` (`fix(orders): reject out-of-range quantities`), pushed to `origin/codex/batch-d-validation-docs`.
+- **Draft PR:** [#18](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/18), targeting `main`; stays draft through C07/C08 and the owner review gate.
+- **Next:** C07 strict boolean configuration. Do not start C09-C11/Batch E until PR #18 is merged by the owner.

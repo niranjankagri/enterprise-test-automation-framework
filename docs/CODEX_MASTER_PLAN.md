@@ -59,3 +59,10 @@ Docker/Grid, Actions, Checkstyle and project documentation were added in the ori
 - Maven Wrapper was absent. Java 27, IntelliJ-bundled Maven 3.9.16, Git, Docker CLI and GitHub CLI are available. Docker daemon is unavailable; `gh auth status` reports the saved token is invalid.
 - The CI unit baseline passed using the current Maven installation: 32 passed, 0 failed, 0 errors, 0 skipped; Checkstyle had 0 violations. The unit suite currently starts the demo app because `unit.xml` includes `DemoAppLifecycle` and `local.properties` sets `app.autostart=true`; this is a verified C05 issue, not changed in C00.
 - Wrapper provenance and execution evidence are in `docs/CODEX_PROGRESS.md` and the engineering decisions in `docs/CODEX_DECISIONS.md`.
+
+## Current execution checkpoint
+
+- PR #17 (Batch C) was merged by the owner; Batch D started from fetched `origin/main` at `91b62f9f501b49f22ca1411e21deb7f9ab0670d4` on `codex/batch-d-validation-docs`.
+- C06 is implemented and verified on `c54b77a816954c22de21a0ee3bf9e58966f87b9c`: overflow quantities are rejected without state changes, the API suite passed 74/74 locally, and PR Actions run `39436856557` passed all jobs.
+- PR #18 is the active draft Batch D review request. C07 strict boolean parsing and C08 documentation consistency remain pending. Do not begin Batch E until PR #18 is merged by the owner.
+- The first coverage snapshot is `docs/TEST_COVERAGE_MATRIX.md`. It separates requirement/route coverage, executed suites, Java line/branch coverage, browser evidence and known gaps; no coverage percentages are reported without a defined denominator.
