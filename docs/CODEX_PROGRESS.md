@@ -41,7 +41,7 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 |---|---|---|
 | C00 | Verified complete and merged | Commit `ac89f577f78b16c248d0f65228de337fc2627088`, PR #15 merged; all recorded C00 CI checks passed. |
 | C01 | Verified complete | Commit `8a4e579fbce015098c22a55413fe78781432aac5`; local Compose integration passed and CI run `39414072615` passed all jobs. |
-| C02 | Local validation passed; GitHub Actions pending | Unit suite passed 34 tests and synthetic-secret artifact scan found 0 leaks; see Batch B C02 record. |
+| C02 | Verified complete | Commit `6d6c8b8b4af2e60fc363b9ac4e525bc38df42d59`; local suite and artifact scan passed; CI run `39415956405` passed all jobs. |
 | C03-C11 | Pending | Continue after Batch B is complete and the owner review gate is satisfied. |
 
 ## Blockers and required follow-up
@@ -63,7 +63,7 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 - **Draft PR:** [#16](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/16), targeting `main`.
 - **Memory record:** C01 evidence was appended to the existing Desktop `MEMORY.md` with its prior byte prefix verified intact.
 
-## Batch B - C02 Allure URL redaction (local validation complete; GitHub Actions pending)
+## Batch B - C02 Allure URL redaction (verified complete)
 
 - **Confirmed issue:** `SecretMasker` hid URL passwords but left userinfo usernames exposed. Allure step and attachment labels/text passed through `Report` without a final mask. A synthetic navigation exception also confirmed that Allure persisted raw URL userinfo/query secrets in step status details and stack traces.
 - **Output path review:** direct Allure steps and attachments are centralized in `Report`; API evidence uses `ReportingApiFilter`, UI navigation uses `BasePage`, and failure URL/page-source/error evidence uses `ReportEvidenceListener`. The API/UI/error paths therefore share the report boundary.
@@ -73,4 +73,7 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 - **Validation command:** Windows wrapper invocation `mvnw.cmd -B -ntp -Dmaven.repo.local=<existing-local-cache> clean test -Dsuite=unit -Dmaven.compiler.failOnWarning=true`; **BUILD SUCCESS; 34 passed, 0 failed, 0 errors, 0 skipped; Checkstyle 0 violations; exit 0.** `git diff --check` passed.
 - **Retained-artifact scan:** scanned 89 local text artifacts under `automation/target`; 0 occurrences of the six synthetic URL secrets. The Allure result record contained the expected redacted URLs and labels with useful safe details intact.
 - **Review note:** the failing-path regression first reproduced the raw exception-details leak. A lifecycle implementation correction was verified by the passing suite and post-run scan. No real credentials or URL data were used.
-- **Next:** stage and commit only C02 source/tests plus these progress/decision updates; push to PR #16 and inspect all applicable Actions jobs to terminal status.
+- **Review:** `git diff --check` passed; no machine-specific paths or real credentials were recorded. GitHub Actions run [39415956405](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39415956405) completed successfully on commit `6d6c8b8b4af2e60fc363b9ac4e525bc38df42d59`: quality gate, dependency review, Chrome smoke and Allure report all passed.
+- **Commit / push:** `6d6c8b8b4af2e60fc363b9ac4e525bc38df42d59` (`fix(reporting): redact sensitive URLs from Allure output`), pushed to `origin/codex/batch-b-security`.
+- **Draft PR:** [#16](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/16), targeting `main`.
+- **Next:** append C02 verification to Desktop `MEMORY.md`; keep PR #16 draft for owner review and stop before Batch C until the owner approves/merges Batch B.
