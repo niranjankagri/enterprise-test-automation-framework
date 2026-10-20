@@ -10,6 +10,7 @@ import com.enterprise.automation.data.CustomerData;
 import com.enterprise.automation.data.OrderData;
 import com.enterprise.automation.data.ProductData;
 import com.enterprise.automation.data.TestDataFactory;
+import com.enterprise.automation.db.ShopDatabase;
 import com.enterprise.automation.driver.DriverManager;
 import com.enterprise.automation.tests.base.BaseTest;
 import com.enterprise.automation.ui.components.ModalComponent;
@@ -158,6 +159,7 @@ public class PurchaseJourneyTest extends BaseTest {
     /** An order placed through the UI can be cancelled from its detail dialog. */
     public void adminCancelsAnOrder() {
         // Place a one-line order for a private fixture so cross-layer stock assertions are isolated.
+        ShopDatabase db = ShopDatabase.fromConfig();
         ProductData productData = TestDataFactory.newProduct().withStock(1);
         var product = ApiSession.admin().products().createProduct(productData);
         CleanupRegistry.register("deactivate product " + product.id(),
@@ -166,6 +168,13 @@ public class PurchaseJourneyTest extends BaseTest {
                 .addToCart(product.name());
         OrderPage orders = products.header().openCart().selectCustomer(buyer().email()).placeOrder();
         long orderId = orders.placedOrderId();
+
+        // Verify that checkout changed the database before cancellation is requested.
+        assertThat(db.orderById(orderId))
+                .hasValueSatisfying(row -> assertThat(row.get("status")).isEqualTo("PLACED"));
+        assertThat(db.orderItems(orderId)).singleElement()
+                .satisfies(line -> assertThat(line.get("quantity")).isEqualTo(1));
+        assertThat(db.stockOf(product.sku())).isZero();
 
         // Cancel it from its detail dialog
         orders.cancelOrder(orderId);
@@ -177,6 +186,11 @@ public class PurchaseJourneyTest extends BaseTest {
         assertThat(ApiSession.admin().orders().getOrder(orderId).status()).isEqualTo("CANCELLED");
         assertThat(ApiSession.admin().products().getProduct(product.id()).stock())
                 .as("cancellation restores the reserved unit across UI/API/database layers").isEqualTo(1);
+        assertThat(db.orderById(orderId))
+                .hasValueSatisfying(row -> assertThat(row.get("status")).isEqualTo("CANCELLED"));
+        assertThat(db.orderItems(orderId)).singleElement()
+                .satisfies(line -> assertThat(line.get("quantity")).isEqualTo(1));
+        assertThat(db.stockOf(product.sku())).isEqualTo(1);
     }
 
     private void assertRejectedCheckoutPreservesState(boolean inactive) {
