@@ -103,3 +103,10 @@ Append material decisions with their evidence and trade-offs. Do not record cred
 - **Reason:** Group overlap and data providers change the number of executed test cases, while a count does not establish that a requirement, route/role combination, branch or browser was covered.
 - **Verification:** Root POM, suite XML, workflows and Compose bindings were compared with the updated documentation; `git diff --check` passed. PR Actions run `39443489388` passed all jobs on documentation commit `5284f992c369087f53fc510353a4d30ce4ebd4bc`; final evidence commit `4588e482f19ebc019461fa7d55fa5fed958e3124` also passed all jobs in run `39444011311`.
 - **Trade-off:** Historical runtime observations may remain when dated and labeled as machine-dependent; stale case totals and unsupported claims are removed.
+
+## D-016 - Complete C09–C11 as one Batch E review PR
+
+- **Decision:** After PR #18 merged, create `codex/batch-e-quality-release` from the fetched `origin/main` and keep C09, C10 and C11 in one owner-review PR. Preserve prior batch history and revise only the current execution status.
+- **Reason:** The owner explicitly authorized autonomous completion of the remaining coverage/release scope in one PR, superseding the old Batch D stop checkpoint.
+- **Verification policy:** Establish clean-start suite/tooling baselines before implementation; keep each logical fix independently tested and committed on the same branch; only mark the PR ready after its required checks and final validation reach terminal status. Never merge, enable auto-merge or deploy.
+- **Trade-off:** The PR will be larger than earlier remediation PRs. The coverage matrix and progress log will link each requirement to its own suite and evidence to keep the review traceable.

@@ -2,7 +2,9 @@
 
 ## Snapshot and status rules
 
-This is the traceable coverage snapshot for the Batch D branch. The branch started from merged PR #17 at `91b62f9f501b49f22ca1411e21deb7f9ab0670d4`, then synchronized the merged REST Assured update from `origin/main` at `9ffe710242c04200e219626b3497c69ee4c98e75` in feature-branch merge commit `324c9a1baab28d404b926909c473038aa753694a`. PR run `39441537561` passed all applicable jobs on that synchronized head. C06 is verified on `c54b77a816954c22de21a0ee3bf9e58966f87b9c`, C07 on `6ce37369fa4812409341f2bd34825830b3de4023`, and C08 documentation consistency on `5284f992c369087f53fc510353a4d30ce4ebd4bc`; C08 run `39443489388` passed every job. Progress commit `4588e482f19ebc019461fa7d55fa5fed958e3124` passed all PR jobs in run `39444011311`; the ready-for-review state commit `b38e2b31966d579e4207c25e4adeb648763b682e` passed all jobs in run `39444525264`. The pre-change API and unit baselines were 59/59 and 35/35 respectively. The C06 regression reproduced two accepted overflowing-quantity orders before the fix; after the fix, the API suite passed 74/74. C07 regressions reproduced permissive invalid booleans before the fix; after the fix, the unit suite passed 41/41. PR Actions passed all jobs for all three chunks.
+Batch E baseline on `22559e5ed2e908664bc45a02dd34f1c6644fc7a7` (the merge commit for PR #18): local unit 41/41, API 74/74 and integration 23/23 passed with zero failures, errors or skips; Checkstyle reported zero violations. The finalized Allure failure-redaction verifier passed. These are baseline execution results, not claims that all mapped requirements are covered. The authorization inventory below is derived from the 26 route declarations in current `DemoApp.java`.
+
+The following is retained as the historical Batch D coverage snapshot. Its branch began from merged PR #17 at `91b62f9f501b49f22ca1411e21deb7f9ab0670d4`, then synchronized the merged REST Assured update from `origin/main` at `9ffe710242c04200e219626b3497c69ee4c98e75` in feature-branch merge commit `324c9a1baab28d404b926909c473038aa753694a`. PR run `39441537561` passed all applicable jobs on that synchronized head. C06 is verified on `c54b77a816954c22de21a0ee3bf9e58966f87b9c`, C07 on `6ce37369fa4812409341f2bd34825830b3de4023`, and C08 documentation consistency on `5284f992c369087f53fc510353a4d30ce4ebd4bc`; C08 run `39443489388` passed every job. Progress commit `4588e482f19ebc019461fa7d55fa5fed958e3124` passed all PR jobs in run `39444011311`; the final Batch D branch commit `ddf3d54102fc9cc1d0e9eef4b5dd3f5c6c55ad6f` passed all five jobs in run `39450701930` immediately before PR #18 merged. The pre-change API and unit baselines were 59/59 and 35/35 respectively. The C06 regression reproduced two accepted overflowing-quantity orders before the fix; after the fix, the API suite passed 74/74. C07 regressions reproduced permissive invalid booleans before the fix; after the fix, the unit suite passed 41/41. PR Actions passed all jobs for all three chunks.
 
 SHA values in the matrix are the first 12 characters of the full commit SHA. “Last verified” means the latest inspected passing execution for the mapped behavior; it does not imply that every listed test ran on the snapshot SHA.
 
@@ -19,6 +21,39 @@ Requirement coverage, route/role coverage, test execution, Java line/branch cove
 ## HTTP routes, roles, contracts and business rules
 
 Routes and access levels below are taken from `demo-app/src/main/java/com/enterprise/demoapp/DemoApp.java`. `USER` means any authenticated account; `ADMIN` means the administrator role.
+
+### Route × method × principal expectations
+
+The expected outcomes below use valid request bodies and existing test-owned record IDs so authorization is reached before resource validation. `ADMIN allowed` means the handler must accept the request and return the shown success status. At the Batch E baseline, the route rules are implemented but the complete black-box three-principal regression matrix is not yet present; C09 will add it. The login route is public, so role-specific tokens are not part of its access decision.
+
+| Requirement ID | Method and route | Declared access | Anonymous | VIEWER | ADMIN | Baseline evidence |
+|---|---|---|---|---|---|---|
+| API-ACL-00 | `POST /api/auth/login` | PUBLIC | 200 with valid credentials | Same public handler | Same public handler | `AuthApiTest.adminLogsInAndGetsABearerToken`; verified in baseline API run. |
+| API-ACL-01 | `POST /api/auth/logout` | USER | 401 | 204 | 204 | Representative viewer logout exists; complete principal matrix missing. |
+| API-ACL-02 | `GET /api/stats` | USER | 401 | 200 | 200 | UI dashboard asserts figures; direct endpoint authorization and API contract missing. |
+| API-ACL-03 | `GET /api/users/me` | USER | 401 | 200 | 200 | Representative response test exists; complete principal matrix missing. |
+| API-ACL-04 | `GET /api/users` | ADMIN | 401 | 403 | 200 | Admin list test exists; denied viewer/anonymous cells need direct coverage. |
+| API-ACL-05 | `POST /api/users` | ADMIN | 401 | 403 | 201 | Admin create test exists; denied writes need state assertion. |
+| API-ACL-06 | `GET /api/users/{id}` | ADMIN | 401 | 403 | 200 | Direct GET-by-ID access test missing. |
+| API-ACL-07 | `PATCH /api/users/{id}` | ADMIN | 401 | 403 | 200 | Admin role-change test exists; full denial/state matrix missing. |
+| API-ACL-08 | `DELETE /api/users/{id}` | ADMIN | 401 | 403 | 204 | Admin self-delete refusal exists; target-account matrix/state checks incomplete. |
+| API-ACL-09 | `GET /api/customers` | USER | 401 | 200 | 200 | Representative viewer read exists; full route matrix missing. |
+| API-ACL-10 | `POST /api/customers` | ADMIN | 401 | 403 | 201 | Representative viewer denial exists; state-preservation check needed. |
+| API-ACL-11 | `GET /api/customers/{id}` | USER | 401 | 200 | 200 | Admin detail test exists; viewer/anonymous matrix missing. |
+| API-ACL-12 | `PUT /api/customers/{id}` | ADMIN | 401 | 403 | 200 | Admin replacement test exists; denied-write state check needed. |
+| API-ACL-13 | `PATCH /api/customers/{id}` | ADMIN | 401 | 403 | 200 | Admin update test exists; denied-write state check needed. |
+| API-ACL-14 | `DELETE /api/customers/{id}` | ADMIN | 401 | 403 | 204 | Admin delete test exists; denied-write state check needed. |
+| API-ACL-15 | `GET /api/products` | USER | 401 | 200 | 200 | Representative viewer read exists; full route matrix missing. |
+| API-ACL-16 | `POST /api/products` | ADMIN | 401 | 403 | 201 | Admin create test exists; denied-write state check needed. |
+| API-ACL-17 | `GET /api/products/{id}` | USER | 401 | 200 | 200 | Product detail is covered; full principal matrix missing. |
+| API-ACL-18 | `PUT /api/products/{id}` | ADMIN | 401 | 403 | 200 | Admin replacement test exists; denied-write state check needed. |
+| API-ACL-19 | `PATCH /api/products/{id}` | ADMIN | 401 | 403 | 200 | Admin patch test exists; denied-write state check needed. |
+| API-ACL-20 | `DELETE /api/products/{id}` | ADMIN | 401 | 403 | 204 | Admin deactivation test exists; denied-write state check needed. |
+| API-ACL-21 | `GET /api/orders` | USER | 401 | 200 | 200 | Representative viewer read exists; full route matrix missing. |
+| API-ACL-22 | `POST /api/orders` | ADMIN | 401 | 403 | 201 | Viewer denial exists with valid order; verify denied request preserves stock and order rows. |
+| API-ACL-23 | `GET /api/orders/{id}` | USER | 401 | 200 | 200 | Viewer detail test exists; anonymous/admin matrix missing. |
+| API-ACL-24 | `PATCH /api/orders/{id}` | ADMIN | 401 | 403 | 200 | Admin status transition exists; denied-write state check needed. |
+| API-ACL-25 | `DELETE /api/orders/{id}` | ADMIN | 401 | 403 | 204 | Admin cleanup/delete exists; denied-write state check needed. |
 
 | Requirement ID | Behavior | Risk | Test method | Layer | Suite | CI job | Last verified SHA | Result | Gap/limitation |
 |---|---|---|---|---|---|---|---|---|---|
@@ -98,7 +133,8 @@ Suites overlap by group and data-provider invocation. Counts are execution evide
 
 ## Next baseline actions
 
-1. C07 and C08 are complete; their verified test and documentation evidence is recorded in this matrix and `docs/CODEX_PROGRESS.md`.
-2. C09 is next: finish the protected route × method × role map, inspect all skipped/unexecuted groups, and add focused high-risk cases where inspection confirms gaps.
-3. In C10, review repository-level scanning settings, CI artifact retention and job dependencies, and decide the JaCoCo module/execution-data design before adding instrumentation.
-4. Do not introduce coverage thresholds until the requirement denominator and measured line/branch baseline are defined.
+1. C09 is active: add and execute the protected-route principal matrix with valid fixtures, denied-write state-preservation assertions, missing `/api/stats` and user-detail coverage, and explicit auth/session cases.
+2. Complete C09's gap-confirmed order, UI/cross-layer, security, framework, cleanup and parallelism regressions; mark only inspected-and-passing requirements `VERIFIED`.
+3. In C10, add pre-merge integration/concurrency and meaningful Java coverage evidence; add repository source scanning only where repository settings and available workflow support justify it. Secret scanning/push protection are already enabled.
+4. C11 will rerun feasible suites, browsers and Compose/Grid at the final PR SHA, recheck M1–M8 and original audit findings, and publish the completed readiness record.
+5. Do not introduce coverage thresholds until the requirement denominator and measured line/branch baseline are defined.
