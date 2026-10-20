@@ -124,6 +124,19 @@ public class OrderApiTest extends BaseApiTest {
         assertThat(stockOf(otherProduct())).isEqualTo(2);
     }
 
+    /** Duplicate product lines remain separate ordered lines and collectively reserve exact stock once. */
+    public void duplicateProductLinesRemainSeparateAndCanConsumeExactStock() {
+        OrderResponse order = placeOrder(OrderRequest.of(customer().id(), item(product().id(), 2),
+                item(product().id(), 3)));
+
+        assertThat(order.items()).extracting(OrderResponse.Item::quantity).containsExactly(2, 3);
+        assertThat(order.items()).extracting(OrderResponse.Item::lineTotal)
+                .usingComparatorForType(BigDecimal::compareTo, BigDecimal.class)
+                .containsExactly(new BigDecimal("21.00"), new BigDecimal("31.50"));
+        assertThat(order.total()).isEqualByComparingTo("52.50");
+        assertThat(stockOf(product())).as("both lines reserve all available units").isZero();
+    }
+
     /** Orders can be filtered by customer and by status. */
     public void ordersCanBeListedPerCustomerAndStatus() {
         OrderResponse order = placeOrder(OrderRequest.of(customer().id(), item(product().id(), 1)));

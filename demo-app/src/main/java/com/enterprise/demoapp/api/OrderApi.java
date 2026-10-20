@@ -12,6 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -147,8 +148,14 @@ public final class OrderApi {
                 total = total.add(price.multiply(BigDecimal.valueOf(quantity)));
                 lines.add(new long[] {productId, quantity});
                 prices.add(price);
+            }
+            // Lock product rows in stable ID order so overlapping multi-product orders cannot deadlock
+            // just because callers supplied the same lines in a different order.
+            List<long[]> reservationOrder = new ArrayList<>(lines);
+            reservationOrder.sort(Comparator.comparingLong(line -> line[0]));
+            for (long[] line : reservationOrder) {
                 // Reserve atomically; a competing order may have used the stock read above.
-                reserveStock(c, productId, quantity);
+                reserveStock(c, line[0], (int) line[1]);
             }
             // The order header with the computed total
             long orderId;
@@ -183,19 +190,25 @@ public final class OrderApi {
         String status = v.oneOf("status", "Status", TRANSITIONS.keySet(), true);
         v.validate();
         return Sql.transaction(database, c -> {
-            String current = (String) find(c, id).get("status");
+            String current = lockStatus(c, id);
             // e.g. DELIVERED -> CANCELLED is not allowed
             if (!TRANSITIONS.get(current).contains(status)) {
                 throw new ApiException(409, "Order " + id + " cannot go from " + current + " to " + status);
             }
-            // A cancelled order no longer needs its reserved stock
-            if ("CANCELLED".equals(status)) {
-                restoreStock(c, id);
-            }
-            try (PreparedStatement ps = c.prepareStatement("UPDATE orders SET status = ? WHERE id = ?")) {
+            // The locked status is part of the update guard: a competing transition cannot repeat the same release.
+            int affectedRows;
+            try (PreparedStatement ps = c.prepareStatement("UPDATE orders SET status = ? WHERE id = ? AND status = ?")) {
                 ps.setString(1, status);
                 ps.setLong(2, id);
-                ps.executeUpdate();
+                ps.setString(3, current);
+                affectedRows = ps.executeUpdate();
+            }
+            if (affectedRows != 1) {
+                throw new SQLException("Expected to update one order row but updated " + affectedRows);
+            }
+            // The status change and stock return commit or roll back together.
+            if ("CANCELLED".equals(status)) {
+                restoreStock(c, id);
             }
             return Response.ok(find(c, id));
         });
@@ -205,23 +218,40 @@ public final class OrderApi {
     public Response delete(Request request) {
         long id = request.pathId("id");
         return Sql.transaction(database, c -> {
+            String status = lockStatus(c, id);
             // Only PLACED orders still hold reserved stock (shipped/delivered stock is gone, cancelled already returned)
-            if ("PLACED".equals(find(c, id).get("status"))) {
+            if ("PLACED".equals(status)) {
                 restoreStock(c, id);
             }
             // Order lines are deleted with the order (ON DELETE CASCADE)
             try (PreparedStatement ps = c.prepareStatement("DELETE FROM orders WHERE id = ?")) {
                 ps.setLong(1, id);
-                ps.executeUpdate();
+                int affectedRows = ps.executeUpdate();
+                if (affectedRows != 1) {
+                    throw new SQLException("Expected to delete one order row but deleted " + affectedRows);
+                }
             }
             return Response.noContent();
         });
     }
 
+    /** Locks one order through the transaction so cancellation and deletion cannot restore the same stock twice. */
+    private static String lockStatus(Connection c, long orderId) throws SQLException {
+        try (PreparedStatement ps = c.prepareStatement("SELECT status FROM orders WHERE id = ? FOR UPDATE")) {
+            ps.setLong(1, orderId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    throw ApiException.notFound("Order", orderId);
+                }
+                return rs.getString("status");
+            }
+        }
+    }
+
     /** Gives every line's quantity back to its product. */
     private static void restoreStock(Connection c, long orderId) throws SQLException {
         try (PreparedStatement ps = c.prepareStatement(
-                "SELECT product_id, quantity FROM order_items WHERE order_id = ?")) {
+                "SELECT product_id, quantity FROM order_items WHERE order_id = ? ORDER BY product_id")) {
             ps.setLong(1, orderId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
