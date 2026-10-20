@@ -53,3 +53,17 @@ Append material decisions with their evidence and trade-offs. Do not record cred
 - **Reason:** The TestNG Allure adapter records an uncaught test method exception directly on the top-level result. Sanitizing only `Report.step` cannot protect this separate output path.
 - **Verification:** A dedicated runner executes a real synthetic `IllegalStateException` failure, then checks the final persisted `*-result.json` after TestNG and Maven finish. It confirms the failed TestNG case and exception type remain, the Allure test and step messages remain useful in redacted form, and the synthetic username, password and query token are absent.
 - **Trade-off:** Allure status details are sanitized immediately before persistence; the original throwable and TestNG failure result remain unchanged. The intentionally failing fixture is excluded from the general `full` suite and run by its dedicated verifier.
+
+## D-009 - Coordinate account deletion with session lifecycle
+
+- **Decision:** Use a fair read/write lock inside each `AuthService`. Login and token authentication share read access; account deletion holds write access while deleting the row and removing every session for that username.
+- **Reason:** A token map removal performed after an uncoordinated database delete can miss a concurrent login that registers its token afterward. The shared lock makes the delete/revoke operation exclusive with both login and authentication while retaining concurrent read-side requests.
+- **Verification:** API regression tests confirm a token works before deletion and is rejected afterward, deleted credentials cannot log in again, and a latch-started login/authentication/delete race leaves no usable token. A deterministic adjustable-clock test confirms 401 at the exact expiry deadline. PR #17 Actions run `39421373220` passed all jobs.
+- **Trade-off:** A deletion briefly blocks logins and auth checks for all accounts handled by that `AuthService` instance. An HTTP request already authorized before deletion can finish in flight; requests authenticated after deletion completes are rejected.
+
+## D-010 - Inject the auth clock for deterministic expiry tests
+
+- **Decision:** Keep system UTC and the existing one-hour token lifetime as `AuthService` production defaults, and allow an explicit `Clock` and `Duration` to be supplied to the service constructor.
+- **Reason:** Expiry should be tested at the deadline without sleeping or introducing time-based flakiness. The same `Clock` now controls issuance and validation.
+- **Verification:** `AuthServiceExpiryTest` advances an adjustable clock from before the deadline to the exact deadline and observes 200 then 401 through the router's HTTP boundary.
+- **Trade-off:** The constructor adds an injection seam, while normal application startup continues to use the existing one-argument constructor and unchanged defaults.

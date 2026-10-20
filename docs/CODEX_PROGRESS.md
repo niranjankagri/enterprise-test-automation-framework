@@ -42,7 +42,8 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 | C00 | Verified complete and merged | Commit `ac89f577f78b16c248d0f65228de337fc2627088`, PR #15 merged; all recorded C00 CI checks passed. |
 | C01 | Verified complete | Commit `8a4e579fbce015098c22a55413fe78781432aac5`; local Compose integration passed and CI run `39414072615` passed all jobs. |
 | C02 | Verified complete | Commit `6d6c8b8b4af2e60fc363b9ac4e525bc38df42d59`; local suite and artifact scan passed; CI run `39415956405` passed all jobs. |
-| C03-C11 | Pending | Continue after Batch B is complete and the owner review gate is satisfied. |
+| C03 | Verified complete | Commit `ed2fb00507caaeaed9b4428f15bdc509aef34b76`; local API suite 59/59 passed; Actions run `39421373220` green; PR #17 draft. |
+| C04-C11 | Pending | Continue C04 after C03's implementation and progress-record CI gates passed. |
 
 ## Blockers and required follow-up
 
@@ -89,3 +90,18 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 - **GitHub Actions:** [run 39419116576](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39419116576) completed successfully on `aa9166e3c63f49afa77fb0414e1ef435af065001`: verifier, quality gate, dependency review, Chrome smoke and Allure report all passed.
 - **Draft PR:** [#16](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/16) remains open and draft, targeting `main`.
 - **Review gate:** PR #16 remains draft; do not merge without owner review.
+
+## Batch C - C03 session revocation on user deletion (verified complete)
+
+- **Starting point:** after the owner confirmed PR #16 merged, `git fetch --prune origin` placed `origin/main` at `e4b2f7a9118030906d6c6a0c0f886f6b7c60d10a`. The clean `codex/batch-c-correctness` branch was created from that SHA.
+- **Confirmed issue:** `UserApi.delete` removed the `app_users` row without touching the in-memory `AuthService.sessions` map. Existing tests only verified that later login failed; they did not check active bearer-token revocation, expiry boundary behavior or delete/auth races.
+- **Change:** coordinate login and token checks with deletion under a fair read/write lock. Login and authentication can share read access; deletion exclusively removes the row and the user's sessions, preventing a concurrent login from leaving a usable token. Expiration uses an injected clock and rejects tokens at the deadline; production defaults remain system UTC and one hour.
+- **Regression coverage:** `UserApiTest` verifies an issued token works before deletion, fails after deletion, and cannot be recreated through login. A latch-started race runs token authentication, fresh login and deletion concurrently, then checks every returned token fails after deletion. `AuthServiceExpiryTest` uses an adjustable clock and a loopback HTTP server to verify success before expiry and 401 exactly at expiry. Cleanup tolerates the account already being deleted.
+- **Files changed:** `demo-app/src/main/java/com/enterprise/demoapp/auth/AuthService.java`, `demo-app/src/main/java/com/enterprise/demoapp/api/UserApi.java`, `automation/src/test/java/com/enterprise/automation/tests/api/UserApiTest.java`, `automation/src/test/java/com/enterprise/automation/tests/api/AuthServiceExpiryTest.java`.
+- **Pre-change baseline:** `mvnw.cmd -B -ntp test -Dsuite=api -Dmaven.compiler.failOnWarning=true` passed with **57 tests, 0 failures, 0 errors, 0 skipped; Checkstyle 0 violations; exit 0**.
+- **Post-change local validation:** the same command passed with **59 tests, 0 failures, 0 errors, 0 skipped; Checkstyle 0 violations; exit 0**. Both modules compiled with Java release 17 and compiler warnings treated as errors. `git diff --check` passed; the application and H2 ports were closed after the suite.
+- **Self-review:** the lifecycle lock protects the required session operations, and the tests use only synthetic test credentials. An HTTP request that passed authentication before deletion may finish in flight; all authentication checks after deletion completes reject the deleted account's tokens.
+- **Implementation commit / push:** `ed2fb00507caaeaed9b4428f15bdc509aef34b76` (`fix(auth): revoke sessions when users are deleted`), pushed to `origin/codex/batch-c-correctness`.
+- **Draft PR:** [#17](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/17), targeting `main`.
+- **GitHub Actions:** [run 39421373220](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39421373220) passed all jobs on the implementation commit: quality gate (including the Allure failure-redaction verifier), dependency review, Chrome smoke and Allure report.
+- **Next:** proceed to C04 atomic stock reservation on the same Batch C branch; keep PR #17 draft and stop after C05 for owner review.
