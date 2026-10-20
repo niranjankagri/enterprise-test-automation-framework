@@ -76,4 +76,5 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 - **Review:** `git diff --check` passed; no machine-specific paths or real credentials were recorded. GitHub Actions run [39415956405](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39415956405) completed successfully on commit `6d6c8b8b4af2e60fc363b9ac4e525bc38df42d59`: quality gate, dependency review, Chrome smoke and Allure report all passed.
 - **Commit / push:** `6d6c8b8b4af2e60fc363b9ac4e525bc38df42d59` (`fix(reporting): redact sensitive URLs from Allure output`), pushed to `origin/codex/batch-b-security`.
 - **Draft PR:** [#16](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/16), targeting `main`.
-- **Next:** append C02 verification to Desktop `MEMORY.md`; keep PR #16 draft for owner review and stop before Batch C until the owner approves/merges Batch B.
+- **Memory record:** C02 evidence was appended to the same Desktop `MEMORY.md`; its original byte prefix was verified intact.
+- **Next:** pause at the Batch B owner review gate. Keep PR #16 in draft; start Batch C only after the owner approves/merges Batch B.
