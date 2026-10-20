@@ -89,3 +89,10 @@ Append material decisions with their evidence and trade-offs. Do not record cred
 - **Verification:** Regression tests reproduced two accepted orders before the fix. After the fix, the API suite passed 74 tests with no failures, errors or skips; mixed-line rollback and unchanged inventory/order state are asserted. PR Actions run `39436856557` passed the API, quality, dependency review, Chrome smoke and report jobs.
 - **CI decision:** Add the existing API suite as a PR job and require it before combined report generation. This makes order API regressions execute on every PR without adding a new framework or duplicating existing tests.
 - **Trade-off:** A quantity at `Integer.MAX_VALUE` is a valid positive integer, but receives the existing insufficient-stock conflict when inventory is lower. This keeps numeric validation separate from available-stock business rules.
+
+## D-014 - Parse boolean configuration explicitly
+
+- **Decision:** Accept only case-insensitive `true` or `false` after trimming for `headless`, `app.autostart`, and the demo application's `DB_ALLOW_REMOTE`. Preserve each setting's existing default when unset or blank. Error messages identify the key and never repeat invalid input.
+- **Reason:** `Boolean.parseBoolean` silently maps every value other than `true` to `false`. This can unexpectedly show a browser window, prevent local app startup, or silently disable the documented remote H2 connection.
+- **Verification:** Regression-first unit runs reproduced the invalid-value behavior for all three settings. The final unit suite passed 41/41 with Checkstyle 0; synthetic invalid strings were absent from generated Allure results, logs and Surefire reports. Actions run `39439648609` passed all jobs.
+- **Trade-off:** `DemoApp.Options.fromEnvironment(Map)` adds a testable map-based resolver; normal application startup continues to use `System.getenv()` through the existing no-argument method.
