@@ -37,7 +37,7 @@ jobs:
 
       - name: Run ${{ inputs.suite }} on ${{ inputs.browser }}
         run: >
-          mvn -B -ntp clean test
+          ./mvnw -B -ntp clean test
           -Dsuite=${{ inputs.suite }}
           -Dbrowser=${{ inputs.browser }}
           -Dheadless=true

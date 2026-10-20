@@ -198,15 +198,17 @@ No real credentials in code or Git (scan of all files and the full history); the
 
 ## Running tests
 
-Requirements: JDK 17+, Maven 3.9+, Chrome/Edge (Selenium Manager can download Firefox); Node.js for the Allure CLI.
+Requirements: JDK 17+, Chrome/Edge (Selenium Manager can download Firefox), and Node.js for the Allure CLI. The checked-in Maven Wrapper pins Maven 3.9.16: use `./mvnw` in macOS/Linux/Git Bash or `mvnw.cmd` in Windows Command Prompt; a separate Maven installation is not required.
 
 ```bash
-mvn clean test                                   # full suite, local app, Chrome
-mvn clean test -Dsuite=smoke -Dheadless=true     # a suite
-mvn clean test -Dbrowser=firefox -Dthreads=4     # another browser, more threads
-mvn clean test -Denv=qa                          # app started separately on 8081
+./mvnw clean test                                   # full suite, local app, Chrome
+./mvnw clean test -Dsuite=smoke -Dheadless=true     # a suite
+./mvnw clean test -Dbrowser=firefox -Dthreads=4     # another browser, more threads
+./mvnw clean test -Denv=qa                          # app started separately on 8081
 npx allure-commandline serve automation/target/allure-results
 ```
+
+On Windows Command Prompt, replace `./mvnw` with `mvnw.cmd` in the Maven commands above.
 
 ## Test suites
 

@@ -27,7 +27,7 @@ jobs:
           java-version: "17"
           cache: maven
       - name: Compile with warnings as errors, unit tests, package the application
-        run: mvn -B -ntp clean package -Dsuite=unit -Dmaven.compiler.failOnWarning=true
+        run: ./mvnw -B -ntp clean package -Dsuite=unit -Dmaven.compiler.failOnWarning=true
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v7
