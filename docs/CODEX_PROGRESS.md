@@ -4,13 +4,13 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 
 ## Current batch: A — repository baseline and coding harness
 
-- **Status:** C00 in progress; wrapper, instructions and tracking records are prepared, and local wrapper validation has passed. Git staging/commit/push, draft PR and required Actions verification remain.
+- **Status:** C00 verified complete. The implementation commit is pushed and all required PR workflow jobs passed. The PR remains draft at the owner review gate.
 - **Branch:** `codex/batch-a-baseline`, based on freshly fetched `origin/main`.
 - **Baseline SHA:** `9a415067fcce2bd4e658f37029775853936ab4da`.
-- **Result SHA:** pending.
-- **Commit / push:** pending.
-- **Draft PR:** pending; `gh auth status` currently reports the saved GitHub CLI token is invalid.
-- **GitHub Actions:** pending PR creation.
+- **Implementation result SHA:** `ac89f577f78b16c248d0f65228de337fc2627088`.
+- **Commit / push:** `ac89f57` (`test(build): add verified Maven wrapper and C00 records`), pushed to `origin/codex/batch-a-baseline`.
+- **Draft PR:** [#15](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/15), targeting `main`.
+- **GitHub Actions:** [CI run 39409762009](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39409762009) completed successfully for `ac89f577f78b16c248d0f65228de337fc2627088`: compile/unit quality gate, dependency review, Chrome smoke and Allure report all passed.
 
 ### Verified pre-change state
 
@@ -29,19 +29,21 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 - Provenance: downloaded the Apache-hosted Maven 3.9.16 binary zip, `.sha512`, `.asc` and Maven `KEYS`; published SHA-512 matched the calculated digest; GPG returned `GOODSIG` and `VALIDSIG` for the archive. The pinned SHA-256 is `5af3b743dd8b876b5c45da33b676251e5f1687712644abb4ee519ca56e1d89ce`. The wrapper itself successfully downloaded the pinned distribution and reported Maven 3.9.16 in a fresh temporary cache on Windows and Git Bash.
 - Wrapper-based CI unit command: **BUILD SUCCESS; 32 passed, 0 failed, 0 errors, 0 skipped; Checkstyle 0 violations.**
 - Wrapper-based main-workflow command `mvnw.cmd -B -ntp -Dmaven.repo.local=<existing-local-cache> clean package -Dsuite=unit -Dmaven.compiler.failOnWarning=true`: **BUILD SUCCESS; 32 passed, 0 failed, 0 errors, 0 skipped; Checkstyle 0 violations; both module JARs packaged.** Maven Shade emitted its existing module-info/overlapping license-resource warnings; the compiler warning gate passed.
-- `.github/workflows/ci.yml`, `regression.yml` and `run-suite.yml` now call `./mvnw`; Docker's container-local `mvn` command is unchanged. Local wrapper tests passed; Ubuntu Actions verification is pending.
+- `.github/workflows/ci.yml`, `regression.yml` and `run-suite.yml` now call `./mvnw`; Docker's container-local `mvn` command is unchanged. Local wrapper tests passed, and the Ubuntu PR workflow passed all jobs on the implementation commit.
 - Local Maven wrapper tests use a task-specific temp wrapper cache and explicit `maven.repo.local` because of this sandbox's profile mapping; these paths are not committed.
-- Final C00 status, exact diff review, `git diff --check`, staged checks, commit, push, draft PR and terminal Actions conclusions remain pending.
+- Final C00 diff review and `git diff --cached --check` passed. The final artifact scan found no bearer credentials, URL userinfo, sensitive query values or JSON credential fields in local Allure results, logs or TestNG reports. The staged-file scan found no personal machine path, credential assignment or private key.
+- Docker Compose validation is **BLOCKED / NOT EXECUTED** because the Docker daemon is unavailable. C00 does not change Docker configuration; this is recorded for the later Docker security chunk.
+- C00 is complete: the branch is pushed, the draft PR exists and every applicable PR Actions job reached a successful terminal conclusion. Stop here for owner review; do not start Batch B before the owner gate.
 
 ## Chunk ledger
 
 | Chunk | Status | Evidence / result |
 |---|---|---|
-| C00 | In progress | Pinned Maven Wrapper, repository instructions, plan/progress/decision files, README and host-run workflow migration are prepared; CI/PR gate remains pending. |
+| C00 | Verified complete | Commit `ac89f577f78b16c248d0f65228de337fc2627088`, draft PR #15, CI run `39409762009` green; 32 unit tests passed locally and in the quality gate. |
 | C01–C11 | Pending | Do not start until the specified batch dependency and owner review gate are satisfied. |
 
 ## Blockers and required follow-up
 
 - Docker Compose service/network validation is **BLOCKED / NOT EXECUTED** until the Docker daemon is available.
-- GitHub CLI cannot create a draft PR or inspect Actions because its saved token is invalid. Git fetch over the configured Git remote works; branch push and PR creation still need verification. Use an already authenticated GitHub session if available; otherwise the owner must reauthenticate `gh` without sharing the token.
-- Do not mark C00 complete until the feature branch is pushed, the draft PR exists and applicable GitHub Actions jobs have terminal successful conclusions.
+- The saved GitHub CLI token was invalid, but the existing Git credential helper provided a valid credential without displaying it; the branch push, PR creation and Actions inspection all succeeded.
+- Batch B remains pending the owner's review/merge approval of PR #15. Do not advance to it before that gate.
