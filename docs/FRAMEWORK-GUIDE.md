@@ -136,6 +136,8 @@ java -jar demo-app/target/demo-app.jar --port 8081 --db-port 9093
 | Simulated API latency | `LATENCY_MS` | 100 ms |
 | Demo passwords | `ADMIN_PASSWORD`, `VIEWER_PASSWORD` | `Admin@12345`, `Viewer@12345` |
 
+`DB_ALLOW_REMOTE` defaults to `false`. Boolean environment values are trimmed and case-insensitive, and must be exactly `true` or `false`; an invalid value stops startup with a key-specific message that does not repeat the value.
+
 Accounts: `admin` (role ADMIN, full access) and `viewer` (role VIEWER, read-only).
 
 The 100 ms latency makes the UI behave like a real backend: data appears after a short delay, so tests must wait for the application's state instead of acting immediately.

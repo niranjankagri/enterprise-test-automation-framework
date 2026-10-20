@@ -67,14 +67,14 @@ public final class ConfigLoader {
                 resolver.uri(ConfigKey.BASE_URL),
                 resolver.uri(ConfigKey.API_BASE_URL),
                 BrowserType.from(resolver.required(ConfigKey.BROWSER)),
-                Boolean.parseBoolean(resolver.required(ConfigKey.HEADLESS)),
+                resolver.booleanValue(ConfigKey.HEADLESS),
                 ExecutionMode.from(resolver.required(ConfigKey.EXECUTION)),
                 resolver.uri(ConfigKey.GRID_URL),
                 resolver.positiveInt(ConfigKey.WINDOW_WIDTH),
                 resolver.positiveInt(ConfigKey.WINDOW_HEIGHT),
                 Duration.ofSeconds(resolver.positiveInt(ConfigKey.TIMEOUT_EXPLICIT_SECONDS)),
                 Duration.ofSeconds(resolver.positiveInt(ConfigKey.TIMEOUT_PAGE_LOAD_SECONDS)),
-                Boolean.parseBoolean(resolver.required(ConfigKey.APP_AUTOSTART)),
+                resolver.booleanValue(ConfigKey.APP_AUTOSTART),
                 new Credentials(resolver.required(ConfigKey.ADMIN_USERNAME), resolver.required(ConfigKey.ADMIN_PASSWORD)),
                 new Credentials(resolver.required(ConfigKey.VIEWER_USERNAME), resolver.required(ConfigKey.VIEWER_PASSWORD)),
                 // Database access only where db.url is set (otherwise empty: database tests skip)
@@ -150,6 +150,19 @@ public final class ConfigLoader {
                         + key.property() + "=... or " + key.environmentVariable() + ")");
             }
             return value;
+        }
+
+        /** A strict boolean that accepts case-insensitive true/false after normal whitespace trimming. */
+        boolean booleanValue(ConfigKey key) {
+            String value = required(key);
+            if ("true".equalsIgnoreCase(value)) {
+                return true;
+            }
+            if ("false".equalsIgnoreCase(value)) {
+                return false;
+            }
+            // Do not echo the supplied value: configuration may be injected from secret-bearing environments.
+            throw new IllegalStateException("Configuration '" + key.property() + "' must be true or false");
         }
 
         /** An absolute URL (scheme and host required). */

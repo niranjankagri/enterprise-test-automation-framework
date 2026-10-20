@@ -128,14 +128,15 @@ System property → environment variable → `config/<env>.properties` → `conf
 |---|---|
 | `env` / `ENV` | `local` (starts the app), `qa`, `staging` |
 | `browser` | `chrome`, `firefox`, `edge` |
-| `headless` | `true` / `false` |
+| `headless` | `true` / `false` (default `false`; local) |
+| `app.autostart` | `true` / `false` (`true` for local; otherwise `false`) |
 | `execution` | `local`, `remote` (Selenium Grid at `grid.url`) |
 | `parallel`, `threads` | `classes`, `2` |
 | `retry.count` | `1` (infrastructure failures only) |
 | `base.url`, `api.base.url`, `db.url` | per environment |
 | `ADMIN_PASSWORD`, `VIEWER_PASSWORD`, `DB_*` | secrets: environment variables only (see `.env.example`) |
 
-Invalid values stop the run at start-up with the list of valid ones.
+Boolean values are trimmed and case-insensitive, but must be exactly `true` or `false`. Environment files inherit settings omitted from that file from `config/default.properties`. Invalid booleans stop startup with a message naming the key without echoing the supplied value; other invalid settings fail with key-specific diagnostics and supported values where applicable.
 
 ## Parallel execution
 
