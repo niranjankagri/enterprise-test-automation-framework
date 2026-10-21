@@ -93,8 +93,17 @@ public class CheckoutPage extends ShopPage<CheckoutPage> {
 
     /** Clicks "Place order" expecting a validation or business error on this page. */
     public String placeOrderExpectingError() {
+        return beginPlaceOrder().waitForErrorMessage();
+    }
+
+    /** Starts order submission without waiting, for a test that controls the request. */
+    public CheckoutPage beginPlaceOrder() {
         actions.click(PLACE_ORDER);
-        // The banner is empty until an error is shown
+        return this;
+    }
+
+    /** Waits for the checkout error banner and returns its message. */
+    public String waitForErrorMessage() {
         wait.until(d -> !d.findElement(ERROR).getText().isBlank(), "checkout error");
         return actions.text(ERROR);
     }

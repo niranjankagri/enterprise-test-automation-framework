@@ -14,6 +14,8 @@ public class CustomerPage extends ShopPage<CustomerPage> {
     private static final By SEARCH_BUTTON = TestId.of("customer-search-button");
     private static final By ADD = TestId.of("add-customer");
     private static final By RESULT_COUNT = TestId.of("result-count");
+    private static final By LOAD_ERROR = TestId.of("customer-load-error");
+    private static final By LOAD_RETRY = TestId.of("customer-load-retry");
     // Column that identifies a customer row (emails are unique)
     private static final String EMAIL = "Email";
 
@@ -34,9 +36,29 @@ public class CustomerPage extends ShopPage<CustomerPage> {
 
     /** Searches by name, email or city and waits for the filtered list. */
     public CustomerPage search(String term) {
+        return beginSearch(term).waitUntilLoaded();
+    }
+
+    /** Submits a search without waiting, for tests that need to control the request. */
+    public CustomerPage beginSearch(String term) {
         actions.type(SEARCH, term);
         actions.click(SEARCH_BUTTON);
-        // Clicking sets data-ready="false" synchronously, so this waits for the new result
+        return this;
+    }
+
+    /** Whether the current customer-list request showed its retryable error. */
+    public boolean hasLoadError() {
+        return actions.isDisplayed(LOAD_ERROR);
+    }
+
+    /** Message shown when the customer list could not be loaded. */
+    public String loadErrorMessage() {
+        return actions.text(LOAD_ERROR);
+    }
+
+    /** Retries loading the current customer search. */
+    public CustomerPage retryLoading() {
+        actions.click(LOAD_RETRY);
         return waitUntilLoaded();
     }
 

@@ -13,6 +13,10 @@
     <nav class="nav" id="nav" data-testid="navigation"></nav>
     <main class="main">
       <h1 data-testid="page-title">Products</h1>
+      <div class="alert" data-testid="product-load-error" role="alert" hidden>
+        <span>Products could not be loaded. Check the connection and retry.</span>
+        <button type="button" data-testid="product-load-retry">Retry</button>
+      </div>
       <form class="toolbar" id="search-form">
         <input type="search" placeholder="Search name or SKU" aria-label="Search products" data-testid="product-search">
         <select aria-label="Category" data-testid="category-filter">
@@ -36,24 +40,34 @@
     (() => {
       const { $, api, rows, esc, money, requireAuth, addToCart, toast } = App;
       requireAuth('products');
+      const loadError = $('[data-testid="product-load-error"]');
       let products = [];
 
       // (Re)loads the catalogue with the current search term and category
       async function load() {
         document.body.dataset.ready = 'false';
+        loadError.hidden = true;
         const params = new URLSearchParams();
         const search = $('[data-testid="product-search"]').value.trim();
         const category = $('[data-testid="category-filter"]').value;
         if (search) params.set('search', search);
         if (category) params.set('category', category);
-        products = await api('GET', '/products' + (params.toString() ? '?' + params : ''));
+        let loadedProducts;
+        try {
+          loadedProducts = await api('GET', '/products' + (params.toString() ? '?' + params : ''));
+        } catch {
+          loadError.hidden = false;
+          document.body.dataset.ready = 'true';
+          return;
+        }
+        products = loadedProducts;
         rows($('[data-testid="products-table"] tbody'), products, (p) => `
-          <tr data-id="${p.id}">
-            <td>${esc(p.sku)}</td><td>${esc(p.name)}</td><td>${esc(p.category)}</td>
-            <td class="num">${money(p.price)}</td><td class="num">${p.stock}</td>
-            <td><button class="small" data-testid="add-to-cart" data-id="${p.id}" ${p.stock === 0 ? 'disabled' : ''}>
-              ${p.stock === 0 ? 'Out of stock' : 'Add to cart'}</button></td>
-          </tr>`, 'No products found');
+            <tr data-id="${p.id}">
+              <td>${esc(p.sku)}</td><td>${esc(p.name)}</td><td>${esc(p.category)}</td>
+              <td class="num">${money(p.price)}</td><td class="num">${p.stock}</td>
+              <td><button class="small" data-testid="add-to-cart" data-id="${p.id}" ${p.stock === 0 ? 'disabled' : ''}>
+                ${p.stock === 0 ? 'Out of stock' : 'Add to cart'}</button></td>
+            </tr>`, 'No products found');
         $('[data-testid="result-count"]').textContent = `${products.length} product${products.length === 1 ? '' : 's'}`;
         document.body.dataset.ready = 'true';
       }
@@ -61,6 +75,7 @@
       // Search on submit; the category filter applies immediately
       $('#search-form').addEventListener('submit', (e) => { e.preventDefault(); load(); });
       $('[data-testid="category-filter"]').addEventListener('change', load);
+      $('[data-testid="product-load-retry"]').addEventListener('click', load);
 
       // "Add to cart" in any row: the cart lives in the browser session, so no API call is needed
       $('[data-testid="products-table"]').addEventListener('click', (event) => {

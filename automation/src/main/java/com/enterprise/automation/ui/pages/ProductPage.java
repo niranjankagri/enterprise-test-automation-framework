@@ -14,6 +14,8 @@ public class ProductPage extends ShopPage<ProductPage> {
     private static final By SEARCH_BUTTON = TestId.of("product-search-button");
     private static final By CATEGORY = TestId.of("category-filter");
     private static final By RESULT_COUNT = TestId.of("result-count");
+    private static final By LOAD_ERROR = TestId.of("product-load-error");
+    private static final By LOAD_RETRY = TestId.of("product-load-retry");
 
     @Override
     protected String pageId() {
@@ -32,9 +34,14 @@ public class ProductPage extends ShopPage<ProductPage> {
 
     /** Searches by name or SKU and waits for the filtered list. */
     public ProductPage search(String term) {
+        return beginSearch(term).waitUntilLoaded();
+    }
+
+    /** Submits a search without waiting, for tests that need to control the request. */
+    public ProductPage beginSearch(String term) {
         actions.type(SEARCH, term);
         actions.click(SEARCH_BUTTON);
-        return waitUntilLoaded();
+        return this;
     }
 
     /** {@code "All categories"} clears the filter. */
@@ -55,6 +62,22 @@ public class ProductPage extends ShopPage<ProductPage> {
     /** E.g. "8 products". */
     public String resultCount() {
         return actions.text(RESULT_COUNT);
+    }
+
+    /** Whether the current catalogue request showed its retryable error. */
+    public boolean hasLoadError() {
+        return actions.isDisplayed(LOAD_ERROR);
+    }
+
+    /** Message shown when the catalogue could not be loaded. */
+    public String loadErrorMessage() {
+        return actions.text(LOAD_ERROR);
+    }
+
+    /** Retries loading the current catalogue search and category. */
+    public ProductPage retryLoading() {
+        actions.click(LOAD_RETRY);
+        return waitUntilLoaded();
     }
 
     /** Adds one unit of the product named {@code name}; waits for the confirmation toast. */

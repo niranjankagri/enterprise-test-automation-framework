@@ -210,4 +210,34 @@ public class CustomerManagementTest extends BaseTest {
         assertThat(customers.canAddCustomers()).as("no Add button").isFalse();
         assertThat(customers.canEditOrDeleteCustomers()).as("no Edit/Delete buttons").isFalse();
     }
+
+    /** A failed customer-list request is announced, and Retry loads the list without a page reload. */
+    @Test(groups = "smoke")
+    public void customerListFailureShowsRetryAndRecovers() {
+        CustomerPage customers = loginAsAdmin().navigation().openCustomers();
+        var driver = DriverManager.getDriver();
+        BrowserRequestSimulator.gateNetworkFailure(driver, "GET", "/api/customers");
+        try {
+            customers.beginSearch("Ava");
+            BrowserRequestSimulator.awaitPending(driver, config().explicitWait());
+
+            assertThat(((JavascriptExecutor) driver).executeScript("return document.body.dataset.busy"))
+                    .isEqualTo("true");
+            assertThat(driver.findElement(By.cssSelector("[data-testid='loader']")).isDisplayed()).isTrue();
+
+            BrowserRequestSimulator.release(driver);
+            customers.waitUntilLoaded();
+
+            assertThat(customers.hasLoadError()).isTrue();
+            assertThat(customers.loadErrorMessage()).contains("Customers could not be loaded");
+            assertThat(driver.findElement(By.cssSelector("[data-testid='customer-load-retry']")).isEnabled()).isTrue();
+
+            customers.retryLoading();
+
+            assertThat(customers.hasLoadError()).isFalse();
+            assertThat(customers.table().column("Email")).contains("ava.patel@example.com");
+        } finally {
+            BrowserRequestSimulator.restore(driver);
+        }
+    }
 }

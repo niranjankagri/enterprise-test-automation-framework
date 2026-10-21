@@ -3,11 +3,14 @@ package com.enterprise.automation.tests.ui;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.enterprise.automation.data.ProductData;
+import com.enterprise.automation.driver.DriverManager;
 import com.enterprise.automation.tests.base.BaseTest;
 import com.enterprise.automation.tests.base.TestDataProviders;
 import com.enterprise.automation.ui.pages.ProductPage;
 import java.util.List;
 import java.util.Map;
+import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.testng.annotations.Test;
 
 /** The catalogue shown in the UI matches the reference data in {@code testdata/products.json}. */
@@ -44,5 +47,35 @@ public class ProductCatalogTest extends BaseTest {
         // The "no products" placeholder row and a zero count
         assertThat(products.table().isEmpty()).isTrue();
         assertThat(products.resultCount()).isEqualTo("0 products");
+    }
+
+    /** A failed catalogue request is announced, and Retry reloads the current search. */
+    @Test(groups = "smoke")
+    public void catalogueFailureShowsRetryAndRecovers() {
+        ProductPage products = loginAsAdmin().navigation().openProducts();
+        var driver = DriverManager.getDriver();
+        BrowserRequestSimulator.gateNetworkFailure(driver, "GET", "/api/products");
+        try {
+            products.beginSearch("Wireless");
+            BrowserRequestSimulator.awaitPending(driver, config().explicitWait());
+
+            assertThat(((JavascriptExecutor) driver).executeScript("return document.body.dataset.busy"))
+                    .isEqualTo("true");
+            assertThat(driver.findElement(By.cssSelector("[data-testid='loader']")).isDisplayed()).isTrue();
+
+            BrowserRequestSimulator.release(driver);
+            products.waitUntilLoaded();
+
+            assertThat(products.hasLoadError()).isTrue();
+            assertThat(products.loadErrorMessage()).contains("Products could not be loaded");
+            assertThat(driver.findElement(By.cssSelector("[data-testid='product-load-retry']")).isEnabled()).isTrue();
+
+            products.retryLoading();
+
+            assertThat(products.hasLoadError()).isFalse();
+            assertThat(products.table().column("Name")).contains("Wireless Keyboard", "Wireless Mouse");
+        } finally {
+            BrowserRequestSimulator.restore(driver);
+        }
     }
 }

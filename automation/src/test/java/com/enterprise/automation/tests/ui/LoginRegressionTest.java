@@ -104,4 +104,27 @@ public class LoginRegressionTest extends BaseTest {
         assertThat(login.currentUrl()).contains("expired=1");
         assertThat(login.infoMessage()).contains("session has expired");
     }
+
+    /** A controlled expired-session response clears browser state and redirects to sign-in. */
+    @Test(groups = "smoke")
+    public void expiredBrowserSessionClearsTheCartAndReturnsToLogin() {
+        CustomerPage customers = loginAsAdmin().navigation().openProducts().addToCart("Wireless Mouse")
+                .navigation().openCustomers();
+        WebDriver driver = DriverManager.getDriver();
+        BrowserRequestSimulator.respondWithHttpFailure(driver, "GET", "/api/customers", 401,
+                "Synthetic expired session");
+        try {
+            customers.beginSearch("Ava");
+            LoginPage login = new LoginPage().waitUntilLoaded();
+
+            assertThat(login.currentUrl()).contains("expired=1");
+            assertThat(login.infoMessage()).contains("session has expired");
+            List<?> browserSession = (List<?>) ((JavascriptExecutor) driver).executeScript(
+                    "return ['shop.token', 'shop.user', 'shop.cart'].map(key => sessionStorage.getItem(key));");
+            assertThat(browserSession).as("expired-session handling clears the token, user and cart")
+                    .containsOnlyNulls();
+        } finally {
+            BrowserRequestSimulator.restore(driver);
+        }
+    }
 }

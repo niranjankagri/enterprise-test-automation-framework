@@ -13,6 +13,7 @@ import com.enterprise.automation.data.TestDataFactory;
 import com.enterprise.automation.db.ShopDatabase;
 import com.enterprise.automation.driver.DriverManager;
 import com.enterprise.automation.tests.base.BaseTest;
+import com.enterprise.automation.tests.ui.BrowserRequestSimulator;
 import com.enterprise.automation.ui.components.ModalComponent;
 import com.enterprise.automation.ui.pages.CheckoutPage;
 import com.enterprise.automation.ui.pages.DashboardPage;
@@ -154,6 +155,55 @@ public class PurchaseJourneyTest extends BaseTest {
         assertThat(buyerOrders).extracting(OrderResponse::id).containsExactly(orderId);
         assertThat(buyerOrders.get(0).items()).singleElement()
                 .satisfies(line -> assertThat(line.quantity()).isEqualTo(1));
+    }
+
+    /** A failed order request leaves no writes behind, restores the control and can be retried safely. */
+    @Test(groups = "smoke")
+    public void failedOrderSubmissionCanBeRetriedWithoutPartialWrites() {
+        ShopDatabase db = ShopDatabase.fromConfig();
+        ProductData productData = TestDataFactory.newProduct().withStock(3);
+        var product = ApiSession.admin().products().createProduct(productData);
+        CleanupRegistry.register("deactivate product " + product.id(),
+                () -> ApiSession.admin().products().deleteProduct(product.id()));
+        ProductPage products = loginAsAdmin().navigation().openProducts();
+        products.search(product.sku()).addToCart(product.name());
+        CheckoutPage checkout = products.header().openCart().selectCustomer(buyer().email());
+        long buyerId = ApiSession.admin().customers().findByEmail(buyer().email()).orElseThrow().id();
+        var driver = DriverManager.getDriver();
+
+        BrowserRequestSimulator.gateHttpFailure(driver, "POST", "/api/orders", 503,
+                "Synthetic service unavailable");
+        try {
+            checkout.beginPlaceOrder();
+            BrowserRequestSimulator.awaitPending(driver, config().explicitWait());
+
+            assertThat(checkout.canPlaceOrder()).as("submission is disabled while the request is pending").isFalse();
+            assertThat(((JavascriptExecutor) driver).executeScript("return document.body.dataset.busy"))
+                    .isEqualTo("true");
+            BrowserRequestSimulator.release(driver);
+
+            assertThat(checkout.waitForErrorMessage()).isEqualTo("Synthetic service unavailable");
+            assertThat(checkout.canPlaceOrder()).as("submission is available again after failure").isTrue();
+            assertThat(checkout.cart().column("Product")).containsExactly(product.name());
+            assertThat(buyerOrders()).as("failed submission creates no order").isEmpty();
+            assertThat(db.orderCountOf(buyerId)).isZero();
+            assertThat(db.sql().count("SELECT COUNT(*) FROM order_items WHERE order_id IN"
+                    + " (SELECT id FROM orders WHERE customer_id = ?)", buyerId)).isZero();
+            assertThat(ApiSession.admin().products().getProduct(product.id()).stock()).isEqualTo(3);
+            assertThat(db.stockOf(product.sku())).isEqualTo(3);
+        } finally {
+            BrowserRequestSimulator.restore(driver);
+        }
+
+        var orders = checkout.placeOrder();
+        long orderId = orders.placedOrderId();
+
+        assertThat(buyerOrders()).extracting(OrderResponse::id).containsExactly(orderId);
+        assertThat(db.orderCountOf(buyerId)).isEqualTo(1);
+        assertThat(db.orderItems(orderId)).singleElement()
+                .satisfies(line -> assertThat(line.get("quantity")).isEqualTo(1));
+        assertThat(ApiSession.admin().products().getProduct(product.id()).stock()).isEqualTo(2);
+        assertThat(db.stockOf(product.sku())).isEqualTo(2);
     }
 
     /** An order placed through the UI can be cancelled from its detail dialog. */
