@@ -24,13 +24,13 @@ public final class BrowserRequestSimulator {
               const scenario = window.__tafRequestScenario;
               if (!scenario || requestMethod !== scenario.method
                   || new URL(url, window.location.href).pathname !== scenario.path) {
-                return originalFetch.call(this, input, init);
+                return originalFetch.call(window, input, init);
               }
               window.__tafRequestPending = true;
               if (scenario.gated) await scenario.released;
               window.__tafRequestPending = false;
               window.__tafRequestScenario = null;
-              if (scenario.passThrough) return originalFetch.call(this, input, init);
+              if (scenario.passThrough) return originalFetch.call(window, input, init);
               if (scenario.networkError) throw new TypeError('Synthetic network failure');
               return new Response(JSON.stringify({ message: scenario.message }), {
                 status: scenario.status,
