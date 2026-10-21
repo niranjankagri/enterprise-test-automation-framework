@@ -99,6 +99,7 @@ jobs:
             automation/target/screenshots
             automation/target/logs
           if-no-files-found: warn
+          retention-days: 14
       - name: Upload Docker/Grid Java coverage
         if: always()
         uses: actions/upload-artifact@v7
