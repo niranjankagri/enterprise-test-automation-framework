@@ -50,6 +50,7 @@ jobs:
           name: results-unit
           path: automation/target/allure-results
           if-no-files-found: warn
+          retention-days: 30
 
   dependencies:
     name: Dependency review
