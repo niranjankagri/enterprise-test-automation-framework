@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.enterprise.automation.api.ApiSession;
 import com.enterprise.automation.api.models.UserResponse;
+import com.enterprise.automation.config.ConfigManager;
 import com.enterprise.automation.config.Credentials;
 import com.enterprise.automation.data.CleanupRegistry;
 import com.enterprise.automation.data.TestDataFactory;
@@ -11,11 +12,17 @@ import com.enterprise.automation.data.UserData;
 import com.enterprise.automation.driver.DriverManager;
 import com.enterprise.automation.tests.base.BaseTest;
 import com.enterprise.automation.tests.base.TestDataProviders;
+import com.enterprise.automation.ui.ElementActions;
+import com.enterprise.automation.ui.TestId;
 import com.enterprise.automation.ui.pages.CustomerPage;
 import com.enterprise.automation.ui.pages.DashboardPage;
 import com.enterprise.automation.ui.pages.LoginPage;
+import com.enterprise.automation.utils.WaitUtils;
+import io.qameta.allure.Allure;
+import io.qameta.allure.model.StepResult;
 import io.restassured.response.Response;
 import java.util.List;
+import java.util.UUID;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
@@ -92,6 +99,28 @@ public class LoginRegressionTest extends BaseTest {
                     assertThat(((Number) ((List<?>) value).get(1)).doubleValue()).isGreaterThanOrEqualTo(1.5);
                 });
         AccessibilityAssertions.pageHasNoViolations(driver, "login page");
+    }
+
+    /** A value typed into a non-password field is omitted from retained Allure step names. */
+    @Test(groups = "smoke")
+    public void typedUserValuesAreOmittedFromReportSteps() {
+        String marker = "synthetic-sensitive-value-" + UUID.randomUUID();
+        openLoginPage();
+        WebDriver driver = DriverManager.getDriver();
+        new ElementActions(driver, new WaitUtils(driver, ConfigManager.config().explicitWait()))
+                .type(TestId.of("username"), marker);
+
+        StringBuilder stepNames = new StringBuilder();
+        Allure.getLifecycle().updateTest(testCase -> appendStepNames(testCase.getSteps(), stepNames));
+
+        assertThat(stepNames).contains("Type [redacted] into username").doesNotContain(marker);
+    }
+
+    private static void appendStepNames(List<StepResult> steps, StringBuilder result) {
+        for (StepResult step : steps) {
+            result.append(step.getName()).append('\n');
+            appendStepNames(step.getSteps(), result);
+        }
     }
 
     /** A deleted account's browser token is cleared and a useful reauthentication message is shown. */

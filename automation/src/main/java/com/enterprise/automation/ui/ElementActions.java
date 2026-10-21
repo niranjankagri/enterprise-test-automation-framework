@@ -4,6 +4,7 @@ import com.enterprise.automation.reporting.Report;
 import com.enterprise.automation.utils.WaitUtils;
 import java.util.List;
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.SearchContext;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -44,13 +45,11 @@ public final class ElementActions {
         });
     }
 
-    /** Replaces the field's content with {@code text}. */
+    /** Replaces a field's content without retaining the typed value in log or report step names. */
     public void type(By locator, String text) {
-        // The typed value is not logged (it may be a password)
+        // Any field may hold user data, so omit all typed values from retained evidence.
         LOG.debug("type into {}", locator);
-        // In the report, values typed into password fields show as ****
-        String shown = describe(locator).toLowerCase(java.util.Locale.ROOT).contains("password") ? "****" : text;
-        Report.step("Type '" + shown + "' into " + describe(locator), () -> {
+        Report.step("Type [redacted] into " + describe(locator), () -> {
             WebElement element = wait.visible(locator);
             // Clear first: typing appends to what is already there
             element.clear();
@@ -79,20 +78,27 @@ public final class ElementActions {
 
     /** Picks the option with exactly this visible text in a select. */
     public void selectByVisibleText(By locator, String text) {
-        LOG.debug("select '{}' in {}", text, locator);
-        Report.step("Select '" + text + "' in " + describe(locator),
-                () -> new Select(wait.visible(locator)).selectByVisibleText(text));
+        LOG.debug("select option in {}", locator);
+        Report.step("Select option in " + describe(locator), () -> {
+            try {
+                new Select(wait.visible(locator)).selectByVisibleText(text);
+            } catch (NoSuchElementException failure) {
+                throw new NoSuchElementException("No matching option in " + describe(locator));
+            }
+        });
     }
 
     /** Selects the first option whose text contains {@code fragment}. */
     public void selectContaining(By locator, String fragment) {
-        LOG.debug("select option containing '{}' in {}", fragment, locator);
-        Select select = new Select(wait.visible(locator));
-        // Options can be filled asynchronously (e.g. the checkout customers): wait until one matches
-        WebElement option = wait.until(d -> select.getOptions().stream()
-                .filter(o -> o.getText().contains(fragment)).findFirst().orElse(null),
-                "option containing '" + fragment + "' in " + locator);
-        select.selectByVisibleText(option.getText());
+        LOG.debug("select matching option in {}", locator);
+        Report.step("Select matching option in " + describe(locator), () -> {
+            Select select = new Select(wait.visible(locator));
+            // Options can be filled asynchronously; keep the query out of retained wait details.
+            WebElement option = wait.until(d -> select.getOptions().stream()
+                    .filter(o -> o.getText().contains(fragment)).findFirst().orElse(null),
+                    "matching option in " + locator);
+            option.click();
+        });
     }
 
     /** Immediate check, no waiting: is the element there and visible right now? */

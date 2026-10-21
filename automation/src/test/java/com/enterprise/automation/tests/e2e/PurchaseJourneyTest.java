@@ -19,6 +19,8 @@ import com.enterprise.automation.ui.pages.CheckoutPage;
 import com.enterprise.automation.ui.pages.DashboardPage;
 import com.enterprise.automation.ui.pages.OrderPage;
 import com.enterprise.automation.ui.pages.ProductPage;
+import io.qameta.allure.Allure;
+import io.qameta.allure.model.StepResult;
 import java.util.List;
 import java.util.Map;
 import org.openqa.selenium.By;
@@ -65,6 +67,7 @@ public class PurchaseJourneyTest extends BaseTest {
      * The whole purchase through the UI: log in, add products to the cart, choose the buyer and place the order, then
      * check the result.
      */
+    @Test(groups = "smoke")
     public void adminPlacesAnOrderForACustomer() {
         // The order to place: 1 laptop + 2 mice; its expected total comes from the reference catalogue
         OrderData order = TestDataFactory.order(buyer(),
@@ -88,7 +91,12 @@ public class PurchaseJourneyTest extends BaseTest {
             checkout.setQuantity(line.product().name(), line.quantity());
         }
         assertThat(checkout.total()).isEqualTo(order.displayTotal());
-        OrderPage orders = checkout.selectCustomer(buyer().email()).placeOrder();
+        CheckoutPage selectedCustomer = checkout.selectCustomer(buyer().email());
+        StringBuilder stepNames = new StringBuilder();
+        Allure.getLifecycle().updateTest(testCase -> appendStepNames(testCase.getSteps(), stepNames));
+        assertThat(stepNames).contains("Select matching option in checkout-customer")
+                .doesNotContain(buyer().email());
+        OrderPage orders = selectedCustomer.placeOrder();
 
         // Verify the order
         // The confirmation toast carries the new order's id; its row shows buyer, items, total and status
@@ -268,5 +276,12 @@ public class PurchaseJourneyTest extends BaseTest {
     private List<OrderResponse> buyerOrders() {
         long customerId = ApiSession.admin().customers().findByEmail(buyer().email()).orElseThrow().id();
         return ApiSession.admin().orders().ordersOf(customerId);
+    }
+
+    private static void appendStepNames(List<StepResult> steps, StringBuilder result) {
+        for (StepResult step : steps) {
+            result.append(step.getName()).append('\n');
+            appendStepNames(step.getSteps(), result);
+        }
     }
 }
