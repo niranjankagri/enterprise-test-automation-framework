@@ -4,11 +4,16 @@ import com.enterprise.automation.FrameworkInfo;
 import com.enterprise.automation.config.ConfigManager;
 import com.enterprise.automation.config.TestConfig;
 import com.enterprise.automation.reporting.SecretMasker;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -55,9 +60,14 @@ public final class ExecutionMetadata {
         if (fromCi != null) {
             return fromCi.length() > 12 ? fromCi.substring(0, 12) : fromCi;
         }
+        Optional<Path> executable = findGitExecutable(System.getenv("PATH"));
+        if (executable.isEmpty()) {
+            return "unknown";
+        }
         try {
             // Local run: ask git; at most 5 seconds, and "unknown" if git is missing
-            Process git = new ProcessBuilder("git", "rev-parse", "--short=12", "HEAD").redirectErrorStream(true).start();
+            Process git = new ProcessBuilder(executable.get().toString(), "rev-parse", "--short=12", "HEAD")
+                    .redirectErrorStream(true).start();
             if (git.waitFor(5, TimeUnit.SECONDS) && git.exitValue() == 0) {
                 return new String(git.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
             }
@@ -69,6 +79,33 @@ public final class ExecutionMetadata {
             Thread.currentThread().interrupt();
         }
         return "unknown";
+    }
+
+    /** Resolve only an absolute executable from PATH so a relative entry cannot shadow git. */
+    static Optional<Path> findGitExecutable(String pathValue) {
+        if (pathValue == null || pathValue.isBlank()) {
+            return Optional.empty();
+        }
+        String executableName = System.getProperty("os.name", "").toLowerCase(Locale.ROOT).startsWith("windows")
+                ? "git.exe" : "git";
+        for (String directoryName : pathValue.split(java.util.regex.Pattern.quote(File.pathSeparator))) {
+            if (directoryName.isBlank()) {
+                continue;
+            }
+            try {
+                Path directory = Path.of(directoryName);
+                if (!directory.isAbsolute()) {
+                    continue;
+                }
+                Path candidate = directory.resolve(executableName).normalize();
+                if (Files.isRegularFile(candidate) && Files.isExecutable(candidate)) {
+                    return Optional.of(candidate);
+                }
+            } catch (InvalidPathException ignored) {
+                // Malformed PATH entries are skipped; they cannot identify a safe executable.
+            }
+        }
+        return Optional.empty();
     }
 
     /** Link to the CI run (GitHub Actions variables, or Jenkins' BUILD_URL), "local" otherwise. */
