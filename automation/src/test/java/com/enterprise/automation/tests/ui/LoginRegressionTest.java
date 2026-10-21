@@ -28,7 +28,7 @@ import org.testng.annotations.Test;
 public class LoginRegressionTest extends BaseTest {
 
     // One run per row of testdata/login-negative.csv; the provider wraps the password in a report-safe value.
-    @Test(dataProvider = "loginNegative", dataProviderClass = TestDataProviders.class)
+    @Test(dataProvider = "loginNegative", dataProviderClass = TestDataProviders.class, groups = "smoke")
     public void signInIsRejected(String testCase, String username, TestDataProviders.SensitiveValue password,
                                  String expectedField,
                                  String expectedMessage) {

@@ -173,7 +173,7 @@ public class CustomerManagementTest extends BaseTest {
     }
 
     // One run per row of testdata/invalid-customers.csv (the same file drives the API test)
-    @Test(dataProvider = "invalidCustomers", dataProviderClass = TestDataProviders.class)
+    @Test(dataProvider = "invalidCustomers", dataProviderClass = TestDataProviders.class, groups = "smoke")
     public void invalidInputIsRejectedPerField(String testCase, String field, String label, String value, String error) {
         CustomerPage customers = loginAsAdmin().navigation().openCustomers();
 
