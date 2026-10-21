@@ -194,3 +194,28 @@ Append material decisions with their evidence and trade-offs. Do not record cred
 - **Reason:** Java URI parsing can include the full invalid input in its message; configured URLs may contain userinfo and sensitive query values. The key-specific diagnostic remains actionable without copying untrusted values into logs or reports.
 - **Verification:** `ConfigLoaderTest.invalidUrlDiagnosticDoesNotExposeCredentialsOrQueryValues` checks every cause message using synthetic values. H04 unit passed 45/45 and PR CI [39545017249](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39545017249), CodeQL [39545017051](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39545017051) passed at PR head `ad1e20fbc484c02e28c3d2a41ba59efb98f1c1f3`.
 - **Trade-off:** The low-level URI parser detail is omitted to prevent secret retention; the configuration key and invalid-URL cause category remain visible.
+
+## D-029 - Redact non-password UI input values at the reporting boundary
+
+- **Decision:** Sanitize user-provided values before recording UI action names or failure details in Allure. Keep the operation and safe element identifier for diagnostics; do not serialize the supplied value.
+- **Reason:** A typed search/input value or rejected select choice can be sensitive even when it is not a password. TestNG parameter masking alone does not cover every UI step.
+- **Verification:** `LoginRegressionTest.typedUserValuesAreOmittedFromReportSteps` and `ProductCatalogTest.missingCategoryOptionDoesNotPersistRequestedValue` assert synthetic markers are absent from retained step evidence and that the original no-such-option failure remains useful. PR CI [39549978335](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39549978335) and Nightly [39550266187](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39550266187) passed.
+- **Limit:** Text redaction does not mask screenshot pixels; screenshot handling separately masks visible passwords/marked regions and omits an image if protection and restoration cannot be verified.
+
+## D-030 - Resolve Git metadata executable before invocation
+
+- **Decision:** Search PATH entries for Git and invoke its absolute path when collecting execution metadata; allow environments without Git to omit that metadata without failing tests.
+- **Reason:** Relative PATH entries could resolve a different executable based on the current working directory.
+- **Verification:** `ExecutionMetadataTest` covers rejection of relative PATH entries and absolute executable selection; the test is included in the pure unit suite. PR quality/unit passed 46/46 on implementation head `1cc3004fb0968bda9fdb5d393f2d1dd1dbb96705`.
+
+## D-031 - Bound retained test artifacts by diagnostic need
+
+- **Decision:** Retain raw unit results and combined Allure/coverage reports for 30 days; retain Nightly Grid logs/screenshots and browser regression diagnostics for 14 days; use the existing 7-day PR regression retention where configured.
+- **Reason:** Failure diagnostics should remain available for triage without retaining sensitive raw browser/report evidence indefinitely.
+- **Verification:** Workflow inspection and GitHub artifact metadata showed `results-unit` expires after 30 days, Nightly `results-grid-firefox` after 14, and final coverage/Allure artifacts after 30. Applicable PR/Nightly upload jobs passed in [39549978335](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39549978335) and [39550266187](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39550266187).
+
+## D-032 - Preserve the native Fetch receiver in request-failure simulation
+
+- **Decision:** Delegate unmodified test-browser requests with `originalFetch.call(window, request, init)` after the route-specific gate, rather than invoking the saved Fetch function without its native receiver.
+- **Reason:** Firefox requires Fetch to retain its Window receiver; omitting it caused retry requests to fail in browser/Grid validation despite passing Chromium tests.
+- **Verification:** Nightly run [39548716350](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39548716350) reproduced two customer/catalog retry failures (171 passed, 2 failed). After preserving the receiver, final Nightly [39550266187](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39550266187) passed Chrome 233/233, Firefox 174/174, Edge 174/174 and Grid 174/174 with zero failures/errors/skips.

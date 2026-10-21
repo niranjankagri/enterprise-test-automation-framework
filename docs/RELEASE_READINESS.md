@@ -1,10 +1,76 @@
-# Release Readiness - Batch E
+# Release Readiness - Current H01-H06 Handoff
 
-## Follow-on H01-H06 hardening status
+## Current status - 2026-10-21
+
+PR #20 is merged by the owner. Fresh `git fetch origin main` confirms current `origin/main` is `6edfa00d7114afb6e3ef347ab3673a7413865006`. C00-C11 remain complete with their historical evidence below. Follow-on H01-H06 work is complete in one PR, [#21](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/21), branch `codex/coverage-hardening`; the implementation source SHA is `1cc3004fb0968bda9fdb5d393f2d1dd1dbb96705`. The PR is unmerged. Applicable implementation checks are green: PR CI [39549978335](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39549978335), CodeQL [39549978164](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39549978164), and fresh browser/Grid Nightly [39550266187](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39550266187). The documentation update is being finalized on the same PR; do not merge before owner review.
+
+| Scope | Status | Evidence |
+|---|---|---|
+| H01 - deterministic UI failure coverage | VERIFIED | Controlled customer/catalog network failures, safe order retry, and expired-session behavior pass in Chrome, Firefox, Edge and Grid runs. |
+| H02 - database constraints and transactions | VERIFIED | Unique/FK violations, numeric bounds, rollback state and existing stock/order lifecycle races pass integration and API regressions. |
+| H03 - critical journey accessibility | VERIFIED | Pinned axe checks and keyboard/focus assertions cover login, navigation, customer form and checkout; manual screen-reader testing was not performed. |
+| H04 - coverage-driven assertions | VERIFIED | Risk-based configuration tests and targeted PIT run killed 28/28 generated mutants; no arbitrary threshold was added. |
+| H05 - dependency/security maintenance | VERIFIED | CodeQL, Dependency Review, repository secret scanning and push protection were checked; Dependabot security updates are enabled; artifact retention and UI-value redaction are covered. |
+| H06 - final validation and handoff | VERIFIED | PR suites, browser matrix, Docker/Grid, Allure failure redaction, JaCoCo verifier, cleanup and final Nightly all passed on the implementation revision. |
+| M1-M8 capabilities | VERIFIED | Preserved from C00-C11; full browser, API, integration and framework regressions remain runnable in the existing two-module architecture. |
+
+### Final validation evidence on implementation SHA `1cc3004fb0968bda9fdb5d393f2d1dd1dbb96705`
+
+| Execution | Result |
+|---|---|
+| Local Chrome smoke: `.\mvnw.cmd -B -ntp clean test '-Dsuite=smoke' '-Dheadless=true' '-Dmaven.compiler.failOnWarning=true'` | 47 passed, 0 failures, 0 errors, 0 skipped; Checkstyle 0. |
+| PR quality/unit | 46 passed, 0 failures, 0 errors, 0 skipped; includes the persisted Allure synthetic-failure verifier. |
+| PR API regressions | 85 passed, 0 failures, 0 errors, 0 skipped. |
+| PR DB/order integration | 37 passed, 0 failures, 0 errors, 0 skipped. |
+| PR Chrome smoke | 47 passed, 0 failures, 0 errors, 0 skipped. |
+| Nightly full Chrome / Firefox / Edge / Docker+Grid | 233 / 174 / 174 / 174 passed, respectively; zero failures/errors/skips. Combined Allure report, Docker teardown and external coverage verification passed. |
+| Local reporting / coverage / Compose | `python scripts/verify_allure_failure_redaction.py` passed; `python -B -m unittest discover -s scripts/tests -v` passed 4/4; `docker compose -f docker/docker-compose.yml config --quiet` passed. |
+
+### Java production coverage
+
+JaCoCo 0.8.15 includes production classes only. The strict verifier requires executed lines and branches in both modules and in designated production classes. PR CI same-revision reports (coverage merge source `b8ef21a9b70fb810ce2dfe59d2df2db75b575c50`) and the separate Nightly Grid capture both passed `scripts/verify_jacoco_reports.py`:
+
+| Source/capture | Module | Classes | Lines | Branches |
+|---|---|---:|---:|---:|
+| PR CI merge capture | `demo-app` | 24 | 919/983 (93.5%) | 271/340 (79.7%) |
+| PR CI merge capture | `automation` | 100 | 1279/1516 (84.4%) | 256/400 (64.0%) |
+| Nightly Grid process capture | `demo-app` | 24 | 922/983 (93.8%) | 275/340 (80.9%) |
+| Nightly Grid process capture | `automation` | 100 | 1222/1516 (80.6%) | 228/400 (57.0%) |
+
+These captures are from separate processes and are not combined. Line/branch execution is distinct from requirement coverage, authorization coverage, and browser coverage. No arbitrary threshold is set.
+
+### Security results and remaining limits
+
+- Dependency Review and PR CodeQL passed. Secret scanning and push protection are enabled; Dependabot security updates are enabled. No native secret or Dependabot alerts are open. Two CodeQL alerts appeared on the old base `main` revision during PR work (`java/relative-path-command`, `java/sensitive-log`); the branch fixes passed CodeQL. Recheck the alerts after merge with the Main CodeQL run.
+- CI retained raw unit results for 30 days, Nightly Grid results for 14 days, and coverage/combined Allure reports for 30 days. Screenshot masking is reversible and screenshot evidence is omitted when masking, capture, or restoration cannot be verified. It covers visible password fields and explicitly marked regions; there is no universal pixel redaction.
+- Remaining limitations: manual screen-reader assessment was not performed; unsupported media-type behavior has no defined API contract; non-provider secret-pattern scanning remains disabled. No required check is blocked.
+
+### Owner review commands
+
+```powershell
+git fetch origin
+git switch codex/coverage-hardening
+git pull --ff-only origin codex/coverage-hardening
+git rev-parse HEAD
+.\mvnw.cmd -B -ntp clean test '-Dsuite=unit' '-Dmaven.compiler.failOnWarning=true'
+.\mvnw.cmd -B -ntp clean test '-Dsuite=api' '-Dmaven.compiler.failOnWarning=true'
+.\mvnw.cmd -B -ntp clean test '-Dsuite=integration' '-Dmaven.compiler.failOnWarning=true'
+.\mvnw.cmd -B -ntp clean test '-Dsuite=integration' '-Dparallel=none' '-Dthreads=1' '-Dmaven.compiler.failOnWarning=true'
+.\mvnw.cmd -B -ntp clean test '-Dsuite=ui' '-Dheadless=true' '-Dmaven.compiler.failOnWarning=true'
+.\mvnw.cmd -B -ntp clean test '-Dsuite=full' '-Dheadless=true' '-Dmaven.compiler.failOnWarning=true'
+python scripts/verify_allure_failure_redaction.py
+python -B -m unittest discover -s scripts/tests -v
+docker compose -f docker/docker-compose.yml config --quiet
+gh workflow run "Nightly regression" --ref codex/coverage-hardening
+```
+
+Review PR #21 CI, CodeQL, and Nightly links above before owner approval. Do not merge or deploy as part of this handoff.
+
+## Historical interim H01-H04 checkpoint (superseded by the current status above)
 
 C00-C11 are complete; PR #20 was merged by the owner. Follow-on work is tracked separately in [CODEX_HARDENING_ROADMAP.md](CODEX_HARDENING_ROADMAP.md), on branch `codex/coverage-hardening`, based on `origin/main` SHA `6edfa00d7114afb6e3ef347ab3673a7413865006`. H01 implementation SHA `3a322a2a4bc1264b9a81f37d9c3ada48495063d1` passed local Chrome smoke 27/27 with Checkstyle 0; draft PR #21 CI 39539069715 and CodeQL 39539069697 passed on head 3bf712df6a006ddd1fa3329e9f9faec2e47ab147. H02 implementation SHA `bac7e20e1245d3fdb0b97fc7c2d0861648480799` passed API 85/85 and integration 37/37 locally, zero failures/errors/skips and Checkstyle 0. Draft PR head `c3f33954e4df9e4b5c58d80a3b14ae0e348ed35c` passed all jobs in CI [39540811264](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39540811264), including integration 37/37, smoke 27/27 and coverage verification; CodeQL [39540811258](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39540811258) passed. H03 was verified at PR #21 head `44b9fa7565ad12ab3d39f53c35bce90801ab6401`: local full UI 66/66, smoke 44/44, PR CI [39543851318](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39543851318), CodeQL [39543851259](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39543851259). H04 is verified at PR head `ad1e20fbc484c02e28c3d2a41ba59efb98f1c1f3`: unit 45/45, Python JaCoCo checks 4/4, targeted mutation 28/28 killed, PR CI [39545017249](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39545017249), CodeQL [39545017051](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39545017051). Same-run JaCoCo at merge source `968ace6172557628ce6626e8ec3fb808b4b63039` measured demo-app 93.8% lines / 79.7% branches and automation 83.5% / 63.3%; no thresholds are set. H01-H04 are verified; H05 is in progress; H06 remains pending. This is an interim status, not the final H06 handoff.
 
-## Current status
+## C00-C11 release record after PR #19 merge
 
 **C09, C10 and C11 are verified complete, and PR #19 merged on 2026-10-21 at `2026-10-21T02:05:41Z`.** The merge commit is current `main` SHA `95c34d61e9421c237d3215f6eb123437bda29248` (merged PR head `7d7eb13a972f6f7f41d8ff1ce56491fc8558b3bf`). Post-merge Main [39531082307](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39531082307), CodeQL [39531082296](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39531082296) and main Nightly [39531660067](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39531660067) completed successfully on that SHA. The Nightly passed Chrome 213/213, Firefox 157/157, Edge 157/157 and Grid Firefox 157/157, with reporting, Docker teardown and coverage verification green. No deployment or release was performed.
 
