@@ -124,7 +124,7 @@ public class ScreenshotUtilsTest {
                                 "const box=document.querySelector('[data-sensitive]');"
                                         + "const button=document.querySelector('#control');"
                                         + "button.click();const overlays=[...document.querySelectorAll("
-                                        + "'[data-codex-screenshot-mask-overlay]')];"
+                                        + "'[data-screenshot-mask-overlay]')];"
                                         + "return [box===window.originalBox,button===window.originalButton,"
                                         + "box.innerHTML===window.originalMarkup,overlays.length,"
                                         + "overlays.every(o=>o.textContent==='[REDACTED]' && "
@@ -160,7 +160,7 @@ public class ScreenshotUtilsTest {
                         + "return [box===window.originalBox,button===window.originalButton,"
                         + "box.innerHTML===window.originalMarkup,"
                         + "document.querySelector('input[type=password]').value,"
-                        + "document.querySelectorAll('[data-codex-screenshot-mask-overlay]').length,"
+                        + "document.querySelectorAll('[data-screenshot-mask-overlay]').length,"
                         + "String(window.clickCount)];");
         List<?> values = (List<?>) state;
         assertThat(values).hasSize(6);
@@ -184,7 +184,7 @@ public class ScreenshotUtilsTest {
                         screenshotAttempted.set(true);
                     }
                     if (method.getName().equals("executeScript")
-                            && args[0].toString().contains("const marker = \"data-codex-screenshot-mask-overlay\"")) {
+                            && args[0].toString().contains("const marker = \"data-screenshot-mask-overlay\"")) {
                         throw new WebDriverException("synthetic screenshot masking failure");
                     }
                     try {

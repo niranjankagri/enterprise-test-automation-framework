@@ -29,7 +29,7 @@ public final class ScreenshotUtils {
     private static final DateTimeFormatter STAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSS");
 
     private static final String INSTALL_MASKS = """
-            const marker = "data-codex-screenshot-mask-overlay";
+            const marker = "data-screenshot-mask-overlay";
             const targets = [...document.querySelectorAll("[data-sensitive], input[type='password']")];
             const overlays = [];
             try {
@@ -102,7 +102,7 @@ public final class ScreenshotUtils {
 
     private static final String REMOVE_ALL_MASKS = """
             let restored = true;
-            for (const overlay of document.querySelectorAll("[data-codex-screenshot-mask-overlay]")) {
+            for (const overlay of document.querySelectorAll("[data-screenshot-mask-overlay]")) {
               try {
                 if (overlay.isConnected) overlay.parentNode.removeChild(overlay);
               } catch (error) {
