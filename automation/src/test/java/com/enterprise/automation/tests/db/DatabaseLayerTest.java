@@ -10,7 +10,6 @@ import com.enterprise.automation.data.TestDataFactory;
 import com.enterprise.automation.db.ShopDatabase;
 import com.enterprise.automation.tests.base.TestDataProviders;
 import java.math.BigDecimal;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -160,6 +159,7 @@ public class DatabaseLayerTest {
     private void assertConstraintViolation(String sql, Object... parameters) {
         assertThatThrownBy(() -> db.sql().update(sql, parameters))
                 .isInstanceOf(IllegalStateException.class)
-                .hasRootCauseInstanceOf(SQLException.class);
+                .hasMessageContaining("SQLState 235")
+                .hasNoCause();
     }
 }
