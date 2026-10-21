@@ -224,6 +224,10 @@ See [CODEX_HARDENING_ROADMAP.md](CODEX_HARDENING_ROADMAP.md) for H03-H06 scope a
 | F06 | Token expiry, identity/endpoint scope and explicit invalidation | SessionTokenCacheTest | Local unit passed |
 | F07 | Bound database values stay out of retained diagnostics | DatabaseEvidenceTest | Local unit passed |
 | F08 | Oversized request has no write; OpenAPI records bounds | FinalHardeningApiTest.oversizedRequestIsRejectedWithoutCreatingARecord; OpenApiLimitsTest | Local API/unit passed |
+| F09 | Session 101 evicts the oldest live session; newest expires exactly at its deadline | AuthServiceExpiryTest.tokensExpireAtTheirDeadlineAndSessionCapacityIsBounded | Local API 93/93 passed |
 
-Remote integration/browser/Grid results remain pending until inspected on this PR.
+Final per-head integration/browser/Grid counts and run links are maintained in
+[PR #24](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/24).
+Focused DatabaseLayerTest: 15/15 passed; constraint failures retain SQLState class
+235 without an unsafe driver cause. No constraints or browser tests are skipped.
 These additions do not claim exhaustive branch or production security coverage.

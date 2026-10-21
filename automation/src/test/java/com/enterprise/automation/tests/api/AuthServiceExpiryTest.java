@@ -26,16 +26,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.testng.annotations.Test;
 
-/** Verifies bearer-token expiry at its exact deadline using an adjustable clock. */
+/** Verifies bearer-token expiry and bounded abandoned sessions using an adjustable clock. */
 @Test(groups = {"api", "regression"})
 public class AuthServiceExpiryTest {
 
     private static final String USERNAME = "expiry-user";
     private static final String PASSWORD = "Synthetic-Password-1";
 
-    /** A token is usable before expiry and rejected at the configured deadline. */
+    /** Tokens expire at their deadline, and the oldest of more than 100 live sessions is evicted. */
     @Test
-    public void tokenExpiresAtItsDeadline() throws Exception {
+    public void tokensExpireAtTheirDeadlineAndSessionCapacityIsBounded() throws Exception {
         AdjustableClock clock = new AdjustableClock(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC);
         Duration tokenLifetime = Duration.ofMinutes(5);
         String databaseName = "auth_expiry_" + UUID.randomUUID().toString().replace("-", "");
@@ -59,26 +59,38 @@ public class AuthServiceExpiryTest {
 
                 String baseUrl = "http://127.0.0.1:" + server.getAddress().getPort();
                 HttpClient client = HttpClient.newHttpClient();
-                HttpResponse<String> login = client.send(HttpRequest.newBuilder(
-                                URI.create(baseUrl + "/api/auth/login"))
-                        .header("Content-Type", "application/json")
-                        .POST(HttpRequest.BodyPublishers.ofString(Json.MAPPER.writeValueAsString(
-                                Map.of("username", USERNAME, "password", PASSWORD)), StandardCharsets.UTF_8))
-                        .build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-                assertThat(login.statusCode()).isEqualTo(200);
-                String token = Json.MAPPER.readTree(login.body()).path("token").asText();
-                assertThat(token).isNotBlank();
-
+                String token = login(client, baseUrl);
                 assertThat(protectedRequest(client, baseUrl, token).statusCode()).isEqualTo(200);
+
+                String newest = token;
+                for (int i = 0; i < 100; i++) {
+                    clock.advance(Duration.ofMillis(1));
+                    newest = login(client, baseUrl);
+                }
+                assertThat(protectedRequest(client, baseUrl, token).statusCode())
+                        .as("oldest session is evicted before its expiry").isEqualTo(401);
+                assertThat(protectedRequest(client, baseUrl, newest).statusCode()).isEqualTo(200);
 
                 clock.advance(tokenLifetime);
 
-                assertThat(protectedRequest(client, baseUrl, token).statusCode()).isEqualTo(401);
+                assertThat(protectedRequest(client, baseUrl, newest).statusCode()).isEqualTo(401);
             } finally {
                 server.stop(0);
                 executor.shutdownNow();
             }
         }
+    }
+
+    private static String login(HttpClient client, String baseUrl) throws Exception {
+        HttpResponse<String> response = client.send(HttpRequest.newBuilder(URI.create(baseUrl + "/api/auth/login"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(Json.MAPPER.writeValueAsString(
+                        Map.of("username", USERNAME, "password", PASSWORD)), StandardCharsets.UTF_8))
+                .build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        assertThat(response.statusCode()).isEqualTo(200);
+        String token = Json.MAPPER.readTree(response.body()).path("token").asText();
+        assertThat(token).isNotBlank();
+        return token;
     }
 
     private static HttpResponse<String> protectedRequest(HttpClient client, String baseUrl, String token)

@@ -250,3 +250,6 @@ Append material decisions with their evidence and trade-offs. Do not record cred
   published registry/release metadata. Allure CLI 2.46.1 is pinned. Scheduled updates
   remain explicit and reviewable. No claim of immutable browser downloads is made.
 - Browser tooling opts out of Selenium telemetry using SE_AVOID_STATS=true.
+
+- Database constraint regressions assert SQLState class 235 with no raw JDBC cause;
+  the session-cap regression isolates 101 logins and advances a test clock.

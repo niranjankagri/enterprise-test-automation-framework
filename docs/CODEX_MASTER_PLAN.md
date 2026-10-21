@@ -134,4 +134,21 @@ Nightly workflow. Local smoke was blocked by automatic approval review because
 Selenium Manager attempted external telemetry. Supported `SE_AVOID_STATS=true` is
 now set for CI/container browser execution; no telemetry authorization is assumed.
 Docker is not installed locally, so container execution must be verified remotely.
-Remote check status and final evidence are recorded in the PR before handoff.
+The focused database class passed 15/15 with exit 0 using a temporary suite containing
+`DatabaseLayerTest`; the temporary suite was removed. Its constraint assertions now
+verify SQLState class 235 and the absence of an unsafe driver cause. Initial remote
+CI/browser/Grid runs exposed those two obsolete cause assertions; they were corrected,
+not skipped. The final API rerun passed 93/93 (exit 0), including the isolated
+`AuthServiceExpiryTest.tokensExpireAtTheirDeadlineAndSessionCapacityIsBounded`
+regression: login 101 evicts the oldest live session, preserves the newest, and an
+adjustable clock proves exact deadline expiry without sleeping.
+
+The single deliverable is [PR #24](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/24).
+Its description and per-head checks provide final remote run links and counts for
+CI, CodeQL and full Chrome/Firefox/Edge/Docker Grid. The `full-validation` label
+reruns that matrix on each PR synchronization. Owner review is the merge gate;
+no merge, deployment or release is performed by this work. Existing alert #3's
+owner disposition and manual screen-reader/pixel-redaction limitations remain as
+documented; passing suites do not establish exhaustive production security.
+The owner's existing Desktop memory file is unavailable in this environment and
+was not recreated; durable implementation and evidence remain in this repository/PR.
