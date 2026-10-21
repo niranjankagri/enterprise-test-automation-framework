@@ -27,6 +27,7 @@ import java.util.Set;
 public final class OrderApi {
 
     private static final String QUANTITY_ERROR = "Quantity must be a whole number between 1 and " + Integer.MAX_VALUE;
+    private static final BigDecimal MAX_TOTAL = new BigDecimal("9999999999.99");
 
     // For each status, the statuses an order may move to next
     private static final Map<String, Set<String>> TRANSITIONS = Map.of(
@@ -148,6 +149,9 @@ public final class OrderApi {
                 total = total.add(price.multiply(BigDecimal.valueOf(quantity)));
                 lines.add(new long[] {productId, quantity});
                 prices.add(price);
+            }
+            if (total.compareTo(MAX_TOTAL) > 0) {
+                throw ApiException.validation(Map.of("items", "Order total must be at most 9999999999.99"));
             }
             // Lock product rows in stable ID order so overlapping multi-product orders cannot deadlock
             // just because callers supplied the same lines in a different order.
