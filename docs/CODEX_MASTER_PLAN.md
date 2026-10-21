@@ -110,3 +110,28 @@ Historical pre-merge checkpoint: PR #20 merged at `6edfa00d7114afb6e3ef347ab3673
 - Deliver the triage in a separate focused PR and leave it open for owner review.
 
 Local verification checkpoint: commit `71498df9ef4be011178b312a00b0ef078f6bf337` passed the 46-test unit suite, 47-test Chrome smoke suite, and persisted Allure failure-redaction verifier. Draft PR [#23](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/23) head `38c7645565002ab1c5e47efcf72883bd5f06cd76` passed PR CI [39558201952](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39558201952) and CodeQL [39558201940](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39558201940), including quality, dependency review, API, database/order integration, Chrome smoke, coverage merge and Allure report jobs. Alert #3 remains open for owner review.
+
+
+## Final correctness hardening — 2026-10-21
+
+Owner-authorized single PR on `codex/final-correctness-hardening`, based on main
+`1df5ec4b5e308aab43239dba94c8eead5b0c98fb`. This extends completed C/H history.
+
+Implemented: range-safe positive order IDs; 1 MiB request and 1000-item limits;
+explicit-null customer PATCH (including preservation of null map entries in the
+framework serializer); database-enforced case-insensitive customer email uniqueness;
+SQLState conflict translation; row-locked read-modify-write customer/product updates;
+role-change session revocation coordinated with login; abandoned-session expiry and
+100-session-per-account bound; expiry/endpoint/credential-scoped client token caching
+with explicit lifecycle invalidation; configurable bounded API transport; SQL parameter
+and driver-error redaction with masked stack diagnostics; OpenAPI numeric limits;
+pinned Selenium release, Docker base digests and Allure CLI, plus Docker Dependabot.
+
+Local checks: unit 51/51 and API 93/93 passed with Checkstyle 0 and compiler warnings
+as errors (Java 17). The read-timeout regression uses a gated loopback handler.
+Browser validation is delegated to PR CI and the `full-validation` label's existing
+Nightly workflow. Local smoke was blocked by automatic approval review because
+Selenium Manager attempted external telemetry. Supported `SE_AVOID_STATS=true` is
+now set for CI/container browser execution; no telemetry authorization is assumed.
+Docker is not installed locally, so container execution must be verified remotely.
+Remote check status and final evidence are recorded in the PR before handoff.

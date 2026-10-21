@@ -199,6 +199,7 @@ public final class Router implements HttpHandler {
             case 404 -> "Not Found";
             case 405 -> "Method Not Allowed";
             case 409 -> "Conflict";
+            case 413 -> "Payload Too Large";
             default -> "Internal Server Error";
         };
     }

@@ -90,7 +90,8 @@ public final class CustomerApi {
     public Response replace(Request request) {
         long id = request.pathId("id");
         Fields f = read(request, false);
-        return Sql.run(database, c -> {
+        return Sql.transaction(database, c -> {
+            Sql.lockRow(c, "customers", id);
             // 404 if the customer does not exist
             find(c, id);
             // The email may stay the same (own id excluded) but not clash with another customer
@@ -116,7 +117,8 @@ public final class CustomerApi {
         long id = request.pathId("id");
         // partial = true: absent fields are not "required" errors
         Fields f = read(request, true);
-        return Sql.run(database, c -> {
+        return Sql.transaction(database, c -> {
+            Sql.lockRow(c, "customers", id);
             // Current values fill in the fields the body does not mention
             Map<String, Object> current = find(c, id);
             if (f.email != null) {
@@ -141,7 +143,8 @@ public final class CustomerApi {
     /** {@code DELETE}: refused with 409 while the customer has orders. */
     public Response delete(Request request) {
         long id = request.pathId("id");
-        return Sql.run(database, c -> {
+        return Sql.transaction(database, c -> {
+            Sql.lockRow(c, "customers", id);
             find(c, id);
             // Orders reference their customer: deleting would break order history
             if (Sql.count(c, "SELECT COUNT(*) FROM orders WHERE customer_id = ?", id) > 0) {

@@ -25,6 +25,8 @@ jobs:
     name: ${{ inputs.name }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      SE_AVOID_STATS: "true"
     steps:
       - uses: actions/checkout@v7
 

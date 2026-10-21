@@ -20,3 +20,8 @@ updates:
     groups:
       github-actions:
         patterns: ["*"]
+
+  - package-ecosystem: docker
+    directory: "/docker"
+    schedule:
+      interval: weekly

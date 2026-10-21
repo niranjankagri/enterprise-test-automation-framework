@@ -27,6 +27,7 @@ import java.util.Set;
 public final class OrderApi {
 
     private static final String QUANTITY_ERROR = "Quantity must be a whole number between 1 and " + Integer.MAX_VALUE;
+    private static final int MAX_ITEMS = 1000;
     private static final BigDecimal MAX_TOTAL = new BigDecimal("9999999999.99");
 
     // For each status, the statuses an order may move to next
@@ -97,17 +98,21 @@ public final class OrderApi {
         // Shape checks first (400), business checks later (404/409)
         Validator v = new Validator(body, false);
         JsonNode customerNode = body.get("customerId");
-        if (customerNode == null || !customerNode.canConvertToLong() || !customerNode.isIntegralNumber()) {
+        if (customerNode == null || !customerNode.canConvertToLong() || !customerNode.isIntegralNumber()
+                || customerNode.longValue() < 1) {
             v.error("customerId", "Customer is required");
         }
         JsonNode items = body.get("items");
         if (items == null || !items.isArray() || items.isEmpty()) {
             v.error("items", "At least one item is required");
+        } else if (items.size() > MAX_ITEMS) {
+            v.error("items", "At most 1000 items are allowed");
         } else {
             // Each line needs a product id and a quantity of at least 1; errors name the line index
             for (int i = 0; i < items.size(); i++) {
                 JsonNode item = items.get(i);
-                if (item.get("productId") == null || !item.get("productId").isIntegralNumber()) {
+                if (item.get("productId") == null || !item.get("productId").isIntegralNumber()
+                        || !item.get("productId").canConvertToLong() || item.get("productId").longValue() < 1) {
                     v.error("items[" + i + "].productId", "Product is required");
                 }
                 JsonNode quantity = item.get("quantity");

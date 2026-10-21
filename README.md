@@ -264,3 +264,27 @@ Topic documents: [Architecture](docs/architecture.md) · [Framework design](docs
 ## License
 
 [MIT](LICENSE)
+
+
+### Transport, session and request bounds
+
+API connection/read timeouts default to 5000/30000 ms. Override with
+`-Dapi.connect.timeout.millis` / `-Dapi.read.timeout.millis`, or the equivalent
+`API_CONNECT_TIMEOUT_MILLIS` / `API_READ_TIMEOUT_MILLIS` environment variables.
+They are independent of browser waits. `ApiClient.forEndpoint` supports isolated
+service fixtures with positive explicit transport timeouts.
+
+`ApiSession` reuses tokens only until expiry and scopes them to endpoint and
+credentials. After logout, role changes or external app restart, call
+`ApiSession.forgetToken(username)` or `clearTokens()`. The local app lifecycle clears
+cached tokens. Automatic replay of writes after authentication failure is deliberately
+not performed. Role changes revoke existing server sessions; sign in again.
+
+Customer PATCH preserves absent fields and clears phone/city for explicit JSON null.
+Request bodies are bounded at 1 MiB; orders at 1000 lines. SQL bound parameters are
+redacted from evidence; use parameterized SQL, never untrusted concatenated fragments.
+
+CI/container browser execution sets `SE_AVOID_STATS=true` to disable Selenium Manager
+telemetry. For a local browser run, set the same environment variable before Maven.
+Add the `full-validation` PR label to execute the existing full browser/Grid Nightly
+workflow on that PR revision. Scheduled and manual Nightly runs remain unchanged.

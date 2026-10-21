@@ -98,7 +98,8 @@ public final class ProductApi {
     public Response replace(Request request) {
         long id = request.pathId("id");
         Fields f = read(request, false);
-        return Sql.run(database, c -> {
+        return Sql.transaction(database, c -> {
+            Sql.lockRow(c, "products", id);
             find(c, id);
             ensureSkuFree(c, f.sku, id);
             save(c, id, f.sku, f.name, f.category, f.price, f.stock);
@@ -110,7 +111,8 @@ public final class ProductApi {
     public Response update(Request request) {
         long id = request.pathId("id");
         Fields f = read(request, true);
-        return Sql.run(database, c -> {
+        return Sql.transaction(database, c -> {
+            Sql.lockRow(c, "products", id);
             // Missing fields keep their current values
             Map<String, Object> current = find(c, id);
             if (f.sku != null) {
@@ -129,7 +131,8 @@ public final class ProductApi {
     /** {@code DELETE}: products referenced by orders are kept for history, so this deactivates them. */
     public Response delete(Request request) {
         long id = request.pathId("id");
-        return Sql.run(database, c -> {
+        return Sql.transaction(database, c -> {
+            Sql.lockRow(c, "products", id);
             find(c, id);
             // Soft delete: hidden from the catalogue, still resolvable from old orders
             try (PreparedStatement ps = c.prepareStatement("UPDATE products SET active = FALSE WHERE id = ?")) {

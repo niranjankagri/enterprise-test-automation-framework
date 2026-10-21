@@ -200,4 +200,16 @@ public class ConfigLoaderTest {
                             .doesNotContain("synthetic-user", "synthetic-pass", "synthetic-query");
                 });
     }
+    public void apiTransportTimeoutsHaveDefaultsAndRejectInvalidValues() {
+        TestConfig defaults = load(Map.of(), Map.of());
+        assertThat(defaults.apiConnectTimeoutMillis()).isEqualTo(5000);
+        assertThat(defaults.apiReadTimeoutMillis()).isEqualTo(30000);
+        TestConfig overrides = load(Map.of("api.read.timeout.millis", "250"),
+                Map.of("API_CONNECT_TIMEOUT_MILLIS", "100"));
+        assertThat(overrides.apiConnectTimeoutMillis()).isEqualTo(100);
+        assertThat(overrides.apiReadTimeoutMillis()).isEqualTo(250);
+        assertThatThrownBy(() -> load(Map.of("api.read.timeout.millis", "0"), Map.of()))
+                .hasMessageContaining("api.read.timeout.millis");
+    }
+
 }

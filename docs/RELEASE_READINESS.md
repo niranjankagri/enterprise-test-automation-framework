@@ -213,3 +213,28 @@ gh workflow run "Nightly regression" --ref main
 ```
 
 When dispatched on `main`, the nightly workflow uses the existing Chrome/Firefox/Edge and Docker/Selenium Grid provisioning, produces source-stamped coverage inputs and runs container cleanup. Review the linked main run before treating any local rerun as a replacement for post-merge CI evidence.
+
+
+## Final correctness hardening — 2026-10-21
+
+Owner-authorized single PR on `codex/final-correctness-hardening`, based on main
+`1df5ec4b5e308aab43239dba94c8eead5b0c98fb`. This extends completed C/H history.
+
+Implemented: range-safe positive order IDs; 1 MiB request and 1000-item limits;
+explicit-null customer PATCH (including preservation of null map entries in the
+framework serializer); database-enforced case-insensitive customer email uniqueness;
+SQLState conflict translation; row-locked read-modify-write customer/product updates;
+role-change session revocation coordinated with login; abandoned-session expiry and
+100-session-per-account bound; expiry/endpoint/credential-scoped client token caching
+with explicit lifecycle invalidation; configurable bounded API transport; SQL parameter
+and driver-error redaction with masked stack diagnostics; OpenAPI numeric limits;
+pinned Selenium release, Docker base digests and Allure CLI, plus Docker Dependabot.
+
+Local checks: unit 51/51 and API 93/93 passed with Checkstyle 0 and compiler warnings
+as errors (Java 17). The read-timeout regression uses a gated loopback handler.
+Browser validation is delegated to PR CI and the `full-validation` label's existing
+Nightly workflow. Local smoke was blocked by automatic approval review because
+Selenium Manager attempted external telemetry. Supported `SE_AVOID_STATS=true` is
+now set for CI/container browser execution; no telemetry authorization is assumed.
+Docker is not installed locally, so container execution must be verified remotely.
+Remote check status and final evidence are recorded in the PR before handoff.

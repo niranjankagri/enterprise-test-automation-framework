@@ -3,7 +3,7 @@
 #
 #   docker compose -f docker/docker-compose.yml up --build --abort-on-container-exit --exit-code-from tests
 #
-# Variables: SUITE (smoke), BROWSER (chrome), THREADS (2), SELENIUM_IMAGE_TAG (latest).
+# Variables: SUITE (smoke), BROWSER (chrome), THREADS (2), SELENIUM_IMAGE_TAG (4.51.0-20261010).
 # Results land in automation/target on the host (allure-results, logs, screenshots).
 name: enterprise-tests
 
@@ -36,7 +36,7 @@ services:
       retries: 30
 
   selenium-hub:
-    image: selenium/hub:${SELENIUM_IMAGE_TAG:-latest}
+    image: selenium/hub:${SELENIUM_IMAGE_TAG:-4.51.0-20261010}
     ports:
       - "127.0.0.1:4444:4444"
     healthcheck:
@@ -47,15 +47,15 @@ services:
 
   chrome:
     <<: *node
-    image: selenium/node-chrome:${SELENIUM_IMAGE_TAG:-latest}
+    image: selenium/node-chrome:${SELENIUM_IMAGE_TAG:-4.51.0-20261010}
 
   firefox:
     <<: *node
-    image: selenium/node-firefox:${SELENIUM_IMAGE_TAG:-latest}
+    image: selenium/node-firefox:${SELENIUM_IMAGE_TAG:-4.51.0-20261010}
 
   edge:
     <<: *node
-    image: selenium/node-edge:${SELENIUM_IMAGE_TAG:-latest}
+    image: selenium/node-edge:${SELENIUM_IMAGE_TAG:-4.51.0-20261010}
 
   tests:
     build:
@@ -78,6 +78,7 @@ services:
       GRID_URL: http://selenium-hub:4444
       BROWSER: ${BROWSER:-chrome}
       HEADLESS: "true"
+      SE_AVOID_STATS: "true"
       THREADS: ${THREADS:-2}
     command: ["-Dsuite=${SUITE:-smoke}"]
     volumes:

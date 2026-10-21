@@ -338,3 +338,28 @@ Updated at each verified chunk. Preserve earlier evidence when updating this fil
 - **Remote verification:** draft PR [#23](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/23) head `2f95beaaa979c007ff8936adbcb1e84bcbcf458a` passed PR CI [39557764320](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39557764320) and CodeQL [39557764443](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39557764443). Quality/unit, dependency review, API, database/order integration, Chrome smoke, same-run coverage merge/verifier, Allure report and analysis jobs all passed. The persisted failure-redaction verifier ran in the quality job.
 - **Final documentation-head verification:** PR #23 head `38c7645565002ab1c5e47efcf72883bd5f06cd76` passed PR CI [39558201952](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39558201952) and CodeQL [39558201940](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39558201940). Quality/unit, dependency review, API, database/order integration, Chrome smoke, same-run coverage merge/verifier, Allure report and both analysis jobs passed.
 - **Status:** locally and remotely verified. The CodeQL alert API does not return serialized intermediate `codeFlow` steps and no local CodeQL CLI is installed; source and argument flow were inspected at the analyzed SHA. Alert #3 remains open; no rule suppression or dismissal was made. PR #23 stays unmerged for owner review.
+
+
+## Final correctness hardening — 2026-10-21
+
+Owner-authorized single PR on `codex/final-correctness-hardening`, based on main
+`1df5ec4b5e308aab43239dba94c8eead5b0c98fb`. This extends completed C/H history.
+
+Implemented: range-safe positive order IDs; 1 MiB request and 1000-item limits;
+explicit-null customer PATCH (including preservation of null map entries in the
+framework serializer); database-enforced case-insensitive customer email uniqueness;
+SQLState conflict translation; row-locked read-modify-write customer/product updates;
+role-change session revocation coordinated with login; abandoned-session expiry and
+100-session-per-account bound; expiry/endpoint/credential-scoped client token caching
+with explicit lifecycle invalidation; configurable bounded API transport; SQL parameter
+and driver-error redaction with masked stack diagnostics; OpenAPI numeric limits;
+pinned Selenium release, Docker base digests and Allure CLI, plus Docker Dependabot.
+
+Local checks: unit 51/51 and API 93/93 passed with Checkstyle 0 and compiler warnings
+as errors (Java 17). The read-timeout regression uses a gated loopback handler.
+Browser validation is delegated to PR CI and the `full-validation` label's existing
+Nightly workflow. Local smoke was blocked by automatic approval review because
+Selenium Manager attempted external telemetry. Supported `SE_AVOID_STATS=true` is
+now set for CI/container browser execution; no telemetry authorization is assumed.
+Docker is not installed locally, so container execution must be verified remotely.
+Remote check status and final evidence are recorded in the PR before handoff.

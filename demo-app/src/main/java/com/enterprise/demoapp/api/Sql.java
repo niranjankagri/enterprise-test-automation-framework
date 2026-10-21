@@ -1,6 +1,7 @@
 package com.enterprise.demoapp.api;
 
 import com.enterprise.demoapp.Database;
+import com.enterprise.demoapp.http.ApiException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,7 +28,7 @@ final class Sql {
             return work.apply(c);
         } catch (SQLException e) {
             // Unexpected database error: the router turns IllegalStateException into a 500
-            throw new IllegalStateException("Database error: " + e.getMessage(), e);
+            throw translate(e);
         }
     }
 
@@ -46,7 +47,36 @@ final class Sql {
                 throw e;
             }
         } catch (SQLException e) {
-            throw new IllegalStateException("Database error: " + e.getMessage(), e);
+            throw translate(e);
+        }
+    }
+
+    /** Database constraints are the final authority when application prechecks race. */
+    private static RuntimeException translate(SQLException error) {
+        for (SQLException current = error; current != null; current = current.getNextException()) {
+            if ("23505".equals(current.getSQLState())) {
+                return new ApiException(409, "A record with that unique value already exists");
+            }
+            if ("23503".equals(current.getSQLState()) || "23506".equals(current.getSQLState())) {
+                return new ApiException(409, "A related record changed or is still referenced");
+            }
+        }
+        // Driver messages may contain bound values; keep them out of retained server exceptions.
+        return new IllegalStateException("Database operation failed (SQLState " + error.getSQLState() + ")");
+    }
+
+    /** Serializes read-modify-write operations on one existing row. Table names are framework constants. */
+    static void lockRow(Connection connection, String table, long id) throws SQLException {
+        if (!java.util.Set.of("customers", "products").contains(table)) {
+            throw new IllegalArgumentException("Unsupported lock table");
+        }
+        try (PreparedStatement statement = connection.prepareStatement("SELECT id FROM " + table + " WHERE id = ? FOR UPDATE")) {
+            statement.setLong(1, id);
+            try (ResultSet result = statement.executeQuery()) {
+                if (!result.next()) {
+                    throw ApiException.notFound("customers".equals(table) ? "Customer" : "Product", id);
+                }
+            }
         }
     }
 

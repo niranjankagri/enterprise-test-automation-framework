@@ -35,10 +35,9 @@ final class Validator {
         this.partial = partial;
     }
 
-    /** Whether the body contains the field with a non-null value. */
+    /** Whether a field is explicitly present, including an explicit null used to clear optional values. */
     boolean has(String field) {
-        JsonNode node = body.get(field);
-        return node != null && !node.isNull();
+        return body.has(field);
     }
 
     /** A trimmed text field; checks "required" and maximum length. */

@@ -23,6 +23,8 @@ public enum ConfigKey {
     WINDOW_HEIGHT("window.height"),
     TIMEOUT_EXPLICIT_SECONDS("timeout.explicit.seconds"),
     TIMEOUT_PAGE_LOAD_SECONDS("timeout.page.load.seconds"),
+    API_CONNECT_TIMEOUT_MILLIS("api.connect.timeout.millis"),
+    API_READ_TIMEOUT_MILLIS("api.read.timeout.millis"),
     // Start the demo application in-process (local only)
     APP_AUTOSTART("app.autostart"),
     // Accounts of the application under test (passwords: secrets in real environments)

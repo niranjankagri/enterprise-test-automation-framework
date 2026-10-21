@@ -225,3 +225,28 @@ Append material decisions with their evidence and trade-offs. Do not record cred
 - **Decision:** Keep CodeQL `java/sensitive-log` enabled. Treat alert #3's reported call site as a false positive only after tracing the source and sink arguments; do not dismiss it automatically.
 - **Reason:** CodeQL highlights the `PASSWORD` locator constant passed as the first `ElementActions.type` argument. The user-entered password is the separate second argument and is not formatted by the logger. A typed-value log/report regression makes this distinction executable.
 - **Verification:** See [CODEQL_ALERT_3_TRIAGE.md](CODEQL_ALERT_3_TRIAGE.md) for the exact source-to-sink trace, API limitation, test names and owner disposition. Alert #3 remains open pending owner review.
+
+
+## D-F01 — Explicit update, session and evidence boundaries
+
+- Customer/product read-modify-write updates lock their row in one transaction;
+  database uniqueness/FK failures map to 409 rather than racing prechecks into 500.
+  Email case-insensitivity is enforced by H2, not solely by a SELECT precheck.
+- Missing customer PATCH fields preserve state; explicit null clears phone/city.
+  Map entries retain explicit nulls; nullable DTO properties retain omission behavior.
+- Changing either direction of role revokes every existing token after commit while
+  excluding concurrent login. Already-authorized requests may complete in flight.
+  A new login is required; requests are never silently replayed after a 401.
+- SQL bound values are hidden in evidence, including echoed values and driver errors.
+  SQLState and sanitized stack diagnostics remain. Callers must use placeholders;
+  concatenated untrusted SQL is outside this boundary's guarantees.
+- Client tokens expire at the advertised deadline and are scoped by endpoint and
+  credentials. Logout/restart/role changes use explicit invalidation. Server sessions
+  are pruned on login and capped at 100 per account (oldest expiry evicted).
+- Payloads above 1048576 bytes return 413 even without Content-Length; orders above
+  1000 lines return 400. No writes occur before validation. This is a controlled demo,
+  not a general-purpose public production server or slow-client defense.
+- Docker base digests and the Selenium release 4.51.0-20261010 were checked against
+  published registry/release metadata. Allure CLI 2.46.1 is pinned. Scheduled updates
+  remain explicit and reviewable. No claim of immutable browser downloads is made.
+- Browser tooling opts out of Selenium telemetry using SE_AVOID_STATS=true.

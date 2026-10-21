@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -22,7 +21,7 @@ import org.slf4j.LoggerFactory;
  * Runs SQL against the application's database and returns rows as maps.
  *
  * <p>Only parameterized statements: values are always bound with {@code ?}, never concatenated
- * into SQL, so test data can contain any character and SQL injection is impossible. Column
+ * into SQL, so bound values remain separate from SQL. Callers must not concatenate untrusted SQL fragments. Column
  * names in the returned maps are lower-case, whatever the database returns.
  *
  * <p>Queries can carry a business name ({@link #named(String)}, used by {@link ShopDatabase}):
@@ -66,7 +65,7 @@ public final class QueryExecutor {
             LOG.debug("{} -> {} row(s) in {} ms", label(sql), rows.size(), millis);
             // The report shows what was asked, where, how long it took and what came back
             Report.attachText("Query result", describe(sql, params) + "Duration: " + millis + " ms\n"
-                    + "Result: " + rows.size() + " row(s)\n" + rows.stream().map(QueryExecutor::masked)
+                    + "Result: " + rows.size() + " row(s)\n" + rows.stream().map(row -> masked(row, params))
                     .map(String::valueOf).collect(Collectors.joining("\n")));
             return rows;
         });
@@ -75,7 +74,7 @@ public final class QueryExecutor {
     /** Query name, SQL, parameters and database as the first lines of the evidence (URL credentials masked). */
     private String describe(String sql, Object... params) {
         return (queryName != null ? "Query: " + queryName + "\n" : "") + "SQL: " + sql + "\nParameters: "
-                + Arrays.toString(params) + "\nDatabase: " + SecretMasker.mask(connection.url()) + "\n";
+                + "[" + params.length + " bound value(s) redacted]" + "\nDatabase: " + SecretMasker.mask(connection.url()) + "\n";
     }
 
     /** The query's name, or its SQL when it has none: what log lines and errors call it. */
@@ -84,16 +83,18 @@ public final class QueryExecutor {
     }
 
     /** Hashes and salts are never written to a report. */
-    private static Map<String, Object> masked(Map<String, Object> row) {
+    private static Map<String, Object> masked(Map<String, Object> row, Object[] params) {
         // A copy: the caller still gets the real values to assert on
         Map<String, Object> copy = new LinkedHashMap<>(row);
-        copy.replaceAll((column, value) -> column.contains("password") || column.equals("salt") ? "****" : value);
+        copy.replaceAll((column, value) -> SecretMasker.isSecretName(column) || column.equals("salt")
+                || java.util.Arrays.stream(params).anyMatch(parameter -> parameter != null && parameter.equals(value))
+                ? "****" : value);
         return copy;
     }
 
     /** Runs the query and turns every row into a column -> value map. */
     private List<Map<String, Object>> runQuery(String sql, Object... params) {
-        LOG.debug("SQL {} {}", sql, Arrays.toString(params));
+        LOG.debug("SQL {} {}", sql, "[" + params.length + " bound value(s) redacted]");
         // Connection, statement and result set are all closed, also on errors
         try (Connection c = connection.open(); PreparedStatement ps = prepare(c, sql, params);
              ResultSet rs = ps.executeQuery()) {
@@ -136,7 +137,7 @@ public final class QueryExecutor {
 
     /** INSERT/UPDATE/DELETE, e.g. for clean-up the API cannot do; returns the affected row count. */
     public int update(String sql, Object... params) {
-        LOG.debug("SQL {} {}", sql, Arrays.toString(params));
+        LOG.debug("SQL {} {}", sql, "[" + params.length + " bound value(s) redacted]");
         long start = System.nanoTime();
         try (Connection c = connection.open(); PreparedStatement ps = prepare(c, sql, params)) {
             int affected = ps.executeUpdate();
@@ -147,10 +148,10 @@ public final class QueryExecutor {
         }
     }
 
-    /** A failure that names the query, the database (credentials masked), the SQL and the parameters. */
+    /** A safe failure with query identity and SQLState; driver text and bound values are not retained. */
     private IllegalStateException failure(String kind, String sql, Object[] params, SQLException cause) {
         return new IllegalStateException(kind + " '" + label(sql) + "' failed on " + SecretMasker.mask(connection.url())
-                + ": " + sql + " " + Arrays.toString(params), cause);
+                + " (SQLState " + cause.getSQLState() + ")");
     }
 
     /** Prepares {@code sql} and binds each parameter to its {@code ?} placeholder. */

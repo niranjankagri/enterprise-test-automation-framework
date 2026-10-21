@@ -104,14 +104,7 @@ public final class UserApi {
         String role = v.oneOf("role", "Role", ROLES, false);
         v.validate();
         return Sql.run(database, c -> {
-            // Fields not in the body keep their current values
-            Map<String, Object> current = find(c, id);
-            try (PreparedStatement ps = c.prepareStatement("UPDATE app_users SET full_name = ?, role = ? WHERE id = ?")) {
-                ps.setString(1, fullName != null ? fullName : (String) current.get("fullName"));
-                ps.setString(2, role != null ? role : (String) current.get("role"));
-                ps.setLong(3, id);
-                ps.executeUpdate();
-            }
+            auth.updateUser(id, fullName, role);
             return Response.ok(find(c, id));
         });
     }

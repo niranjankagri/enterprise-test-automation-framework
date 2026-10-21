@@ -13,6 +13,9 @@ import java.util.Map;
 /** One API request: path parameters, query parameters, JSON body and the signed-in user. */
 public final class Request {
 
+    /** Bounded before JSON parsing, including chunked requests without Content-Length. */
+    public static final int MAX_BODY_BYTES = 1_048_576;
+
     // The raw JDK exchange (headers, body stream, method)
     private final HttpExchange exchange;
     // Values of {placeholders} in the route template, e.g. id -> "42"
@@ -61,7 +64,10 @@ public final class Request {
     /** The request body as a JSON object; 400 when it is missing, malformed or not an object. */
     public JsonNode body() {
         try (InputStream in = exchange.getRequestBody()) {
-            byte[] bytes = in.readAllBytes();
+            byte[] bytes = in.readNBytes(MAX_BODY_BYTES + 1);
+            if (bytes.length > MAX_BODY_BYTES) {
+                throw new ApiException(413, "Request body exceeds 1048576 bytes");
+            }
             // Endpoints that need a body must get one
             if (bytes.length == 0) {
                 throw new ApiException(400, "Request body is required");
