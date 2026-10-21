@@ -1,8 +1,8 @@
-# Release Readiness - Current H01-H06 Handoff
+# Release Readiness - Post-merge H01-H06 Status
 
 ## Current status - 2026-10-21
 
-PR #20 is merged by the owner. Fresh `git fetch origin main` confirms current `origin/main` is `6edfa00d7114afb6e3ef347ab3673a7413865006`. C00-C11 remain complete with their historical evidence below. Follow-on H01-H06 work is complete in one PR, [#21](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/21), branch `codex/coverage-hardening`; the implementation source SHA is `1cc3004fb0968bda9fdb5d393f2d1dd1dbb96705`. The PR is unmerged. Implementation PR CI [39549978335](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39549978335), CodeQL [39549978164](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39549978164), and browser/Grid Nightly [39550266187](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39550266187) passed. Documentation checkpoint `652fa0e9d3d5f8121bc889f5aacf02dd8039d605` passed PR CI [39551427397](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39551427397) and CodeQL [39551427589](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39551427589): unit 46/46, API 85/85, integration 37/37 and Chrome smoke 47/47; coverage merge, Allure report and Dependency Review also passed. These checks were on the docs checkpoint; this evidence-record update is rechecked before the PR is marked ready. Do not merge before owner review.
+PR #21 merged at `2026-10-21T06:09:10Z`; current tested `origin/main` is `23e7878bb4b7958a4124234fe6319c03397e03e8` (merged PR head `68c9e180a184eeba2e1fa741acd1977197e67f25`). C00-C11 remain complete from PR #19, and H01-H06 are complete from PR #21. Post-merge Main [39553677331](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39553677331), CodeQL [39553677330](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39553677330), and refreshed Nightly [39553795238](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39553795238) all passed on the merge SHA. Prior CodeQL alerts #1 (`java/sensitive-log`) and #2 (`java/relative-path-command`) are fixed. The scan also opened [alert #3](https://github.com/niranjankagri/enterprise-test-automation-framework/security/code-scanning/3) (`java/sensitive-log`, `ElementActions.java:51`); it remains untriaged.
 
 | Scope | Status | Evidence |
 |---|---|---|
@@ -14,7 +14,24 @@ PR #20 is merged by the owner. Fresh `git fetch origin main` confirms current `o
 | H06 - final validation and handoff | VERIFIED | PR suites, browser matrix, Docker/Grid, Allure failure redaction, JaCoCo verifier, cleanup and final Nightly all passed on the implementation revision. |
 | M1-M8 capabilities | VERIFIED | Preserved from C00-C11; full browser, API, integration and framework regressions remain runnable in the existing two-module architecture. |
 
-### Final validation evidence on implementation SHA `1cc3004fb0968bda9fdb5d393f2d1dd1dbb96705`
+### Post-merge execution evidence on main SHA `23e7878bb4b7958a4124234fe6319c03397e03e8`
+
+| Run | Result |
+|---|---|
+| Main [39553677331](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39553677331) | Build/unit 46/46, API 85/85, Chrome UI 68/68, Edge smoke 47/47; Allure report passed. Zero failures, errors and test skips. |
+| CodeQL [39553677330](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39553677330) | Analyze Java passed. Alerts #1 and #2 are `fixed` on `refs/heads/main`, both at `2026-10-21T06:11:16Z`. New [alert #3](https://github.com/niranjankagri/enterprise-test-automation-framework/security/code-scanning/3) (`java/sensitive-log`, `ElementActions.java:51`) is open and untriaged. |
+| Nightly [39553795238](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39553795238) | Chrome 233/233, Firefox 174/174, Edge 174/174 and Docker/Selenium Grid 174/174; zero failures, errors and test skips. Combined Allure reporting, external coverage verification, artifact upload and Compose teardown passed. |
+
+The Nightly Grid coverage artifact [coverage-grid-23e7878bb4b7958a4124234fe6319c03397e03e8](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39553795238/artifacts/12324624169) contains executed production reports for the exact merge SHA:
+
+| Module | Lines | Branches |
+|---|---:|---:|
+| `demo-app` | 922/983 (93.8%) | 275/340 (80.9%) |
+| `automation` | 1222/1516 (80.6%) | 228/400 (57.0%) |
+
+The two module reports are a separate Grid/container capture; they are not merged with test-JVM reports or interpreted as requirement/browser coverage.
+
+### Pre-merge validation evidence on implementation SHA `1cc3004fb0968bda9fdb5d393f2d1dd1dbb96705`
 
 | Execution | Result |
 |---|---|
@@ -41,16 +58,16 @@ These captures are from separate processes and are not combined. Line/branch exe
 
 ### Security results and remaining limits
 
-- Dependency Review and PR CodeQL passed. Secret scanning and push protection are enabled; Dependabot security updates are enabled. No native secret or Dependabot alerts are open. Two CodeQL alerts appeared on the old base `main` revision during PR work (`java/relative-path-command`, `java/sensitive-log`); the branch fixes passed CodeQL. Recheck the alerts after merge with the Main CodeQL run.
+- Dependency Review and PR CodeQL passed. Secret scanning and push protection are enabled; Dependabot security updates are enabled. No native secret or Dependabot alerts are open. Post-merge CodeQL run [39553677330](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39553677330) fixed old alerts #1 (`java/sensitive-log`) and #2 (`java/relative-path-command`) at `2026-10-21T06:11:16Z`, and opened #3 (`java/sensitive-log`) at `ElementActions.java:51`. Its reported source is the password argument at `LoginPage.java:66`; the sink line logs the locator, not the typed value, so #3 is a review candidate and remains open pending triage.
 - CI retained raw unit results for 30 days, Nightly Grid results for 14 days, and coverage/combined Allure reports for 30 days. Screenshot masking is reversible and screenshot evidence is omitted when masking, capture, or restoration cannot be verified. It covers visible password fields and explicitly marked regions; there is no universal pixel redaction.
-- Remaining limitations: manual screen-reader assessment was not performed; unsupported media-type behavior has no defined API contract; non-provider secret-pattern scanning remains disabled. No required check is blocked.
+- Remaining limitations: manual screen-reader assessment was not performed; unsupported media-type behavior has no defined API contract; non-provider secret-pattern scanning remains disabled. All required Actions jobs passed. CodeQL alert #3 remains untriaged and should be assessed before security follow-ups are considered clear.
 
 ### Owner review commands
 
 ```powershell
 git fetch origin
-git switch codex/coverage-hardening
-git pull --ff-only origin codex/coverage-hardening
+git switch main
+git pull --ff-only origin main
 git rev-parse HEAD
 .\mvnw.cmd -B -ntp clean test '-Dsuite=unit' '-Dmaven.compiler.failOnWarning=true'
 .\mvnw.cmd -B -ntp clean test '-Dsuite=api' '-Dmaven.compiler.failOnWarning=true'
@@ -61,10 +78,10 @@ git rev-parse HEAD
 python scripts/verify_allure_failure_redaction.py
 python -B -m unittest discover -s scripts/tests -v
 docker compose -f docker/docker-compose.yml config --quiet
-gh workflow run "Nightly regression" --ref codex/coverage-hardening
+gh workflow run "Nightly regression" --ref main
 ```
 
-Review PR #21 CI, CodeQL, and Nightly links above before owner approval. Do not merge or deploy as part of this handoff.
+PR #21 is merged. The commands above target `main` at the recorded post-merge revision; no deployment or release was performed.
 
 ## Historical interim H01-H04 checkpoint (superseded by the current status above)
 
