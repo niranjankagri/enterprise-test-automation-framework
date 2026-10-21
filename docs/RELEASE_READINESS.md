@@ -2,13 +2,13 @@
 
 ## Current status
 
-**C09, C10 and C11 are verified complete. Implementation source `6b3fb1971278940df3b4f8882b470b47e4bd3452` passed PR CI [39477093094](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477093094), CodeQL [39477093115](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477093115) and nightly [39477175118](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477175118). The documentation PR head `e442e9922a3e3ab0c7a119b4cef15f25034d8897` passed final PR CI [39480246928](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39480246928) and CodeQL [39480246914](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39480246914). All seven PR jobs passed, including unit 43/43, API 78/78, integration 28/28, smoke 23/23, JaCoCo verification/reporting and Allure report. PR #19 remains open and unmerged for owner review.** No deployment or release was performed.
+**C09, C10 and C11 are verified complete, and PR #19 merged on 2026-10-21 at `2026-10-21T02:05:41Z`.** The merge commit is current `main` SHA `95c34d61e9421c237d3215f6eb123437bda29248` (merged PR head `7d7eb13a972f6f7f41d8ff1ce56491fc8558b3bf`). Post-merge Main [39531082307](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39531082307), CodeQL [39531082296](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39531082296) and main Nightly [39531660067](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39531660067) completed successfully on that SHA. The Nightly passed Chrome 213/213, Firefox 157/157, Edge 157/157 and Grid Firefox 157/157, with reporting, Docker teardown and coverage verification green. No deployment or release was performed.
 
 - Baseline: `22559e5ed2e908664bc45a02dd34f1c6644fc7a7` (PR #18 merge to `main`).
-- Final tested implementation source: `6b3fb1971278940df3b4f8882b470b47e4bd3452` (`codex/batch-e-quality-release`).
+- Final tested main revision: `95c34d61e9421c237d3215f6eb123437bda29248` (PR #19 merge commit; Main, CodeQL and Nightly verified).
 - Verified documentation PR head: `e442e9922a3e3ab0c7a119b4cef15f25034d8897`; all required PR CI jobs and CodeQL passed on that head.
 - Final PR CI tested merge SHA: `20cd87bd4286347215a5491bbe90603e47ae2d4d` for the implementation-source coverage merge.
-- Pull request: [#19 - Batch E quality and release readiness](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/19).
+- Pull request: [#19 - Batch E quality and release readiness](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/19), merged.
 
 ## C09, C10, C11 and M1-M8 status
 
@@ -16,7 +16,7 @@
 |---|---|---|
 | C09 - regression and coverage reliability | VERIFIED | The route/method/principal inventory, business rules, UI journeys, framework behavior and security evidence are mapped in `TEST_COVERAGE_MATRIX.md`; high-risk gaps received targeted regressions. |
 | C10 - CI/CD, security validation and Java coverage | VERIFIED | PR quality, dependency review, API, integration/order, Chrome smoke, coverage merge, report and CodeQL jobs passed; JaCoCo reports contain production classes and same-revision execution data. |
-| C11 - final review and release readiness | VERIFIED | Final full Chrome, serial integration, persisted Allure verifier, branch nightly browser/Grid, coverage and cleanup checks passed. |
+| C11 - final review and release readiness | VERIFIED / MERGED | Final full Chrome, serial integration, persisted Allure verifier, main nightly browser/Grid, coverage and cleanup checks passed after PR #19 merged. |
 | M1 - Maven foundation / Java build identity | VERIFIED | Two-module Java 17-target build compiled with warnings-as-errors; Maven Wrapper used for final local suites. |
 | M2 - configuration and browser/driver foundation | VERIFIED | Configuration tests and deterministic browser setup/cleanup failure regression passed; Chrome, Firefox, Edge and Grid ran. |
 | M3 - app, page/component model and UI journeys | VERIFIED | Existing ShopEase and page/component architecture retained; full Chrome and nightly browser/Grid regressions passed. |
@@ -54,7 +54,7 @@ All commands below ran on the final implementation source SHA unless noted. Mave
 | Full Chrome | `.\mvnw.cmd -B -ntp clean test '-Dsuite=full' '-Dheadless=true' '-Dmaven.compiler.failOnWarning=true'` | 213 passed, 0 failures, 0 errors, 0 skipped; local class-parallel run. |
 | Local Chrome smoke | `.\mvnw.cmd -B -ntp clean test '-Dsuite=smoke' '-Dheadless=true' '-Dmaven.compiler.failOnWarning=true'` | Exit 0; 23 passed, 0 failures, 0 errors, 0 skipped; includes reversible screenshot masking regression. |
 | PR Chrome smoke | PR job `Smoke / smoke-chrome` | 23 passed, 0 failures, 0 errors, 0 skipped; screenshot overlay regression included. |
-| Nightly browser results | Run [39477175118](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477175118) | Full Chrome 213/213; Firefox 157/157; Edge 157/157; Selenium Grid Firefox 157/157. All Allure results passed; 0 failed, broken or skipped. Chrome/Firefox/Edge Surefire reports each show 0 failures, errors, skips and flakes. |
+| Main Nightly browser results | Run [39531660067](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39531660067) on `95c34d61e9421c237d3215f6eb123437bda29248` | Full Chrome 213/213; Firefox 157/157; Edge 157/157; Selenium Grid Firefox 157/157. All jobs and Allure reporting passed; each suite reported 0 failures, errors and skips. Docker cleanup and external coverage verification passed. |
 | Allure failure verifier | `python scripts/verify_allure_failure_redaction.py` and PR quality job | Passed. TestNG retained the synthetic `IllegalStateException`; finalized result was broken and test-level/step-level details were redacted. |
 | JaCoCo verifier regressions | `python -B -m unittest discover -s scripts/tests -v` | Exit 0; 4 tests passed, covering executed module/class counters and zero-execution rejection. |
 | Compose configuration | `docker compose -f docker/docker-compose.yml config --quiet` | Passed locally. Nightly Docker/Grid job started the platform, validated app/Grid tests and external coverage, then stopped containers successfully. |
@@ -68,9 +68,12 @@ The final local full-run TestNG result records 213 passed, 0 failed and 0 skippe
 - PR CI [run 39477093094](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477093094) - all seven jobs passed: Dependency Review; quality/unit plus persisted Allure verifier; database/order integration; Chrome smoke; API regressions; merged Java coverage reports; Allure report.
 - CodeQL [run 39477093115](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477093115) - Analyze Java passed.
 - Nightly [run 39477175118](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477175118) - full Chrome, Firefox/Edge regressions, Docker/Selenium Grid, combined Allure report and cleanup all passed on the Batch E source SHA.
+- Post-merge Main [run 39531082307](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39531082307) - build/package + unit 43/43, API, Chrome UI, Edge smoke and Allure report all passed on main merge SHA `95c34d61e9421c237d3215f6eb123437bda29248`.
+- Post-merge CodeQL [run 39531082296](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39531082296) - Analyze Java passed on the same main merge SHA.
+- Main Nightly [run 39531660067](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39531660067) - Chrome 213/213, Firefox 157/157, Edge 157/157 and Grid Firefox 157/157 passed; Allure, Compose teardown and external coverage validation passed.
 - Documentation-head PR CI [run 39480246928](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39480246928) - all seven jobs passed on `e442e9922a3e3ab0c7a119b4cef15f25034d8897` (unit 43/43, API 78/78, integration 28/28, smoke 23/23); JaCoCo verifier/report and Allure report passed. CodeQL [run 39480246914](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39480246914) passed on the same head.
 
-The implementation-source PR CI/CodeQL/nightly runs checked out source `6b3fb1971278940df3b4f8882b470b47e4bd3452` or its PR merge commit; documentation-head PR CI and CodeQL checked out `e442e9922a3e3ab0c7a119b4cef15f25034d8897`. No earlier `main` or nightly run was substituted for final source evidence.
+The earlier PR and implementation-source runs above are retained as historical evidence. Post-merge Main, CodeQL and the dispatched Nightly all checked out the merged `main` SHA `95c34d61e9421c237d3215f6eb123437bda29248`.
 
 ## Java line and branch coverage
 
@@ -82,6 +85,8 @@ JaCoCo 0.8.15 reports production classes only. These are executed Java code metr
 | PR merge SHA `20cd87bd4286347215a5491bbe90603e47ae2d4d`; four non-empty same-SHA inputs | `automation` | 100 | 1207 / 1473 (81.9%) | 233 / 384 (60.7%) |
 | Nightly Grid source SHA `6b3fb1971278940df3b4f8882b470b47e4bd3452`; separate process capture | `demo-app` | 24 | 912 / 975 (93.5%) | 266 / 334 (79.6%) |
 | Nightly Grid source SHA `6b3fb1971278940df3b4f8882b470b47e4bd3452`; separate process capture | `automation` | 100 | 1173 / 1473 (79.6%) | 219 / 384 (57.0%) |
+| Main Nightly Grid source SHA `95c34d61e9421c237d3215f6eb123437bda29248`; run 39531660067 | `demo-app` | 24 | 912 / 975 (93.5%) | 266 / 334 (79.6%) |
+| Main Nightly Grid source SHA `95c34d61e9421c237d3215f6eb123437bda29248`; run 39531660067 | `automation` | 100 | 1173 / 1473 (79.6%) | 219 / 384 (57.0%) |
 
 The CI verifier rejects zero covered line/branch counts per module and requires positive covered line and branch counts in designated `OrderApi` (`demo-app`) and `ApiClient` (`automation`) classes. Its Python regressions reject empty execution and aggregate-only coverage. In-process `demo-app` execution is captured by the automation agent; Docker/Grid app-container coverage is collected separately. These reports describe the execution paths above and should not be presented as repository-wide functional coverage percentages.
 
@@ -94,15 +99,17 @@ The CI verifier rejects zero covered line/branch counts per module and requires 
 
 ## Security findings and remaining blockers
 
-- CodeQL [39477093115](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477093115) passed; current open CodeQL alerts: 0. Current native secret-scanning alerts: 0. Repository secret scanning and push protection are enabled. Dependabot security updates are disabled at the repository setting; CodeQL default setup is not configured because the advanced workflow runs analysis. No GitHub settings were modified.
+- Post-merge CodeQL [39531082296](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39531082296) passed on main SHA `95c34d61e9421c237d3215f6eb123437bda29248`; current open CodeQL alerts: 0. Current native secret-scanning alerts: 0. Repository secret scanning and push protection are enabled. Dependabot security updates are disabled at the repository setting; CodeQL default setup is not configured because the advanced workflow runs analysis. No GitHub settings were modified.
 - A retained-artifact pattern scan found no checked demo/synthetic credentials in Allure result JSON, Surefire results or runtime logs. Two matches in the broad artifact scan were the static demo seed credential shown in generated JaCoCo `DemoApp.java.html` source listings; that source is already part of the demo repository. No runtime evidence contained those values.
-- There are no blocked required checks. The limitations above are scoped test/security follow-ups, not failed release gates. PR #19 remains unmerged for owner review.
+- There are no blocked required checks. The limitations above are scoped test/security follow-ups, not failed release gates. PR #19 is merged; the Batch E owner review gate is complete.
 
 ## Owner full-suite review commands
 
-Windows PowerShell, from the checked-out Batch E branch:
+Windows PowerShell, from the latest `main` checkout:
 
 ```powershell
+git switch main
+git pull --ff-only origin main
 .\mvnw.cmd -B -ntp clean test '-Dsuite=unit' '-Dmaven.compiler.failOnWarning=true'
 .\mvnw.cmd -B -ntp clean test '-Dsuite=api' '-Dmaven.compiler.failOnWarning=true'
 .\mvnw.cmd -B -ntp clean test '-Dsuite=integration' '-Dmaven.compiler.failOnWarning=true'
@@ -111,7 +118,7 @@ Windows PowerShell, from the checked-out Batch E branch:
 .\mvnw.cmd -B -ntp clean test '-Dsuite=full' '-Dheadless=true' '-Dmaven.compiler.failOnWarning=true'
 python scripts/verify_allure_failure_redaction.py
 docker compose -f docker/docker-compose.yml config --quiet
-gh workflow run "Nightly regression" --ref codex/batch-e-quality-release
+gh workflow run "Nightly regression" --ref main
 ```
 
-The nightly workflow uses the branch's existing Chrome/Firefox/Edge and Docker/Selenium Grid provisioning, produces separate coverage inputs and always runs container cleanup. Review the current workflow results before treating any local rerun as a replacement for final CI evidence.
+When dispatched on `main`, the nightly workflow uses the existing Chrome/Firefox/Edge and Docker/Selenium Grid provisioning, produces source-stamped coverage inputs and runs container cleanup. Review the linked main run before treating any local rerun as a replacement for post-merge CI evidence.

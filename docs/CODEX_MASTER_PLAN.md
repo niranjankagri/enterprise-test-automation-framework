@@ -14,7 +14,7 @@ Keep the two Maven modules and existing test architecture. Every confirmed defec
 | B — security | C01–C02 | Batch A merged by owner | `codex/batch-b-security` | Same |
 | C — correctness | C03–C05 | Batch B merged by owner | `codex/batch-c-correctness` | Same |
 | D — validation/docs | C06–C08 | Batch C merged by owner | `codex/batch-d-validation-docs` | Same |
-| E — quality/release | C09–C11 | Batch D merged by owner | `codex/batch-e-quality-release` | Same; leave PR unmerged |
+| E — quality/release | C09–C11 | Batch D merged by owner | `codex/batch-e-quality-release` | Owner review before merge; PR #19 is now merged |
 
 Do not build a later batch on unmerged work unless the owner explicitly authorizes that dependency change. Within a batch, commit and push each independently verified chunk. A failed or unavailable required check leaves that chunk `NOT VERIFIED` and blocks dependent work.
 
@@ -33,13 +33,13 @@ Do not build a later batch on unmerged work unless the owner explicitly authoriz
 | C08 — documentation consistency | Compare README, relevant docs, POMs and workflows. | Selenium version, wrapper use, environment commands and Docker/network guidance match verified code; only confirmed stale claims are corrected. |
 | C09 — regression and coverage reliability | Review changed-path coverage, suite inclusion, parallelism and test-data isolation. | Required regression tests execute in stable suites; high-value gaps are added only when evidence shows they are missing; untested behavior is reported. |
 | C10 — CI/CD and security validation | Review workflow triggers, permissions, dependency strategy, artifacts, secrets and scanning. | Required build/test/Docker/report jobs execute; least privilege and artifact handling are justified; no required checks are bypassed. |
-| C11 — final review and release readiness | Independently compare cumulative changes to all eight audit findings and M1–M8 capabilities. | Each finding is fixed or clearly unresolved; feasible full checks and CI evidence are recorded; docs and backlog are accurate; PR remains unmerged for owner review. |
+| C11 — final review and release readiness | Independently compare cumulative changes to all eight audit findings and M1–M8 capabilities. | Each finding is fixed or clearly unresolved; feasible full checks and CI evidence are recorded; docs and backlog are accurate; PR and review status are recorded accurately. |
 
 ## Current Batch E checkpoint
 
 - **C09 - VERIFIED COMPLETE:** coverage inventory expanded and high-risk API authorization, order concurrency, UI/cross-layer, framework and evidence gaps were addressed with named tests in `docs/TEST_COVERAGE_MATRIX.md`.
 - **C10 - VERIFIED COMPLETE:** PR CI [39477093094](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477093094), CodeQL [39477093115](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477093115), and nightly [39477175118](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477175118) passed on implementation source `6b3fb1971278940df3b4f8882b470b47e4bd3452`. JaCoCo verification now requires executed lines and branches per module and in `OrderApi` / `ApiClient`.
-- **C11 - VERIFIED COMPLETE; OWNER REVIEW GATE:** local full Chrome, serial integration, retained Allure verification, branch nightly browser/Grid matrix, container coverage, cleanup and source/dependency checks passed. Follow-up screenshot and coverage-verifier regressions pass at source `6b3fb1971278940df3b4f8882b470b47e4bd3452`. PR #19 remains unmerged; final documentation-head checks must pass before it is marked ready.
+- **C11 - VERIFIED COMPLETE; PR #19 MERGED:** local full Chrome, serial integration, retained Allure verification, browser/Grid matrix, container coverage, cleanup and source/dependency checks passed. PR #19 merged on 2026-10-21; post-merge Main, CodeQL and Nightly passed on `95c34d61e9421c237d3215f6eb123437bda29248`. See the post-merge evidence in `docs/CODEX_PROGRESS.md` and `docs/RELEASE_READINESS.md`.
 
 ## Original M1–M8 capability mapping
 
@@ -66,7 +66,7 @@ Docker/Grid, Actions, Checkstyle and project documentation were added in the ori
 - The CI unit baseline passed using the current Maven installation: 32 passed, 0 failed, 0 errors, 0 skipped; Checkstyle had 0 violations. The unit suite currently starts the demo app because `unit.xml` includes `DemoAppLifecycle` and `local.properties` sets `app.autostart=true`; this is a verified C05 issue, not changed in C00.
 - Wrapper provenance and execution evidence are in `docs/CODEX_PROGRESS.md` and the engineering decisions in `docs/CODEX_DECISIONS.md`.
 
-## Current execution checkpoint
+## Batch D-to-E execution checkpoint (historical)
 
 - PR #17 (Batch C) was merged by the owner; Batch D started from `origin/main` at `91b62f9f501b49f22ca1411e21deb7f9ab0670d4`. After Dependabot PR #14 advanced main to `9ffe710242c04200e219626b3497c69ee4c98e75`, the feature branch merged that main commit as `324c9a1baab28d404b926909c473038aa753694a`; PR run `39441537561` passed all applicable jobs.
 - C06 is implemented and verified on `c54b77a816954c22de21a0ee3bf9e58966f87b9c`: overflow quantities are rejected without state changes, the API suite passed 74/74 locally, and PR Actions run `39436856557` passed all jobs.
@@ -74,7 +74,7 @@ Docker/Grid, Actions, Checkstyle and project documentation were added in the ori
 - C08 documentation consistency was verified complete on `5284f992c369087f53fc510353a4d30ce4ebd4bc`; local source comparison passed and PR Actions run `39443489388` passed every applicable job. PR #18 subsequently merged at `22559e5ed2e908664bc45a02dd34f1c6644fc7a7` on 2026-10-20. The former stop-before-Batch-E instruction was the prior owner review gate and is superseded by the current authorization.
 - The traceable coverage snapshot is `docs/TEST_COVERAGE_MATRIX.md`. It separates requirement/route coverage, executed suites, Java line/branch coverage, browser evidence and known gaps; no coverage percentages are reported without a defined denominator.
 
-## Batch E execution checkpoint — owner-authorized continuation
+## Batch E implementation checkpoint (pre-merge history)
 
 - Batch E branch: `codex/batch-e-quality-release`, created from freshly fetched `origin/main` at `22559e5ed2e908664bc45a02dd34f1c6644fc7a7`; PR #18 is confirmed merged. The starting worktree was clean.
 - Pre-change baseline on the starting SHA: unit 41/41, API 74/74, integration/DB/UI cross-layer 23/23; all reported 0 failures, errors and skips, with Checkstyle 0. The persisted Allure failure-redaction verifier passed. Docker Engine 29.8.2 is running and Compose configuration validates.
@@ -83,4 +83,10 @@ Docker/Grid, Actions, Checkstyle and project documentation were added in the ori
 - C09 and C10 are verified complete; their original evidence is preserved above and in `docs/CODEX_PROGRESS.md`.
 - Latest implementation tested: `6b3fb1971278940df3b4f8882b470b47e4bd3452`. PR CI [39477093094](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477093094), CodeQL [39477093115](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477093115), and nightly [39477175118](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39477175118) passed.
 - Documentation PR head `e442e9922a3e3ab0c7a119b4cef15f25034d8897` passed PR CI [39480246928](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39480246928) and CodeQL [39480246914](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39480246914).
-- PR #19 is the single Batch E PR. Mark it ready only after the final documentation commit's required checks finish green; do not merge, deploy, or enable auto-merge.
+- Historical Batch E review gate: PR #19 was kept open until its required checks passed and was then merged by the owner on 2026-10-21. This supersedes the pre-merge checkpoint above.
+
+## Post-merge verification - 2026-10-21
+
+- PR #19 merged at `2026-10-21T02:05:41Z`; fresh `origin/main` is `95c34d61e9421c237d3215f6eb123437bda29248`.
+- Main workflow [39531082307](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39531082307), CodeQL [39531082296](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39531082296) and dispatched main Nightly [39531660067](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39531660067) all completed successfully on that SHA.
+- Nightly passed Chrome 213/213, Firefox 157/157, Edge 157/157 and Grid Firefox 157/157; Docker teardown and external JaCoCo verification passed. Current review commands target `main`, not the former Batch E branch.
