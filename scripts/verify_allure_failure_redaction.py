@@ -109,6 +109,7 @@ def verify_allure_result(results_dir: Path, marker: str) -> str:
         f"synthetic-user-{marker}",
         f"synthetic-password-{marker}",
         f"synthetic-token-{marker}",
+        f"synthetic-typed-password-{marker}",
     )
     if any(value in serialized for value in synthetic_values):
         raise RuntimeError("Synthetic URL secrets remain in the finalized Allure result JSON")
@@ -121,10 +122,14 @@ def verify_allure_result(results_dir: Path, marker: str) -> str:
     )
     if expected_message not in message:
         raise RuntimeError("The test-level failure message was not preserved in its redacted form")
+    if "password=****" not in message:
+        raise RuntimeError("The typed password was not redacted from the persisted test-level failure details")
 
     step_messages = [str(detail.get("message", "")) for detail in step_details]
     if not any(expected_message in step_message for step_message in step_messages):
         raise RuntimeError("The step-level failure message was not preserved in its redacted form")
+    if not any("password=****" in step_message for step_message in step_messages):
+        raise RuntimeError("The typed password was not redacted from the persisted step-level failure details")
     return str(result["status"])
 
 

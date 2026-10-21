@@ -27,6 +27,7 @@ public class ReportRedactionTest {
                 + "?access_token=api-token-" + marker + "&page=2&probe=" + marker;
         String uiUrl = "https://ui-user-" + marker + ":ui-password-" + marker + "@shop.example.test/catalog"
                 + "?session_token=ui-token-" + marker + "&page=3&probe=" + marker;
+        String typedPassword = "synthetic-password-" + marker;
 
         Report.step("API GET " + apiUrl, () -> {
             Report.attachText("API request " + apiUrl, "GET " + apiUrl);
@@ -40,7 +41,8 @@ public class ReportRedactionTest {
             Report.attachPng("Screenshot " + uiUrl, new byte[] {0x01});
         });
         Report.log("UI checkpoint " + uiUrl);
-        IllegalStateException navigationFailure = new IllegalStateException("Navigation failed at " + uiUrl);
+        IllegalStateException navigationFailure = new IllegalStateException(
+                "Navigation failed at " + uiUrl + " with password=" + typedPassword);
         assertThatThrownBy(() -> Report.step("UI navigate " + uiUrl, () -> {
             throw navigationFailure;
         })).isSameAs(navigationFailure);
@@ -55,8 +57,9 @@ public class ReportRedactionTest {
                 .contains("https://****@shop.example.test/catalog?session_token=****&page=3&probe=" + marker)
                 .contains("API request https://****@api.example.test/items?access_token=****&page=2&probe=" + marker)
                 .contains("Page source https://****@shop.example.test/catalog?session_token=****&page=3&probe=" + marker)
+                .contains("Navigation failed at", "password=****")
                 .doesNotContain("api-user-" + marker, "api-password-" + marker, "api-token-" + marker,
-                        "ui-user-" + marker, "ui-password-" + marker, "ui-token-" + marker);
+                        "ui-user-" + marker, "ui-password-" + marker, "ui-token-" + marker, typedPassword);
     }
 
     private static List<String> reportArtifactsContaining(Path resultsDirectory, String marker) throws IOException {

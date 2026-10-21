@@ -173,6 +173,10 @@ The CI verifier rejects zero covered line/branch counts per module and requires 
 - A retained-artifact pattern scan found no checked demo/synthetic credentials in Allure result JSON, Surefire results or runtime logs. Two matches in the broad artifact scan were the static demo seed credential shown in generated JaCoCo `DemoApp.java.html` source listings; that source is already part of the demo repository. No runtime evidence contained those values.
 - There are no blocked required checks. The limitations above are scoped test/security follow-ups, not failed release gates. PR #19 is merged; the Batch E owner review gate is complete.
 
+## Current CodeQL follow-up - alert #3
+
+The post-PR #21 CodeQL analysis [39553677330](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39553677330) on `main` SHA `23e7878bb4b7958a4124234fe6319c03397e03e8` opened [alert #3](https://github.com/niranjankagri/enterprise-test-automation-framework/security/code-scanning/3), `java/sensitive-log`, at `ElementActions.java:51`. The focused trace in [CODEQL_ALERT_3_TRIAGE.md](CODEQL_ALERT_3_TRIAGE.md) identifies the reported source as the constant password-field locator and the sink argument as `locator`; the typed password is the separate `text` argument. A separate PR adds log/report regression evidence. Alert #3 remains open pending owner review; the query is not suppressed and no dismissal has been applied.
+
 ## Owner full-suite review commands
 
 Windows PowerShell, from the latest `main` checkout:

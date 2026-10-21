@@ -2,6 +2,9 @@ package com.enterprise.automation.tests.ui;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.enterprise.automation.api.ApiSession;
 import com.enterprise.automation.api.models.UserResponse;
 import com.enterprise.automation.config.ConfigManager;
@@ -23,11 +26,14 @@ import io.qameta.allure.model.StepResult;
 import io.restassured.response.Response;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
 /** Sign-in rules, data-driven from {@code testdata/login-negative.csv}. */
@@ -101,19 +107,34 @@ public class LoginRegressionTest extends BaseTest {
         AccessibilityAssertions.pageHasNoViolations(driver, "login page");
     }
 
-    /** A value typed into a non-password field is omitted from retained Allure step names. */
+    /** A typed password reaches its field but stays out of retained logs and Allure step names. */
     @Test(groups = "smoke")
-    public void typedUserValuesAreOmittedFromReportSteps() {
-        String marker = "synthetic-sensitive-value-" + UUID.randomUUID();
+    public void typedPasswordsAreOmittedFromLogsAndReportSteps() {
+        String marker = "SYNTHETIC_PASSWORD_" + UUID.randomUUID();
         openLoginPage();
         WebDriver driver = DriverManager.getDriver();
-        new ElementActions(driver, new WaitUtils(driver, ConfigManager.config().explicitWait()))
-                .type(TestId.of("username"), marker);
+        By passwordLocator = TestId.of("password");
+        Logger actionLogger = (Logger) LoggerFactory.getLogger(ElementActions.class);
+        ListAppender<ILoggingEvent> capturedLogs = new ListAppender<>();
+        capturedLogs.start();
+        actionLogger.addAppender(capturedLogs);
+        try {
+            new ElementActions(driver, new WaitUtils(driver, ConfigManager.config().explicitWait()))
+                    .type(passwordLocator, marker);
+        } finally {
+            actionLogger.detachAppender(capturedLogs);
+            capturedLogs.stop();
+        }
 
+        String logMessages = capturedLogs.list.stream().map(ILoggingEvent::getFormattedMessage)
+                .collect(Collectors.joining("\n"));
         StringBuilder stepNames = new StringBuilder();
         Allure.getLifecycle().updateTest(testCase -> appendStepNames(testCase.getSteps(), stepNames));
 
-        assertThat(stepNames).contains("Type [redacted] into username").doesNotContain(marker);
+        assertThat(marker.equals(driver.findElement(passwordLocator).getDomProperty("value")))
+                .as("the typed value reaches the password field").isTrue();
+        assertThat(logMessages).contains("type into " + passwordLocator).doesNotContain(marker);
+        assertThat(stepNames).contains("Type [redacted] into password").doesNotContain(marker);
     }
 
     private static void appendStepNames(List<StepResult> steps, StringBuilder result) {
