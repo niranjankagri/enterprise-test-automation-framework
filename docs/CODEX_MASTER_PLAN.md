@@ -90,3 +90,6 @@ Docker/Grid, Actions, Checkstyle and project documentation were added in the ori
 - PR #19 merged at `2026-10-21T02:05:41Z`; fresh `origin/main` is `95c34d61e9421c237d3215f6eb123437bda29248`.
 - Main workflow [39531082307](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39531082307), CodeQL [39531082296](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39531082296) and dispatched main Nightly [39531660067](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39531660067) all completed successfully on that SHA.
 - Nightly passed Chrome 213/213, Firefox 157/157, Edge 157/157 and Grid Firefox 157/157; Docker teardown and external JaCoCo verification passed. Current review commands target `main`, not the former Batch E branch.
+## Follow-on hardening work: H01-H06
+
+C00-C11 are complete and PR #20 is merged. The separately tracked follow-on hardening plan is [CODEX_HARDENING_ROADMAP.md](CODEX_HARDENING_ROADMAP.md) on branch `codex/coverage-hardening`. H01 implementation SHA `3a322a2a4bc1264b9a81f37d9c3ada48495063d1` passed the local clean Chrome smoke suite 27/27 with Checkstyle 0; applicable PR CI is pending. H02-H06 remain pending. This follow-on work does not rewrite the historical C00-C11 records.

@@ -154,3 +154,16 @@ Suites overlap by group and data-provider invocation. Counts are execution evide
 3. Remaining limits: unsupported media-type policy is undefined; direct exhaustive foreign-key violation cases are not covered; loading/network error UI states are not a modeled contract; manual screen-reader assessment was not performed; screenshot masking is limited to password and marked elements.
 4. The coverage scan found only the static demo seed credential in generated JaCoCo source listings; no checked credential patterns appeared in persisted runtime Allure, Surefire or log evidence.
 5. Java line/branch metrics describe production-code execution only. Requirement and browser denominators remain separate; no arbitrary thresholds are imposed.
+
+## H-series hardening coverage snapshot
+
+H01 regressions ran on implementation SHA `3a322a2a4bc1264b9a81f37d9c3ada48495063d1` with the clean Chrome smoke suite. The local run had 27 passed, 0 failures/errors/skips and Checkstyle 0. Applicable PR CI has not run yet; rows below record local verification and pending remote evidence.
+
+| Requirement ID | Behavior | Risk | Test method | Layer | Suite | CI job | Last verified SHA | Result | Gap/limitation |
+|---|---|---|---|---|---|---|---|---|---|
+| H01-UI-01 | Customer list fetch network failure is announced, readiness returns, and retry reloads data. | Medium | `CustomerManagementTest.customerListFailureShowsRetryAndRecovers` | UI/browser | Smoke | PR Chrome smoke (pending) | `3a322a2a4bc1` | VERIFIED locally: included in 27/27 smoke pass | Uses a test-only controlled Fetch error; does not model browser/OS network stacks. |
+| H01-UI-02 | Catalogue fetch network failure is announced, readiness returns, and retry preserves the current search. | Medium | `ProductCatalogTest.catalogueFailureShowsRetryAndRecovers` | UI/browser | Smoke | PR Chrome smoke (pending) | `3a322a2a4bc1` | VERIFIED locally: included in 27/27 smoke pass | Uses a test-only controlled Fetch error. |
+| H01-UI-03 | Failed order submission preserves cart and inventory, creates no partial records, restores submit, then permits a safe retry. | High | `PurchaseJourneyTest.failedOrderSubmissionCanBeRetriedWithoutPartialWrites` | UI/API/DB | Smoke / E2E | PR Chrome smoke (pending) | `3a322a2a4bc1` | VERIFIED locally: included in 27/27 smoke pass | Synthetic 503 is deterministic; external service outage behavior is out of scope. |
+| H01-UI-04 | Expired browser session clears token, user and cart after a controlled 401 and returns to login. | High | `LoginRegressionTest.expiredBrowserSessionClearsTheCartAndReturnsToLogin` | UI/session/API | Smoke | PR Chrome smoke (pending) | `3a322a2a4bc1` | VERIFIED locally: included in 27/27 smoke pass | Session expiry is induced by a synthetic 401, not wall-clock delay. |
+
+See [CODEX_HARDENING_ROADMAP.md](CODEX_HARDENING_ROADMAP.md) for H02-H06 scope and status. This is requirement-level evidence and is distinct from Java line/branch coverage and browser matrix coverage.

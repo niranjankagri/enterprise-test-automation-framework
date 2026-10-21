@@ -1,5 +1,9 @@
 # Release Readiness - Batch E
 
+## Follow-on H01-H06 hardening status
+
+C00-C11 are complete; PR #20 was merged by the owner. Follow-on work is tracked separately in [CODEX_HARDENING_ROADMAP.md](CODEX_HARDENING_ROADMAP.md), on branch `codex/coverage-hardening`, starting from `origin/main` SHA `6edfa00d7114afb6e3ef347ab3673a7413865006`. H01 implementation SHA `3a322a2a4bc1264b9a81f37d9c3ada48495063d1` passed the local clean Chrome smoke suite (27 passed; 0 failures, errors or skips; Checkstyle 0). PR CI is pending. H02-H06 are pending; this section is an interim status, not the final H06 handoff.
+
 ## Current status
 
 **C09, C10 and C11 are verified complete, and PR #19 merged on 2026-10-21 at `2026-10-21T02:05:41Z`.** The merge commit is current `main` SHA `95c34d61e9421c237d3215f6eb123437bda29248` (merged PR head `7d7eb13a972f6f7f41d8ff1ce56491fc8558b3bf`). Post-merge Main [39531082307](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39531082307), CodeQL [39531082296](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39531082296) and main Nightly [39531660067](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39531660067) completed successfully on that SHA. The Nightly passed Chrome 213/213, Firefox 157/157, Edge 157/157 and Grid Firefox 157/157, with reporting, Docker teardown and coverage verification green. No deployment or release was performed.

@@ -167,3 +167,9 @@ Append material decisions with their evidence and trade-offs. Do not record cred
 - **Reason:** A report can list production classes and measurable missed counters while recording zero executed code; class presence alone does not prove coverage data belongs to the intended production path.
 - **Verification:** `python -B -m unittest discover -s scripts/tests -v` passed four verifier tests. The strengthened verifier accepted actual local JaCoCo reports generated from the Chrome smoke execution; PR and nightly coverage jobs now run the verifier regressions before checking their reports.
 - **Trade-off:** A module or designated class with no covered branch fails the gate even if lines ran. This is intentional for the current modules, whose designated classes contain branch decisions; no percentage threshold is introduced.
+## D-025 - Simulate browser request failures through a test-only Fetch wrapper
+
+- **Decision:** Install a bounded, route-and-method-specific Fetch wrapper in the browser test session. It can gate a request until an explicit release, return a synthetic HTTP error or throw a synthetic network error; restore the original Fetch function in test cleanup.
+- **Reason:** UI loading and order-failure behavior must be reproducible without external outages or race-based timing. A test-only browser hook preserves the production app contract and makes delayed/pending states directly observable.
+- **Verification:** H01 regressions cover customer/catalog load and retry, failed order no-write state plus retry, and an expired-session 401. Clean Chrome smoke on `3a322a2a4bc1264b9a81f37d9c3ada48495063d1` passed 27/27 with no failures, errors or skips; Checkstyle reported zero violations.
+- **Limit:** The tests exercise application behavior after Fetch failures; they do not simulate every browser, proxy or operating-system network failure mode. Remote PR CI is pending.
