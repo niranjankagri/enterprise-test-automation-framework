@@ -101,3 +101,12 @@ C00-C11 are complete and PR #20 is merged. The separately tracked follow-on hard
 ## H01-H06 final verification checkpoint - 2026-10-21
 
 Historical pre-merge checkpoint: PR #20 merged at `6edfa00d7114afb6e3ef347ab3673a7413865006`; H01-H06 were verified on implementation source `1cc3004fb0968bda9fdb5d393f2d1dd1dbb96705`. PR CI [39549978335](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39549978335), CodeQL [39549978164](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39549978164), and Nightly [39550266187](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39550266187) passed at handoff. Documentation checkpoint `652fa0e9d3d5f8121bc889f5aacf02dd8039d605` passed PR CI [39551427397](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39551427397) and CodeQL [39551427589](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39551427589). PR #21 later merged; the current source and post-merge verification are recorded in the project status above and in `docs/CODEX_PROGRESS.md`, `docs/CODEX_HARDENING_ROADMAP.md`, `docs/TEST_COVERAGE_MATRIX.md` and `docs/RELEASE_READINESS.md`.
+
+## Focused follow-up: CodeQL alert #3
+
+- Inspect the reported source-to-sink trace for `java/sensitive-log` at `LoginPage.java:66` to `ElementActions.java:51`.
+- Verify the typed password is separate from the logged locator; add regressions proving typed values stay out of log events and Allure step/failure details.
+- Document a false-positive trace before proposing dismissal, or fix a confirmed leak. Do not suppress the query or dismiss the alert during the PR.
+- Deliver the triage in a separate focused PR and leave it open for owner review.
+
+Local verification checkpoint: commit `71498df9ef4be011178b312a00b0ef078f6bf337` passed the 46-test unit suite, 47-test Chrome smoke suite, and persisted Allure failure-redaction verifier. Draft PR [#23](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/23) head `38c7645565002ab1c5e47efcf72883bd5f06cd76` passed PR CI [39558201952](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39558201952) and CodeQL [39558201940](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39558201940), including quality, dependency review, API, database/order integration, Chrome smoke, coverage merge and Allure report jobs. Alert #3 remains open for owner review.

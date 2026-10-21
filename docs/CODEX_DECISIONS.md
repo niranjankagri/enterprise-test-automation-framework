@@ -219,3 +219,9 @@ Append material decisions with their evidence and trade-offs. Do not record cred
 - **Decision:** Delegate unmodified test-browser requests with `originalFetch.call(window, request, init)` after the route-specific gate, rather than invoking the saved Fetch function without its native receiver.
 - **Reason:** Firefox requires Fetch to retain its Window receiver; omitting it caused retry requests to fail in browser/Grid validation despite passing Chromium tests.
 - **Verification:** Nightly run [39548716350](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39548716350) reproduced two customer/catalog retry failures (171 passed, 2 failed). After preserving the receiver, final Nightly [39550266187](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39550266187) passed Chrome 233/233, Firefox 174/174, Edge 174/174 and Grid 174/174 with zero failures/errors/skips.
+
+## D-033 - Keep the sensitive-log rule and classify alert #3 from its actual data flow
+
+- **Decision:** Keep CodeQL `java/sensitive-log` enabled. Treat alert #3's reported call site as a false positive only after tracing the source and sink arguments; do not dismiss it automatically.
+- **Reason:** CodeQL highlights the `PASSWORD` locator constant passed as the first `ElementActions.type` argument. The user-entered password is the separate second argument and is not formatted by the logger. A typed-value log/report regression makes this distinction executable.
+- **Verification:** See [CODEQL_ALERT_3_TRIAGE.md](CODEQL_ALERT_3_TRIAGE.md) for the exact source-to-sink trace, API limitation, test names and owner disposition. Alert #3 remains open pending owner review.

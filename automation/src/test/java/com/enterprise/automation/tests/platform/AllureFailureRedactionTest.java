@@ -15,7 +15,9 @@ public class AllureFailureRedactionTest {
         }
         String url = "https://synthetic-user-" + marker + ":synthetic-password-" + marker
                 + "@redaction.example.test/path?access_token=synthetic-token-" + marker + "&page=2";
-        IllegalStateException failure = new IllegalStateException("Synthetic navigation failed at " + url);
+        String typedPassword = "synthetic-typed-password-" + marker;
+        IllegalStateException failure = new IllegalStateException(
+                "Synthetic navigation failed at " + url + " with password=" + typedPassword);
         Report.step("Navigate to " + url, () -> {
             throw failure;
         });
