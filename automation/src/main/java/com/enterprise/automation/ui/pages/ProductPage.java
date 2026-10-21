@@ -76,8 +76,13 @@ public class ProductPage extends ShopPage<ProductPage> {
 
     /** Retries loading the current catalogue search and category. */
     public ProductPage retryLoading() {
+        return beginRetryLoading().waitUntilLoaded();
+    }
+
+    /** Clicks Retry without waiting, for tests that control the follow-up request. */
+    public ProductPage beginRetryLoading() {
         actions.click(LOAD_RETRY);
-        return waitUntilLoaded();
+        return this;
     }
 
     /** Adds one unit of the product named {@code name}; waits for the confirmation toast. */

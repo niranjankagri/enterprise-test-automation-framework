@@ -58,8 +58,13 @@ public class CustomerPage extends ShopPage<CustomerPage> {
 
     /** Retries loading the current customer search. */
     public CustomerPage retryLoading() {
+        return beginRetryLoading().waitUntilLoaded();
+    }
+
+    /** Clicks Retry without waiting, for tests that control the follow-up request. */
+    public CustomerPage beginRetryLoading() {
         actions.click(LOAD_RETRY);
-        return waitUntilLoaded();
+        return this;
     }
 
     /** E.g. "3 customers". */

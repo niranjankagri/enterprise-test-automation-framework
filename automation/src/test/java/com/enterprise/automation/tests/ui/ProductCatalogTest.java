@@ -70,7 +70,15 @@ public class ProductCatalogTest extends BaseTest {
             assertThat(products.loadErrorMessage()).contains("Products could not be loaded");
             assertThat(driver.findElement(By.cssSelector("[data-testid='product-load-retry']")).isEnabled()).isTrue();
 
-            products.retryLoading();
+            BrowserRequestSimulator.gatePassThrough(driver, "GET", "/api/products");
+            products.beginRetryLoading();
+            BrowserRequestSimulator.awaitPending(driver, config().explicitWait());
+            assertThat(products.hasLoadError()).isFalse();
+            assertThat(((JavascriptExecutor) driver).executeScript("return document.body.dataset.busy"))
+                    .isEqualTo("true");
+
+            BrowserRequestSimulator.release(driver);
+            products.waitUntilLoaded();
 
             assertThat(products.hasLoadError()).isFalse();
             assertThat(products.table().column("Name")).contains("Wireless Keyboard", "Wireless Mouse");

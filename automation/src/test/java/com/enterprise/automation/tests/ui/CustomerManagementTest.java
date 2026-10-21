@@ -249,7 +249,15 @@ public class CustomerManagementTest extends BaseTest {
             assertThat(customers.loadErrorMessage()).contains("Customers could not be loaded");
             assertThat(driver.findElement(By.cssSelector("[data-testid='customer-load-retry']")).isEnabled()).isTrue();
 
-            customers.retryLoading();
+            BrowserRequestSimulator.gatePassThrough(driver, "GET", "/api/customers");
+            customers.beginRetryLoading();
+            BrowserRequestSimulator.awaitPending(driver, config().explicitWait());
+            assertThat(customers.hasLoadError()).isFalse();
+            assertThat(((JavascriptExecutor) driver).executeScript("return document.body.dataset.busy"))
+                    .isEqualTo("true");
+
+            BrowserRequestSimulator.release(driver);
+            customers.waitUntilLoaded();
 
             assertThat(customers.hasLoadError()).isFalse();
             assertThat(customers.table().column("Email")).contains("ava.patel@example.com");
