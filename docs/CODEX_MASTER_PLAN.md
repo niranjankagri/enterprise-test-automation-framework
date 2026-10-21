@@ -104,3 +104,5 @@ The owner confirmed PR #20 merged at `6edfa00d7114afb6e3ef347ab3673a7413865006`;
 - Verify the typed password is separate from the logged locator; add regressions proving typed values stay out of log events and Allure step/failure details.
 - Document a false-positive trace before proposing dismissal, or fix a confirmed leak. Do not suppress the query or dismiss the alert during the PR.
 - Deliver the triage in a separate focused PR and leave it open for owner review.
+
+Local verification checkpoint: commit `71498df9ef4be011178b312a00b0ef078f6bf337` passed the 46-test unit suite, 47-test Chrome smoke suite, and persisted Allure failure-redaction verifier. Remote checks and owner review remain pending; alert #3 is still open.
