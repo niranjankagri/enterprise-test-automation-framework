@@ -2,7 +2,7 @@
 
 ## Follow-on H01-H06 hardening status
 
-C00-C11 are complete; PR #20 was merged by the owner. Follow-on work is tracked separately in [CODEX_HARDENING_ROADMAP.md](CODEX_HARDENING_ROADMAP.md), on branch `codex/coverage-hardening`, starting from `origin/main` SHA `6edfa00d7114afb6e3ef347ab3673a7413865006`. H01 implementation SHA `3a322a2a4bc1264b9a81f37d9c3ada48495063d1` passed the local clean Chrome smoke suite (27 passed; 0 failures, errors or skips; Checkstyle 0). PR CI is pending. H02-H06 are pending; this section is an interim status, not the final H06 handoff.
+C00-C11 are complete; PR #20 was merged by the owner. Follow-on work is tracked separately in [CODEX_HARDENING_ROADMAP.md](CODEX_HARDENING_ROADMAP.md), on branch `codex/coverage-hardening`, based on `origin/main` SHA `6edfa00d7114afb6e3ef347ab3673a7413865006`. H01 implementation SHA `3a322a2a4bc1264b9a81f37d9c3ada48495063d1` passed local Chrome smoke 27/27 with Checkstyle 0; draft PR #21 CI 39539069715 and CodeQL 39539069697 passed on head 3bf712df6a006ddd1fa3329e9f9faec2e47ab147. H02 implementation SHA `bac7e20e1245d3fdb0b97fc7c2d0861648480799` passed API 85/85 and integration 37/37 locally, zero failures/errors/skips and Checkstyle 0; PR verification is pending. H03-H06 are pending. This is an interim status, not the final H06 handoff.
 
 ## Current status
 

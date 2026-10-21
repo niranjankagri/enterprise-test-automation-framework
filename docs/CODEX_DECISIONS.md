@@ -173,3 +173,10 @@ Append material decisions with their evidence and trade-offs. Do not record cred
 - **Reason:** UI loading and order-failure behavior must be reproducible without external outages or race-based timing. A test-only browser hook preserves the production app contract and makes delayed/pending states directly observable.
 - **Verification:** H01 regressions cover customer/catalog load and retry, failed order no-write state plus retry, and an expired-session 401. Clean Chrome smoke on `3a322a2a4bc1264b9a81f37d9c3ada48495063d1` passed 27/27 with no failures, errors or skips; Checkstyle reported zero violations.
 - **Limit:** The tests exercise application behavior after Fetch failures; they do not simulate every browser, proxy or operating-system network failure mode. Remote PR CI is pending.
+
+## D-026 - Validate monetary values against persisted DECIMAL bounds before writes
+
+- **Decision:** Reject product prices that exceed `DECIMAL(10,2)` or require non-zero precision beyond cents; accept additional trailing zeroes because they do not require rounding. Reject order totals above `DECIMAL(12,2)` before reserving inventory.
+- **Reason:** H2 previously rounded a sub-cent product price and raised an internal server error for values outside the schema range. Those are invalid client values and must not leave partial order or stock changes.
+- **Verification:** H02 regressions reproduced the defects before the change. On commit `bac7e20e1245d3fdb0b97fc7c2d0861648480799`, API passed 85/85 and integration passed 37/37, with zero failures/errors/skips and Checkstyle 0. PR CI is pending.
+- **Trade-off:** Monetary limits intentionally mirror the current H2 schema; changing those limits requires a coordinated schema and API contract change.

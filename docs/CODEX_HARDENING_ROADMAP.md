@@ -12,8 +12,8 @@ Statuses: `PENDING`, `IN PROGRESS`, `VERIFIED LOCALLY`, `VERIFIED` (local checks
 
 | ID | Objective | Acceptance evidence | Status |
 |---|---|---|---|
-| H01 | Deterministic UI failure coverage | Controlled request gating/failure; customer/catalog network-error retry; safe order retry with unchanged DB/API state after rejection; controlled expired-session handling. | VERIFIED LOCALLY; CI PENDING |
-| H02 | Database constraints and transaction boundaries | Direct uniqueness/FK violations, referenced-row deletion behavior, numeric precision/range, and no partial state after failures; existing stock reservation/cancellation concurrency retained. | PENDING |
+| H01 | Deterministic UI failure coverage | Controlled request gating/failure; customer/catalog network-error retry; safe order retry with unchanged DB/API state after rejection; controlled expired-session handling. | VERIFIED |
+| H02 | Database constraints and transaction boundaries | Direct uniqueness/FK violations, referenced-row deletion behavior, numeric precision/range, and no partial state after failures; existing stock reservation/cancellation concurrency retained. | VERIFIED LOCALLY |
 | H03 | Accessibility of critical journeys | Pinned compatible automated accessibility checks for login/customer/checkout, keyboard/focus/dialog assertions, fixes for confirmed defects, and explicit manual-check limits. | PENDING |
 | H04 | Coverage-driven assertion improvement | Fresh same-revision module JaCoCo reports, branch review by business risk, targeted behavioral tests, and an assessed (not assumed) mutation-testing option. | PENDING |
 | H05 | Dependency and security maintenance | Current CodeQL/dependency/secret-check evidence, verified Dependabot security-update setting, artifact-retention review, and preserved screenshot limits. | PENDING |
@@ -31,11 +31,17 @@ Regression tests:
 - `PurchaseJourneyTest.failedOrderSubmissionCanBeRetriedWithoutPartialWrites`
 - `LoginRegressionTest.expiredBrowserSessionClearsTheCartAndReturnsToLogin`
 
-Current local evidence on implementation SHA `3a322a2a4bc1264b9a81f37d9c3ada48495063d1`: `.\mvnw.cmd -B -ntp clean test '-Dsuite=smoke' '-Dheadless=true' '-Dmaven.compiler.failOnWarning=true'` passed 27 tests, zero failures/errors/skips, Checkstyle zero. Remote PR CI is pending.
+Current local evidence on implementation SHA `3a322a2a4bc1264b9a81f37d9c3ada48495063d1`: `.\mvnw.cmd -B -ntp clean test '-Dsuite=smoke' '-Dheadless=true' '-Dmaven.compiler.failOnWarning=true'` passed 27 tests, zero failures/errors/skips, Checkstyle zero. Draft PR #21 head 3bf712df6a006ddd1fa3329e9f9faec2e47ab147 passed all jobs in PR CI run 39539069715 and CodeQL run 39539069697.
 
 ## H02 — Database constraints and transaction boundaries
 
-Inspect DDL and existing DB/API assertions before editing. Add direct H2 constraint tests only for uncovered implemented constraints, including duplicate unique keys, invalid foreign keys, and referenced-row deletion. Inspect DECIMAL scales/ranges against validation and order arithmetic. For every rejected operation assert the resulting database records and stock; use test-owned records and dependency-aware cleanup. Retain deterministic stock reservation/cancellation tests.
+Confirmed gaps: the database had unique and foreign-key constraints but no direct violation tests. Product validation accepted sub-cent prices that H2 rounded during storage and values above `DECIMAL(10,2)`; an order total above `DECIMAL(12,2)` reached persistence and became a 500.
+
+Implementation commit `bac7e20e1245d3fdb0b97fc7c2d0861648480799` validates product prices as positive, within `99999999.99` and exactly representable to cents (insignificant trailing zeroes are accepted). Order totals above `9999999999.99` return a field-specific 400 before stock reservation or writes. H2 tests directly exercise duplicate username/email/SKU, missing foreign keys, referenced customer/product deletion, order-line cascade and test-data cleanup.
+
+Regression coverage: `DatabaseLayerTest.uniqueConstraintsRejectDuplicateKeys`, `DatabaseLayerTest.foreignKeysProtectReferencesAndCascadeOrderLines`, `ProductApiTest.priceWithMoreThanTwoDecimalPlacesIsRejectedWithoutWriting`, `ProductApiTest.priceAboveDatabaseMaximumIsRejectedWithoutWriting`, `ProductApiTest.maximumSupportedProductPriceIsStoredExactly`, `ProductApiTest.insignificantTrailingPriceZeroesAreAcceptedAndNormalized`, `ProductApiTest.unsupportedPricePrecisionPatchLeavesStoredValueUnchanged`, `OrderApiTest.maximumSupportedOrderTotalIsStoredExactly`, and `OrderApiTest.orderTotalAboveDatabaseMaximumIsRejectedWithoutWriting`.
+
+Reproduction before the implementation: API suite 83 tests, 3 failures (sub-cent price returned 201; oversized price and total returned 500). After implementation, exact-commit API suite passed 85/85 and integration suite passed 37/37; both had zero failures/errors/skips and Checkstyle 0. The integration run retained the existing deterministic stock reservation/cancellation tests. Applicable PR CI is pending push.
 
 ## H03 — Accessibility of critical journeys
 
