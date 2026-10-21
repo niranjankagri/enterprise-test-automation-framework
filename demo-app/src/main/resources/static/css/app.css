@@ -33,7 +33,10 @@ h2 { font-size: 16px; margin: 0 0 12px; }
 .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
 .toolbar .spacer { flex: 1; }
 input, select { font: inherit; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; }
-input:focus, select:focus { outline: 2px solid #bfdbfe; border-color: var(--primary); }
+input:focus, select:focus { border-color: var(--primary); }
+input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible {
+  outline: 2px solid var(--primary-dark); outline-offset: 2px;
+}
 button { font: inherit; padding: 8px 14px; border-radius: 6px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; }
 button:hover:not(:disabled) { background: var(--bg); }
 button:disabled { opacity: .5; cursor: not-allowed; }
@@ -62,7 +65,7 @@ tr.empty td { text-align: center; color: var(--muted); padding: 24px; }
 /* Modal */
 .modal-backdrop { position: fixed; inset: 0; background: rgba(17,24,39,.45); display: flex; align-items: center; justify-content: center; z-index: 20; }
 .modal { background: var(--surface); border-radius: 10px; width: min(480px, 92vw); box-shadow: 0 20px 50px rgba(0,0,0,.25); }
-.modal header { padding: 16px 20px; border-bottom: 1px solid var(--border); font-weight: 700; font-size: 16px; }
+.modal .modal-title { padding: 16px 20px; margin: 0; border-bottom: 1px solid var(--border); font-weight: 700; font-size: 16px; }
 .modal .body { padding: 20px; max-height: 65vh; overflow: auto; }
 .modal footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
 

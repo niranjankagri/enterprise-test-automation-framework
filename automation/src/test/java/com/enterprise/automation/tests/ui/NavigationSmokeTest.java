@@ -2,6 +2,7 @@ package com.enterprise.automation.tests.ui;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.enterprise.automation.driver.DriverManager;
 import com.enterprise.automation.tests.base.BaseTest;
 import com.enterprise.automation.ui.components.NavigationComponent;
 import com.enterprise.automation.ui.pages.DashboardPage;
@@ -43,5 +44,12 @@ public class NavigationSmokeTest extends BaseTest {
         assertThat(Integer.parseInt(dashboard.stat("customers"))).isPositive();
         assertThat(dashboard.stat("revenue")).startsWith("$");
         assertThat(dashboard.recentOrders().headers()).containsExactly("Order", "Customer", "Total", "Status", "Date");
+    }
+
+    /** The dashboard and shared navigation pass the selected automated axe rules. */
+    public void dashboardNavigationHasNoAxeViolations() {
+        loginAsAdmin();
+
+        AccessibilityAssertions.pageHasNoViolations(DriverManager.getDriver(), "dashboard navigation");
     }
 }

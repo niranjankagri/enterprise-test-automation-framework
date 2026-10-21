@@ -9,8 +9,12 @@ import com.enterprise.automation.data.ProductData;
 import com.enterprise.automation.data.TestDataFactory;
 import com.enterprise.automation.db.ShopDatabase;
 import com.enterprise.automation.tests.base.TestDataProviders;
+import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -82,5 +86,80 @@ public class DatabaseLayerTest {
         long seeded = db.sql().count("SELECT COUNT(*) FROM products WHERE sku NOT LIKE 'TST-%'");
 
         assertThat(seeded).isEqualTo(TestDataFactory.catalogue().size());
+    }
+
+    /** Database uniqueness constraints reject duplicates without inserting another row. */
+    public void uniqueConstraintsRejectDuplicateKeys() {
+        assertConstraintViolation("INSERT INTO app_users (username, password_hash, salt, full_name, role)"
+                + " VALUES (?, ?, ?, ?, ?)", "admin", "synthetic-hash", "synthetic-salt", "Duplicate", "VIEWER");
+        assertThat(db.sql().count("SELECT COUNT(*) FROM app_users WHERE username = ?", "admin")).isEqualTo(1);
+
+        assertConstraintViolation("INSERT INTO customers (first_name, last_name, email) VALUES (?, ?, ?)",
+                "Duplicate", "Customer", "ava.patel@example.com");
+        assertThat(db.sql().count("SELECT COUNT(*) FROM customers WHERE email = ?", "ava.patel@example.com"))
+                .isEqualTo(1);
+
+        assertConstraintViolation("INSERT INTO products (sku, name, category, price, stock) VALUES (?, ?, ?, ?, ?)",
+                "ACC-3002", "Duplicate", "Accessories", new BigDecimal("49.00"), 1);
+        assertThat(db.sql().count("SELECT COUNT(*) FROM products WHERE sku = ?", "ACC-3002")).isEqualTo(1);
+    }
+
+    /** Foreign keys reject missing references, protect referenced rows, and cascade order-line deletion. */
+    public void foreignKeysProtectReferencesAndCascadeOrderLines() {
+        long customerId = -ThreadLocalRandom.current().nextLong(1_000_000_000L, 2_000_000_000L);
+        long productId = customerId - 1;
+        long orderId = customerId - 2;
+        long itemId = customerId - 3;
+        String suffix = UUID.randomUUID().toString().replace("-", "");
+        String email = "h02-" + suffix + "@example.test";
+        String sku = "H02-" + suffix.substring(0, 20);
+
+        try {
+            db.sql().update("INSERT INTO customers (id, first_name, last_name, email) VALUES (?, ?, ?, ?)",
+                    customerId, "H02", "Fixture", email);
+            db.sql().update("INSERT INTO products (id, sku, name, category, price, stock) VALUES (?, ?, ?, ?, ?, ?)",
+                    productId, sku, "H02 fixture", "Test", new BigDecimal("1.00"), 1);
+
+            assertConstraintViolation("INSERT INTO orders (customer_id, status, total) VALUES (?, ?, ?)",
+                    customerId - 10, "PLACED", new BigDecimal("1.00"));
+            assertThat(db.sql().count("SELECT COUNT(*) FROM orders WHERE customer_id = ?", customerId - 10))
+                    .as("invalid customer reference inserts no order").isZero();
+            assertConstraintViolation("INSERT INTO order_items (order_id, product_id, quantity, unit_price)"
+                    + " VALUES (?, ?, ?, ?)", orderId - 10, productId, 1, new BigDecimal("1.00"));
+            assertThat(db.sql().count("SELECT COUNT(*) FROM order_items WHERE order_id = ?", orderId - 10))
+                    .as("invalid order reference inserts no line").isZero();
+
+            db.sql().update("INSERT INTO orders (id, customer_id, status, total) VALUES (?, ?, ?, ?)", orderId,
+                    customerId, "PLACED", new BigDecimal("1.00"));
+            assertConstraintViolation("INSERT INTO order_items (order_id, product_id, quantity, unit_price)"
+                    + " VALUES (?, ?, ?, ?)", orderId, productId - 10, 1, new BigDecimal("1.00"));
+            assertThat(db.sql().count("SELECT COUNT(*) FROM order_items WHERE order_id = ?", orderId)).isZero();
+
+            db.sql().update("INSERT INTO order_items (id, order_id, product_id, quantity, unit_price)"
+                    + " VALUES (?, ?, ?, ?, ?)", itemId, orderId, productId, 1, new BigDecimal("1.00"));
+            assertConstraintViolation("DELETE FROM customers WHERE id = ?", customerId);
+            assertConstraintViolation("DELETE FROM products WHERE id = ?", productId);
+            assertThat(db.sql().count("SELECT COUNT(*) FROM customers WHERE id = ?", customerId)).isEqualTo(1);
+            assertThat(db.sql().count("SELECT COUNT(*) FROM products WHERE id = ?", productId)).isEqualTo(1);
+            assertThat(db.sql().count("SELECT COUNT(*) FROM order_items WHERE order_id = ?", orderId)).isEqualTo(1);
+
+            assertThat(db.sql().update("DELETE FROM orders WHERE id = ?", orderId)).isEqualTo(1);
+            assertThat(db.sql().count("SELECT COUNT(*) FROM order_items WHERE order_id = ?", orderId))
+                    .as("order deletion cascades to its lines").isZero();
+            assertThat(db.sql().update("DELETE FROM customers WHERE id = ?", customerId)).isEqualTo(1);
+            assertThat(db.sql().update("DELETE FROM products WHERE id = ?", productId)).isEqualTo(1);
+            assertThat(db.sql().count("SELECT COUNT(*) FROM customers WHERE id = ?", customerId)).isZero();
+            assertThat(db.sql().count("SELECT COUNT(*) FROM products WHERE id = ?", productId)).isZero();
+        } finally {
+            db.sql().update("DELETE FROM orders WHERE id = ?", orderId);
+            db.sql().update("DELETE FROM products WHERE id = ?", productId);
+            db.sql().update("DELETE FROM customers WHERE id = ?", customerId);
+        }
+    }
+
+    private void assertConstraintViolation(String sql, Object... parameters) {
+        assertThatThrownBy(() -> db.sql().update(sql, parameters))
+                .isInstanceOf(IllegalStateException.class)
+                .hasRootCauseInstanceOf(SQLException.class);
     }
 }

@@ -173,7 +173,7 @@ public class CustomerManagementTest extends BaseTest {
     }
 
     // One run per row of testdata/invalid-customers.csv (the same file drives the API test)
-    @Test(dataProvider = "invalidCustomers", dataProviderClass = TestDataProviders.class)
+    @Test(dataProvider = "invalidCustomers", dataProviderClass = TestDataProviders.class, groups = "smoke")
     public void invalidInputIsRejectedPerField(String testCase, String field, String label, String value, String error) {
         CustomerPage customers = loginAsAdmin().navigation().openCustomers();
 
@@ -185,6 +185,23 @@ public class CustomerManagementTest extends BaseTest {
         // The API's message for that field appears under it, and the form stays open
         assertThat(form.fieldError(field)).as(testCase).isEqualTo(error);
         assertThat(form.isDisplayed()).as("form stays open").isTrue();
+        WebElement invalidField = DriverManager.getDriver().findElement(By.id("field-" + field));
+        assertThat(invalidField.getAttribute("aria-invalid")).as("invalid control is identified").isEqualTo("true");
+        assertThat(invalidField.getAttribute("aria-describedby")).contains("error-" + field);
+        assertThat(DriverManager.getDriver().findElement(By.id("error-" + field)).getAttribute("role"))
+                .isEqualTo("alert");
+        assertThat(DriverManager.getDriver().switchTo().activeElement()).as("focus moves to the first invalid field")
+                .isEqualTo(invalidField);
+    }
+
+    /** The customer list and add-customer dialog pass the selected automated axe rules. */
+    @Test(groups = "smoke")
+    public void customerListAndFormHaveNoAxeViolations() {
+        CustomerPage customers = loginAsAdmin().navigation().openCustomers();
+        AccessibilityAssertions.pageHasNoViolations(DriverManager.getDriver(), "customer list");
+
+        customers.openAddCustomerForm();
+        AccessibilityAssertions.pageHasNoViolations(DriverManager.getDriver(), "add-customer dialog");
     }
 
     /** An email already in use is rejected in the form. */
@@ -209,5 +226,43 @@ public class CustomerManagementTest extends BaseTest {
         assertThat(customers.table().rowCount()).as("viewer can read the list").isPositive();
         assertThat(customers.canAddCustomers()).as("no Add button").isFalse();
         assertThat(customers.canEditOrDeleteCustomers()).as("no Edit/Delete buttons").isFalse();
+    }
+
+    /** A failed customer-list request is announced, and Retry loads the list without a page reload. */
+    @Test(groups = "smoke")
+    public void customerListFailureShowsRetryAndRecovers() {
+        CustomerPage customers = loginAsAdmin().navigation().openCustomers();
+        var driver = DriverManager.getDriver();
+        BrowserRequestSimulator.gateNetworkFailure(driver, "GET", "/api/customers");
+        try {
+            customers.beginSearch("Ava");
+            BrowserRequestSimulator.awaitPending(driver, config().explicitWait());
+
+            assertThat(((JavascriptExecutor) driver).executeScript("return document.body.dataset.busy"))
+                    .isEqualTo("true");
+            assertThat(driver.findElement(By.cssSelector("[data-testid='loader']")).isDisplayed()).isTrue();
+
+            BrowserRequestSimulator.release(driver);
+            customers.waitUntilLoaded();
+
+            assertThat(customers.hasLoadError()).isTrue();
+            assertThat(customers.loadErrorMessage()).contains("Customers could not be loaded");
+            assertThat(driver.findElement(By.cssSelector("[data-testid='customer-load-retry']")).isEnabled()).isTrue();
+
+            BrowserRequestSimulator.gatePassThrough(driver, "GET", "/api/customers");
+            customers.beginRetryLoading();
+            BrowserRequestSimulator.awaitPending(driver, config().explicitWait());
+            assertThat(customers.hasLoadError()).isFalse();
+            assertThat(((JavascriptExecutor) driver).executeScript("return document.body.dataset.busy"))
+                    .isEqualTo("true");
+
+            BrowserRequestSimulator.release(driver);
+            customers.waitUntilLoaded();
+
+            assertThat(customers.hasLoadError()).isFalse();
+            assertThat(customers.table().column("Email")).contains("ava.patel@example.com");
+        } finally {
+            BrowserRequestSimulator.restore(driver);
+        }
     }
 }

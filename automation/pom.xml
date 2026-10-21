@@ -86,6 +86,24 @@
             <artifactId>demo-app</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Pinned axe-core rules for repeatable accessibility checks in the existing Selenium tests. -->
+        <dependency>
+            <groupId>com.deque.html.axe-core</groupId>
+            <artifactId>selenium</artifactId>
+            <version>4.13.0</version>
+            <scope>test</scope>
+            <exclusions>
+                <!-- Use the framework's pinned Selenium and driver lifecycle instead of the helper defaults. -->
+                <exclusion>
+                    <groupId>org.seleniumhq.selenium</groupId>
+                    <artifactId>selenium-java</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.github.bonigarcia</groupId>
+                    <artifactId>webdrivermanager</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
 
     <build>
@@ -149,4 +167,40 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>targeted-mutation-testing</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.pitest</groupId>
+                        <artifactId>pitest-maven</artifactId>
+                        <version>1.30.1</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.pitest</groupId>
+                                <artifactId>pitest-testng-plugin</artifactId>
+                                <version>1.0.0</version>
+                            </dependency>
+                        </dependencies>
+                        <configuration>
+                            <targetClasses>
+                                <param>com.enterprise.automation.config.ConfigLoader*</param>
+                            </targetClasses>
+                            <targetTests>
+                                <param>com.enterprise.automation.tests.platform.ConfigLoaderTest</param>
+                            </targetTests>
+                            <threads>1</threads>
+                            <outputFormats>
+                                <param>HTML</param>
+                                <param>XML</param>
+                            </outputFormats>
+                            <timestampedReports>true</timestampedReports>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

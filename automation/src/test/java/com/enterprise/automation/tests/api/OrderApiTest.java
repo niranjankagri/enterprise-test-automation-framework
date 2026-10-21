@@ -15,6 +15,7 @@ import com.enterprise.automation.api.models.ProductResponse;
 import com.enterprise.automation.api.services.OrderService;
 import com.enterprise.automation.data.CleanupRegistry;
 import com.enterprise.automation.data.TestDataFactory;
+import com.enterprise.automation.db.ShopDatabase;
 import com.enterprise.automation.tests.base.BaseApiTest;
 import com.enterprise.automation.tests.base.TestDataProviders;
 import io.restassured.response.Response;
@@ -266,5 +267,47 @@ public class OrderApiTest extends BaseApiTest {
         // Reading an existing order is fine; placing one is admin-only
         expectStatus(viewer().orders().get(order.id()), 200);
         expectStatus(viewer().orders().create(OrderRequest.of(customer().id(), item(product().id(), 1))), 403);
+    }
+
+    /** The exact DECIMAL(12,2) maximum order total is accepted and persisted precisely. */
+    @Test(groups = "integration")
+    public void maximumSupportedOrderTotalIsStoredExactly() {
+        ShopDatabase database = ShopDatabase.fromConfig();
+        ProductResponse highPrice = admin().products().createProduct(TestDataFactory.newProduct()
+                .withPrice(new BigDecimal("99999999.99")).withStock(100));
+        CleanupRegistry.register("remove high-price boundary product " + highPrice.sku(),
+                () -> database.deleteUnusedProduct(highPrice.id()));
+        ProductResponse remainder = admin().products().createProduct(TestDataFactory.newProduct()
+                .withPrice(new BigDecimal("0.99")).withStock(1));
+        CleanupRegistry.register("remove remainder boundary product " + remainder.sku(),
+                () -> database.deleteUnusedProduct(remainder.id()));
+
+        OrderResponse order = placeOrder(OrderRequest.of(customer().id(), item(highPrice.id(), 100),
+                item(remainder.id(), 1)));
+
+        assertThat(order.total()).isEqualByComparingTo("9999999999.99");
+        assertThat(database.orderById(order.id()).orElseThrow()).containsEntry("total", new BigDecimal("9999999999.99"));
+        assertThat(database.stockOf(highPrice.sku())).isZero();
+        assertThat(database.stockOf(remainder.sku())).isZero();
+    }
+
+    /** A total beyond DECIMAL(12,2) is a client error and leaves no order, lines or stock changes. */
+    @Test(groups = "integration")
+    public void orderTotalAboveDatabaseMaximumIsRejectedWithoutWriting() {
+        ShopDatabase database = ShopDatabase.fromConfig();
+        ProductResponse highPrice = admin().products().createProduct(TestDataFactory.newProduct()
+                .withPrice(new BigDecimal("99999999.99")).withStock(101));
+        CleanupRegistry.register("remove high-price overflow product " + highPrice.sku(),
+                () -> database.deleteUnusedProduct(highPrice.id()));
+
+        Response response = orders().create(OrderRequest.of(customer().id(), item(highPrice.id(), 101)));
+
+        assertThat(response.statusCode()).as("unsupported order totals are rejected as client input").isEqualTo(400);
+        ErrorResponse error = error(response);
+        assertThat(error.fieldErrors()).containsEntry("items", "Order total must be at most 9999999999.99");
+        assertThat(database.orderCountOf(customer().id())).as("no order header was committed").isZero();
+        assertThat(database.sql().count("SELECT COUNT(*) FROM order_items WHERE product_id = ?", highPrice.id()))
+                .as("no order line was committed").isZero();
+        assertThat(database.stockOf(highPrice.sku())).as("the failed transaction leaves stock unchanged").isEqualTo(101);
     }
 }

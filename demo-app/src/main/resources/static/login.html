@@ -15,13 +15,13 @@
     <form id="login-form" novalidate>
       <div class="field">
         <label for="username">Username</label>
-        <input id="username" name="username" autocomplete="username" data-testid="username">
-        <div class="field-error" data-testid="username-error"></div>
+        <input id="username" name="username" autocomplete="username" aria-describedby="username-error" data-testid="username">
+        <div id="username-error" class="field-error" role="alert" data-testid="username-error"></div>
       </div>
       <div class="field">
         <label for="password">Password</label>
-        <input id="password" name="password" type="password" autocomplete="current-password" data-testid="password">
-        <div class="field-error" data-testid="password-error"></div>
+        <input id="password" name="password" type="password" autocomplete="current-password" aria-describedby="password-error" data-testid="password">
+        <div id="password-error" class="field-error" role="alert" data-testid="password-error"></div>
       </div>
       <button type="submit" class="primary" style="width:100%" data-testid="login-button">Sign in</button>
     </form>
@@ -45,9 +45,20 @@
         const password = $('#password').value;
         // Client-side "required" checks show messages under the fields without calling the API
         $('[data-testid="login-error"]').textContent = '';
-        $('[data-testid="username-error"]').textContent = username ? '' : 'Username is required';
-        $('[data-testid="password-error"]').textContent = password ? '' : 'Password is required';
-        if (!username || !password) return;
+        const usernameField = $('#username');
+        const passwordField = $('#password');
+        const usernameMissing = !username;
+        const passwordMissing = !password;
+        $('[data-testid="username-error"]').textContent = usernameMissing ? 'Username is required' : '';
+        $('[data-testid="password-error"]').textContent = passwordMissing ? 'Password is required' : '';
+        if (usernameMissing) usernameField.setAttribute('aria-invalid', 'true');
+        else usernameField.removeAttribute('aria-invalid');
+        if (passwordMissing) passwordField.setAttribute('aria-invalid', 'true');
+        else passwordField.removeAttribute('aria-invalid');
+        if (usernameMissing || passwordMissing) {
+          (usernameMissing ? usernameField : passwordField).focus();
+          return;
+        }
 
         // Disabled while the request runs (no double submit)
         const button = $('[data-testid="login-button"]');

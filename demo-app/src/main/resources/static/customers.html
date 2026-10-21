@@ -13,6 +13,10 @@
     <nav class="nav" id="nav" data-testid="navigation"></nav>
     <main class="main">
       <h1 data-testid="page-title">Customers</h1>
+      <div class="alert" data-testid="customer-load-error" role="alert" hidden>
+        <span>Customers could not be loaded. Check the connection and retry.</span>
+        <button type="button" data-testid="customer-load-retry">Retry</button>
+      </div>
       <form class="toolbar" id="search-form">
         <input type="search" placeholder="Search name, email or city" aria-label="Search customers" data-testid="customer-search">
         <button type="submit" data-testid="customer-search-button">Search</button>
@@ -33,6 +37,7 @@
     (() => {
       const { $, api, rows, esc, statusBadge, requireAuth, isAdmin, modal, field, toast } = App;
       requireAuth('customers');
+      const loadError = $('[data-testid="customer-load-error"]');
       // Viewers see the list but no Add/Edit/Delete controls
       const admin = isAdmin();
       const addButton = $('[data-testid="add-customer"]');
@@ -43,15 +48,24 @@
       // (Re)loads the list with the current search term; data-ready is false while loading
       async function load() {
         document.body.dataset.ready = 'false';
+        loadError.hidden = true;
         const search = $('[data-testid="customer-search"]').value.trim();
-        customers = await api('GET', '/customers' + (search ? '?search=' + encodeURIComponent(search) : ''));
+        let loadedCustomers;
+        try {
+          loadedCustomers = await api('GET', '/customers' + (search ? '?search=' + encodeURIComponent(search) : ''));
+        } catch {
+          loadError.hidden = false;
+          document.body.dataset.ready = 'true';
+          return;
+        }
+        customers = loadedCustomers;
         rows($('[data-testid="customers-table"] tbody'), customers, (c) => `
-          <tr data-id="${c.id}">
-            <td>${esc(c.firstName)} ${esc(c.lastName)}</td><td>${esc(c.email)}</td><td>${esc(c.phone)}</td>
-            <td>${esc(c.city)}</td><td>${statusBadge(c.status)}</td>
-            <td>${admin ? `<button class="small" data-testid="edit" data-id="${c.id}">Edit</button>
-                <button class="small danger" data-testid="delete" data-id="${c.id}">Delete</button>` : ''}</td>
-          </tr>`, 'No customers found');
+            <tr data-id="${c.id}">
+              <td>${esc(c.firstName)} ${esc(c.lastName)}</td><td>${esc(c.email)}</td><td>${esc(c.phone)}</td>
+              <td>${esc(c.city)}</td><td>${statusBadge(c.status)}</td>
+              <td>${admin ? `<button class="small" data-testid="edit" data-id="${c.id}">Edit</button>
+                  <button class="small danger" data-testid="delete" data-id="${c.id}">Delete</button>` : ''}</td>
+            </tr>`, 'No customers found');
         $('[data-testid="result-count"]').textContent = `${customers.length} customer${customers.length === 1 ? '' : 's'}`;
         document.body.dataset.ready = 'true';
       }
@@ -82,6 +96,7 @@
 
       // Search button and Enter in the search box
       $('#search-form').addEventListener('submit', (e) => { e.preventDefault(); load(); });
+      $('[data-testid="customer-load-retry"]').addEventListener('click', load);
 
       // Add: POST, confirmation toast, reload (the dialog closes after the reload)
       addButton.addEventListener('click', () => form(null, async (body) => {

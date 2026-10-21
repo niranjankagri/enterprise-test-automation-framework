@@ -20,6 +20,7 @@ final class Validator {
     private static final Pattern EMAIL = Pattern.compile("^[\\w.+-]+@[\\w-]+(\\.[\\w-]+)+$");
     // 7-20 characters of digits, spaces, +, - and parentheses
     private static final Pattern PHONE = Pattern.compile("^[+0-9 ()-]{7,20}$");
+    private static final BigDecimal MAX_PRICE = new BigDecimal("99999999.99");
 
     // The request body being validated
     private final JsonNode body;
@@ -84,7 +85,7 @@ final class Validator {
         return value;
     }
 
-    /** A number greater than zero (prices). */
+    /** A positive price within the product table's DECIMAL(10,2) range. */
     BigDecimal positiveDecimal(String field, String label, boolean required) {
         JsonNode node = body.get(field);
         if (node == null || node.isNull()) {
@@ -98,7 +99,12 @@ final class Validator {
             errors.put(field, label + " must be a positive number");
             return null;
         }
-        return node.decimalValue();
+        BigDecimal value = node.decimalValue();
+        if (value.compareTo(MAX_PRICE) > 0 || value.stripTrailingZeros().scale() > 2) {
+            errors.put(field, label + " must be no greater than 99999999.99 and representable to 2 decimal places");
+            return null;
+        }
+        return value;
     }
 
     /** A whole number of 0 or more (stock). */

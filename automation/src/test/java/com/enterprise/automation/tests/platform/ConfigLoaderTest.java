@@ -146,6 +146,18 @@ public class ConfigLoaderTest {
                 });
     }
 
+    /** Retry count accepts zero and positive values, but rejects negative values. */
+    public void retryCountValidatesItsNonNegativeBoundary() {
+        assertThat(load(Map.of("retry.count", "0"), Map.of()).runSettings().retryCount()).isZero();
+        assertThat(load(Map.of("retry.count", "3"), Map.of()).runSettings().retryCount()).isEqualTo(3);
+
+        assertThatThrownBy(() -> load(Map.of("retry.count", "-1"), Map.of()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("retry.count")
+                .hasMessageContaining("0 or more")
+                .hasMessageContaining("-1");
+    }
+
     /** An unknown environment stops the run with the list of valid ones. */
     public void unknownEnvironmentFailsWithAHint() {
         // "prod" has no file: a typo must stop the run, not silently use defaults
@@ -169,5 +181,23 @@ public class ConfigLoaderTest {
                 .hasMessageContaining("base.url");
         assertThatThrownBy(() -> load(Map.of("timeout.explicit.seconds", "0"), Map.of()))
                 .hasMessageContaining("positive");
+    }
+
+    /** Invalid URL diagnostics identify the key without retaining credentials or query secrets. */
+    public void invalidUrlDiagnosticDoesNotExposeCredentialsOrQueryValues() {
+        String suppliedUrl = "http://synthetic-user:synthetic-pass@shop.test/api?token=synthetic-query%ZZ";
+
+        assertThatThrownBy(() -> load(Map.of("base.url", suppliedUrl), Map.of()))
+                .isInstanceOf(IllegalStateException.class)
+                .satisfies(error -> {
+                    StringBuilder details = new StringBuilder();
+                    for (Throwable cause = error; cause != null; cause = cause.getCause()) {
+                        if (cause.getMessage() != null) {
+                            details.append(cause.getMessage()).append(' ');
+                        }
+                    }
+                    assertThat(details.toString()).contains("base.url").contains("not a valid URL")
+                            .doesNotContain("synthetic-user", "synthetic-pass", "synthetic-query");
+                });
     }
 }

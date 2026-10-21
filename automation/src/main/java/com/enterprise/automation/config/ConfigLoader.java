@@ -176,7 +176,8 @@ public final class ConfigLoader {
                 }
                 return uri;
             } catch (IllegalArgumentException e) {
-                throw new IllegalStateException("Configuration '" + key.property() + "' is not a valid URL: " + value, e);
+                // URI parse failures may echo the complete input, including credentials and query parameters.
+                throw new IllegalStateException("Configuration '" + key.property() + "' is not a valid URL");
             }
         }
 

@@ -22,6 +22,7 @@
         <packages>
             <package name="com.enterprise.automation.tests.*"/>
             <package name="com.enterprise.automation.driver"/>
+            <package name="com.enterprise.automation.listeners"/>
         </packages>
     </test>
 </suite>

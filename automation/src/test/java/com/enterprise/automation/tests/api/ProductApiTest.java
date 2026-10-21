@@ -13,8 +13,10 @@ import com.enterprise.automation.api.services.ProductService;
 import com.enterprise.automation.data.CleanupRegistry;
 import com.enterprise.automation.data.ProductData;
 import com.enterprise.automation.data.TestDataFactory;
+import com.enterprise.automation.db.ShopDatabase;
 import com.enterprise.automation.tests.base.BaseApiTest;
 import com.enterprise.automation.tests.base.TestDataProviders;
+import io.restassured.response.Response;
 import java.math.BigDecimal;
 import java.util.Map;
 import org.testng.annotations.Test;
@@ -32,6 +34,16 @@ public class ProductApiTest extends BaseApiTest {
         ProductResponse created = products().createProduct(data);
         CleanupRegistry.register("deactivate product " + created.sku(), () -> products().deleteProduct(created.id()));
         return created;
+    }
+
+    private ErrorResponse expectInvalidPrice(ProductData data) {
+        Response response = products().create(ProductRequest.from(data));
+        if (response.statusCode() == 201) {
+            ProductResponse unexpected = JsonMapper.fromJson(response.asString(), ProductResponse.class);
+            CleanupRegistry.register("remove unexpectedly accepted product " + unexpected.sku(),
+                    () -> ShopDatabase.fromConfig().deleteUnusedProduct(unexpected.id()));
+        }
+        return error(expectStatus(response, 400));
     }
 
     /** Each seeded product matches the reference data and the single-product contract. */
@@ -129,5 +141,77 @@ public class ProductApiTest extends BaseApiTest {
         assertThat(products().findProducts(Map.of("search", "' OR '1'='1 --")))
                 .as("search text cannot turn a filter into an always-true SQL predicate")
                 .isEmpty();
+    }
+
+    /** Prices with a non-zero fractional digit beyond cents are rejected without inserting a rounded value. */
+    @Test(groups = "integration")
+    public void priceWithMoreThanTwoDecimalPlacesIsRejectedWithoutWriting() {
+        ProductData data = TestDataFactory.newProduct().withPrice(new BigDecimal("1.001"));
+
+        ErrorResponse error = expectInvalidPrice(data);
+
+        assertThat(error.fieldErrors()).containsEntry("price",
+                "Price must be no greater than 99999999.99 and representable to 2 decimal places");
+        assertThat(ShopDatabase.fromConfig().productBySku(data.sku())).as("rejected price leaves no product row")
+                .isEmpty();
+    }
+
+    /** Product prices above the DECIMAL(10,2) maximum are rejected before the database write. */
+    @Test(groups = "integration")
+    public void priceAboveDatabaseMaximumIsRejectedWithoutWriting() {
+        ProductData data = TestDataFactory.newProduct().withPrice(new BigDecimal("100000000.00"));
+
+        ErrorResponse error = expectInvalidPrice(data);
+
+        assertThat(error.fieldErrors()).containsEntry("price",
+                "Price must be no greater than 99999999.99 and representable to 2 decimal places");
+        assertThat(ShopDatabase.fromConfig().productBySku(data.sku())).as("rejected price leaves no product row")
+                .isEmpty();
+    }
+
+    /** The DECIMAL(10,2) maximum is accepted and stored without precision loss. */
+    @Test(groups = "integration")
+    public void maximumSupportedProductPriceIsStoredExactly() {
+        ProductData data = TestDataFactory.newProduct().withPrice(new BigDecimal("99999999.99"));
+
+        ProductResponse created = JsonMapper.fromJson(expectStatus(
+                products().create(ProductRequest.from(data)), 201).asString(), ProductResponse.class);
+        ShopDatabase database = ShopDatabase.fromConfig();
+        CleanupRegistry.register("remove boundary product " + created.sku(),
+                () -> database.deleteUnusedProduct(created.id()));
+
+        assertThat(created.price()).isEqualByComparingTo("99999999.99");
+        assertThat(database.productBySku(data.sku()).orElseThrow()).containsEntry("price", new BigDecimal("99999999.99"));
+    }
+
+    /** Extra zeroes after cents are accepted because they do not require numeric rounding. */
+    @Test(groups = "integration")
+    public void insignificantTrailingPriceZeroesAreAcceptedAndNormalized() {
+        ProductData data = TestDataFactory.newProduct().withPrice(new BigDecimal("1.000"));
+
+        ProductResponse created = JsonMapper.fromJson(expectStatus(
+                products().create(ProductRequest.from(data)), 201).asString(), ProductResponse.class);
+        ShopDatabase database = ShopDatabase.fromConfig();
+        CleanupRegistry.register("remove trailing-zero product " + created.sku(),
+                () -> database.deleteUnusedProduct(created.id()));
+
+        assertThat(database.productBySku(data.sku()).orElseThrow()).containsEntry("price", new BigDecimal("1.00"));
+    }
+
+    /** A PATCH with a non-cent value is rejected and does not alter the existing database price. */
+    @Test(groups = "integration")
+    public void unsupportedPricePrecisionPatchLeavesStoredValueUnchanged() {
+        ProductData data = TestDataFactory.newProduct().withPrice(new BigDecimal("10.00"));
+        ProductResponse created = products().createProduct(data);
+        ShopDatabase database = ShopDatabase.fromConfig();
+        CleanupRegistry.register("remove patch precision product " + created.sku(),
+                () -> database.deleteUnusedProduct(created.id()));
+
+        Response response = products().update(created.id(), Map.of("price", new BigDecimal("10.001")));
+
+        assertThat(response.statusCode()).isEqualTo(400);
+        assertThat(error(response).fieldErrors()).containsEntry("price",
+                "Price must be no greater than 99999999.99 and representable to 2 decimal places");
+        assertThat(database.productBySku(data.sku()).orElseThrow()).containsEntry("price", new BigDecimal("10.00"));
     }
 }
