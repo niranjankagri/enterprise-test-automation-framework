@@ -42,14 +42,26 @@ public final class DriverFactory {
             case CLOUD -> throw new UnsupportedOperationException(
                     "Cloud execution is not implemented; use -Dexecution=local or -Dexecution=remote (Selenium Grid)");
         };
-        // Timeouts and window size; if that fails, close the session we just opened
+        driver = configureAndCloseOnFailure(driver, config);
+        LOG.info("Started {} ({}, {})", config.browser(), config.execution(), config.headless() ? "headless" : "headed");
+        return driver;
+    }
+
+    /** Configures a new session and preserves that failure if cleanup also fails. */
+    static WebDriver configureAndCloseOnFailure(WebDriver driver, TestConfig config) {
         try {
             configure(driver, config);
-        } catch (RuntimeException e) {
-            driver.quit(); // the session exists already: never leak a browser on a failed setup
-            throw e;
+        } catch (RuntimeException setupFailure) {
+            try {
+                // The session exists already: never leave it open after a failed setup.
+                driver.quit();
+            } catch (RuntimeException cleanupFailure) {
+                // Keep the useful setup failure primary and retain cleanup evidence as suppressed.
+                setupFailure.addSuppressed(cleanupFailure);
+                LOG.warn("Browser setup cleanup also failed ({})", cleanupFailure.getClass().getSimpleName());
+            }
+            throw setupFailure;
         }
-        LOG.info("Started {} ({}, {})", config.browser(), config.execution(), config.headless() ? "headless" : "headed");
         return driver;
     }
 

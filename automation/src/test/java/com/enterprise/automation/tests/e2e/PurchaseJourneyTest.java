@@ -8,14 +8,20 @@ import com.enterprise.automation.api.models.OrderResponse;
 import com.enterprise.automation.data.CleanupRegistry;
 import com.enterprise.automation.data.CustomerData;
 import com.enterprise.automation.data.OrderData;
+import com.enterprise.automation.data.ProductData;
 import com.enterprise.automation.data.TestDataFactory;
+import com.enterprise.automation.db.ShopDatabase;
+import com.enterprise.automation.driver.DriverManager;
 import com.enterprise.automation.tests.base.BaseTest;
 import com.enterprise.automation.ui.components.ModalComponent;
 import com.enterprise.automation.ui.pages.CheckoutPage;
 import com.enterprise.automation.ui.pages.DashboardPage;
 import com.enterprise.automation.ui.pages.OrderPage;
 import com.enterprise.automation.ui.pages.ProductPage;
+import java.util.List;
 import java.util.Map;
+import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -73,6 +79,10 @@ public class PurchaseJourneyTest extends BaseTest {
 
         // Checkout
         CheckoutPage checkout = products.header().openCart();
+        assertThat(DriverManager.getDriver().findElement(By.cssSelector("[data-testid='checkout-customer']"))
+                .getAttribute("aria-label")).isEqualTo("Customer");
+        assertThat(DriverManager.getDriver().findElements(By.cssSelector("[data-testid='quantity']")))
+                .allSatisfy(quantity -> assertThat(quantity.getAttribute("aria-label")).startsWith("Quantity of "));
         for (OrderData.Line line : order.lines()) {
             checkout.setQuantity(line.product().name(), line.quantity());
         }
@@ -102,13 +112,69 @@ public class PurchaseJourneyTest extends BaseTest {
         assertThat(orders.filterByStatus("PLACED").table().column("Order")).contains("#" + orderId);
     }
 
+    /** A stale cart cannot buy stock that was consumed after the product was displayed. */
+    public void checkoutWithStaleStockPreservesTheCartAndCreatesNoOrder() {
+        assertRejectedCheckoutPreservesState(false);
+    }
+
+    /** A product deactivated after it was displayed cannot be bought from the stale cart. */
+    public void checkoutWithInactiveProductPreservesTheCartAndCreatesNoOrder() {
+        assertRejectedCheckoutPreservesState(true);
+    }
+
+    /** A second submit while the first request is pending cannot create a duplicate order. */
+    public void repeatedCheckoutSubmissionCreatesOneOrder() {
+        ProductData productData = TestDataFactory.newProduct().withStock(4);
+        var product = ApiSession.admin().products().createProduct(productData);
+        CleanupRegistry.register("deactivate product " + product.id(),
+                () -> ApiSession.admin().products().deleteProduct(product.id()));
+        ProductPage products = loginAsAdmin().navigation().openProducts();
+        products.search(product.sku()).addToCart(product.name());
+        products.header().openCart().selectCustomer(buyer().email());
+        var driver = DriverManager.getDriver();
+        ((JavascriptExecutor) driver).executeScript("""
+                const originalFetch = window.fetch.bind(window);
+                let releaseOrder;
+                window.__orderGate = new Promise(resolve => { releaseOrder = resolve; });
+                window.__releaseOrder = releaseOrder;
+                window.fetch = (url, options) => String(url) === '/api/orders'
+                  ? window.__orderGate.then(() => originalFetch(url, options))
+                  : originalFetch(url, options);
+                """);
+
+        var submit = driver.findElement(By.cssSelector("[data-testid='place-order']"));
+        submit.click();
+        assertThat(submit.isEnabled()).as("first request disables the submit control").isFalse();
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", submit);
+        ((JavascriptExecutor) driver).executeScript("window.__releaseOrder();");
+
+        var orders = new com.enterprise.automation.ui.pages.OrderPage().waitUntilLoaded();
+        long orderId = orders.placedOrderId();
+        List<OrderResponse> buyerOrders = buyerOrders();
+        assertThat(buyerOrders).extracting(OrderResponse::id).containsExactly(orderId);
+        assertThat(buyerOrders.get(0).items()).singleElement()
+                .satisfies(line -> assertThat(line.quantity()).isEqualTo(1));
+    }
+
     /** An order placed through the UI can be cancelled from its detail dialog. */
     public void adminCancelsAnOrder() {
-        // Place a one-line order through the UI
-        OrderData order = TestDataFactory.order(buyer(), TestDataFactory.line("AUD-4001", 1));
-        ProductPage products = loginAsAdmin().navigation().openProducts().addToCart(order.lines().get(0).product().name());
+        // Place a one-line order for a private fixture so cross-layer stock assertions are isolated.
+        ShopDatabase db = ShopDatabase.fromConfig();
+        ProductData productData = TestDataFactory.newProduct().withStock(1);
+        var product = ApiSession.admin().products().createProduct(productData);
+        CleanupRegistry.register("deactivate product " + product.id(),
+                () -> ApiSession.admin().products().deleteProduct(product.id()));
+        ProductPage products = loginAsAdmin().navigation().openProducts().search(product.sku())
+                .addToCart(product.name());
         OrderPage orders = products.header().openCart().selectCustomer(buyer().email()).placeOrder();
         long orderId = orders.placedOrderId();
+
+        // Verify that checkout changed the database before cancellation is requested.
+        assertThat(db.orderById(orderId))
+                .hasValueSatisfying(row -> assertThat(row.get("status")).isEqualTo("PLACED"));
+        assertThat(db.orderItems(orderId)).singleElement()
+                .satisfies(line -> assertThat(line.get("quantity")).isEqualTo(1));
+        assertThat(db.stockOf(product.sku())).isZero();
 
         // Cancel it from its detail dialog
         orders.cancelOrder(orderId);
@@ -117,5 +183,40 @@ public class PurchaseJourneyTest extends BaseTest {
         assertThat(orders.toast().waitForMessage("cancelled")).isEqualTo("Order #" + orderId + " cancelled");
         assertThat(orders.statusOf(orderId)).isEqualTo("CANCELLED");
         assertThat(orders.viewOrder(orderId).hasSubmit()).as("a cancelled order cannot be cancelled again").isFalse();
+        assertThat(ApiSession.admin().orders().getOrder(orderId).status()).isEqualTo("CANCELLED");
+        assertThat(ApiSession.admin().products().getProduct(product.id()).stock())
+                .as("cancellation restores the reserved unit across UI/API/database layers").isEqualTo(1);
+        assertThat(db.orderById(orderId))
+                .hasValueSatisfying(row -> assertThat(row.get("status")).isEqualTo("CANCELLED"));
+        assertThat(db.orderItems(orderId)).singleElement()
+                .satisfies(line -> assertThat(line.get("quantity")).isEqualTo(1));
+        assertThat(db.stockOf(product.sku())).isEqualTo(1);
+    }
+
+    private void assertRejectedCheckoutPreservesState(boolean inactive) {
+        ProductData productData = TestDataFactory.newProduct().withStock(1);
+        var product = ApiSession.admin().products().createProduct(productData);
+        CleanupRegistry.register("deactivate product " + product.id(),
+                () -> ApiSession.admin().products().deleteProduct(product.id()));
+        ProductPage products = loginAsAdmin().navigation().openProducts();
+        products.search(product.sku()).addToCart(product.name());
+        var checkout = products.header().openCart().selectCustomer(buyer().email());
+
+        if (inactive) {
+            ApiSession.admin().products().deleteProduct(product.id());
+        } else {
+            ApiSession.admin().products().update(product.id(), Map.of("stock", 0));
+        }
+        String message = checkout.placeOrderExpectingError();
+
+        assertThat(message).contains(inactive ? "no longer sold" : "0 left");
+        assertThat(checkout.cart().column("Product")).containsExactly(product.name());
+        assertThat(ApiSession.admin().products().getProduct(product.id()).stock()).isEqualTo(inactive ? 1 : 0);
+        assertThat(buyerOrders()).as("rejected checkout leaves no order header or lines").isEmpty();
+    }
+
+    private List<OrderResponse> buyerOrders() {
+        long customerId = ApiSession.admin().customers().findByEmail(buyer().email()).orElseThrow().id();
+        return ApiSession.admin().orders().ordersOf(customerId);
     }
 }

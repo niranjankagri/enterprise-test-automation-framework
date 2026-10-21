@@ -21,6 +21,7 @@
         </groups>
         <packages>
             <package name="com.enterprise.automation.tests.*"/>
+            <package name="com.enterprise.automation.driver"/>
         </packages>
     </test>
 </suite>

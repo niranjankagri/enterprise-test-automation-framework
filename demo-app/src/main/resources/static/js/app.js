@@ -144,22 +144,28 @@ const App = (() => {
   }
 
   /* ---------- modals ---------- */
+  let modalReturnFocus = null;
+
   // Removes the open dialog, if any
   function closeModal() {
     $('[data-testid="modal-backdrop"]')?.remove();
+    const returnFocus = modalReturnFocus;
+    modalReturnFocus = null;
+    if (returnFocus?.isConnected) returnFocus.focus();
   }
 
   // Opens a dialog with a form; onSubmit(FormData) is awaited, API errors are shown in the dialog
   function modal({ title, bodyHtml, submitLabel, submitClass = 'primary', cancelLabel = 'Cancel', onSubmit }) {
     // Only one dialog at a time
     closeModal();
+    modalReturnFocus = document.activeElement;
     const backdrop = document.createElement('div');
     backdrop.className = 'modal-backdrop';
     backdrop.dataset.testid = 'modal-backdrop';
     // Title, a general error slot, the caller's fields, Cancel and (optionally) a submit button
     backdrop.innerHTML = `
-      <div class="modal" role="dialog" aria-modal="true" data-testid="modal">
-        <header data-testid="modal-title">${esc(title)}</header>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1" data-testid="modal">
+        <header id="modal-title" data-testid="modal-title">${esc(title)}</header>
         <form novalidate>
           <div class="body">
             <div class="alert" data-testid="modal-error"></div>
@@ -172,6 +178,29 @@ const App = (() => {
         </form>
       </div>`;
     document.body.appendChild(backdrop);
+    backdrop.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeModal();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusable = Array.from(backdrop.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]),'
+        + ' textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'));
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first) {
+        event.preventDefault();
+        backdrop.querySelector('[role="dialog"]').focus();
+      } else if (event.shiftKey && (document.activeElement === first || !backdrop.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !backdrop.contains(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
     $('[data-testid="modal-cancel"]', backdrop).addEventListener('click', closeModal);
     $('form', backdrop).addEventListener('submit', async (event) => {
       // No page reload: the form is submitted through the API
@@ -198,7 +227,7 @@ const App = (() => {
       }
     });
     // Focus the first field, as a user would expect
-    backdrop.querySelector('input, select')?.focus();
+    (backdrop.querySelector('input, select') || backdrop.querySelector('[role="dialog"]'))?.focus();
     return backdrop;
   }
 

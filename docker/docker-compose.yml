@@ -26,6 +26,10 @@ services:
       target: app
     ports:
       - "127.0.0.1:8081:8081"
+    environment:
+      JAVA_TOOL_OPTIONS: ${DEMO_APP_JAVA_TOOL_OPTIONS:-}
+    volumes:
+      - ../automation/target/container-coverage:/coverage
     healthcheck:
       test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8081'"]
       interval: 2s

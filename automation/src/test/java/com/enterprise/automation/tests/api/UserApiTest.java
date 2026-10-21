@@ -109,14 +109,20 @@ public class UserApiTest extends BaseApiTest {
         UserData user = TestDataFactory.newUser("VIEWER");
         UserResponse created = admin().users().createUser(user);
         registerUserCleanup(created);
-        String token = anonymous().auth().loginAs(new Credentials(user.username(), user.password())).token();
-        ApiSession userSession = ApiSession.withToken(token);
-        expectStatus(userSession.customers().list(null), 200);
+        Credentials credentials = new Credentials(user.username(), user.password());
+        String firstToken = anonymous().auth().loginAs(credentials).token();
+        String secondToken = anonymous().auth().loginAs(credentials).token();
+        assertThat(secondToken).as("each login creates an independent active session").isNotEqualTo(firstToken);
+        ApiSession firstSession = ApiSession.withToken(firstToken);
+        ApiSession secondSession = ApiSession.withToken(secondToken);
+        expectStatus(firstSession.customers().list(null), 200);
+        expectStatus(secondSession.customers().list(null), 200);
 
         expectStatus(admin().users().delete(created.id()), 204);
 
         // The issued bearer token and old credentials both stop working
-        expectStatus(userSession.customers().list(null), 401);
+        expectStatus(firstSession.customers().list(null), 401);
+        expectStatus(secondSession.customers().list(null), 401);
         expectStatus(anonymous().auth().login(Map.of("username", user.username(), "password", user.password())), 401);
     }
 

@@ -103,3 +103,67 @@ Append material decisions with their evidence and trade-offs. Do not record cred
 - **Reason:** Group overlap and data providers change the number of executed test cases, while a count does not establish that a requirement, route/role combination, branch or browser was covered.
 - **Verification:** Root POM, suite XML, workflows and Compose bindings were compared with the updated documentation; `git diff --check` passed. PR Actions run `39443489388` passed all jobs on documentation commit `5284f992c369087f53fc510353a4d30ce4ebd4bc`; final evidence commit `4588e482f19ebc019461fa7d55fa5fed958e3124` also passed all jobs in run `39444011311`.
 - **Trade-off:** Historical runtime observations may remain when dated and labeled as machine-dependent; stale case totals and unsupported claims are removed.
+
+## D-016 - Complete C09–C11 as one Batch E review PR
+
+- **Decision:** After PR #18 merged, create `codex/batch-e-quality-release` from the fetched `origin/main` and keep C09, C10 and C11 in one owner-review PR. Preserve prior batch history and revise only the current execution status.
+- **Reason:** The owner explicitly authorized autonomous completion of the remaining coverage/release scope in one PR, superseding the old Batch D stop checkpoint.
+- **Verification policy:** Establish clean-start suite/tooling baselines before implementation; keep each logical fix independently tested and committed on the same branch; only mark the PR ready after its required checks and final validation reach terminal status. Never merge, enable auto-merge or deploy.
+- **Trade-off:** The PR will be larger than earlier remediation PRs. The coverage matrix and progress log will link each requirement to its own suite and evidence to keep the review traceable.
+
+## D-017 - Serialize order lifecycle transitions and use a stable product lock order
+
+- **Decision:** Lock the order header while changing status or deleting it, condition the transition on its previous state, and verify affected-row counts. Restore stock only for the winning transition, locking order lines by ascending product ID.
+- **Reason:** Concurrent cancellation, deletion or cancellation-plus-deletion could each observe a placed order and restore the same stock twice. Overlapping orders with reversed line order could also acquire product locks in opposite orders.
+- **Verification:** H2 contention tests cover two cancellations, two deletions, a cancellation/deletion race and reversed line order. They assert bounded completion, final status/deletion, order lines and stock. Integration suite passed 28/28 at `7a7b69b`; the PR API/order run `39456674788` passed.
+- **Trade-off:** A losing lifecycle request receives the existing conflict/not-found response after the lock holder commits. Multi-product operations acquire locks in product-ID order, preserving the existing database and transaction design.
+
+## D-018 - Mask screenshot values temporarily and preserve browser failure behavior
+
+- **Decision:** Add temporary opaque visual overlays over visible password inputs and explicitly marked `[data-sensitive]` elements before capture. Do not replace DOM nodes, alter their values or remove their descendants. Remove overlays in `finally`; omit the screenshot if masking, capture or restoration cannot be verified. Log exception classes only so browser diagnostics do not copy page content.
+- **Reason:** Textual Allure redaction does not alter pixels already rendered in a screenshot. Replacing `textContent` on a marked container can destroy nested controls and event handlers, so pixel protection must leave the page content intact.
+- **Verification:** `ScreenshotUtilsTest.masksSensitivePageWithReversibleOverlaysAndRestoresAfterCaptureFailure` checks overlay pixels, original container/control identity and markup, an interactive click handler during masking, restoration after successful and failed capture, and omission when masking setup fails. The test is in `platform`, `smoke` and `regression` groups so PR Chrome smoke and the nightly browser/Grid matrix exercise it. This protects only password and explicitly marked regions; unmarked sensitive pixels are not universally redacted.
+- **Accessibility decision:** Give modal dialogs an accessible title, trap Tab navigation, close with Escape and return focus to the opener. Automated login/customer/checkout checks cover labels, visible focus and dialog behavior; no screen-reader conformance claim is made.
+
+
+## D-019 - Measure Java coverage by module and tested source revision
+
+- **Decision:** Pin JaCoCo 0.8.15, instrument the automation test JVM and both production modules, merge only non-empty artifacts whose manifests identify the same workflow source SHA, then publish separate `demo-app` and `automation` XML/HTML reports. Preserve separate external-container collection for nightly Grid execution.
+- **Reason:** The framework JVM executes demo-app classes during API/integration tests, while the Grid app container is a separate JVM. Treating them as one execution source would miss code or risk mixing revisions.
+- **Verification:** PR CI run `39463151404` verified four same-SHA inputs and real production classes. The tested merge SHA `3cede33dffde81c9459a57ff914248571bf14329` measured demo-app lines 912/975 and branches 262/334; automation lines 1171/1449 and branches 224/378. The report verifier rejects absent classes or empty counters.
+- **Trade-off:** No threshold is set before the requirement denominator and baseline are reviewed. Percentages describe executed production code only and do not imply requirement or browser coverage.
+
+## D-020 - Run CodeQL in the repository workflow with fork-safe upload
+
+- **Decision:** Add a pinned-major CodeQL v4 advanced workflow for Java/Kotlin, extended queries, manual Maven compilation, least-scoped analysis permissions, and avoid result upload for fork pull requests.
+- **Reason:** Repository metadata showed CodeQL default setup was not configured. The workflow makes source analysis part of this PR without changing repository settings or exposing a write token to fork code.
+- **Verification:** C10 CodeQL run `39463151680` passed on `62427b353eb6aba3cc96b3371473c80a0f83b6a5`; final C11 run [39469980683](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39469980683) also passed on the final source, with zero open CodeQL alerts.
+- **Trade-off:** GitHub native secret scanning and push protection are enabled, but their alerts are not a downloadable Actions artifact. Dependabot security updates remain disabled by repository configuration; no settings were changed.
+
+## D-021 - Keep nightly container coverage separate from test-JVM coverage
+
+- **Decision:** Copy the same pinned JaCoCo agent into the demo-app runtime image and attach it only in the Docker/Grid nightly workflow; collect the app process data separately from automation test JVM data, then validate and report module execution on matching source revisions.
+- **Reason:** CI API/integration tests may cover in-process app classes, but a Grid container runs the app in another JVM and cannot write to the automation workspace without an explicit bind mount and agent destination.
+- **Verification:** Docker image build and Compose configuration passed locally; PR coverage passed; final nightly run [39470084784](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39470084784) validated separate Grid/container coverage on source SHA `bc1c1ec87e6c7cb12c68fa6383a2f4134bfdd98e` and stopped the containers successfully.
+- **Trade-off:** The coverage merge is valid only for artifacts produced from the same source revision and compatible JaCoCo format; nightly container execution is reported separately from PR coverage.
+
+## D-022 - Preserve the browser setup exception if cleanup also fails
+
+- **Decision:** When driver configuration fails, retain that setup exception as the thrown failure. Attempt `quit()` and add any cleanup exception as suppressed rather than replacing the original failure.
+- **Reason:** A browser setup error is the actionable cause; a failing quit must not obscure it or make diagnostics misclassify the failure.
+- **Verification:** `DriverFactoryTest.setupFailureRemainsPrimaryWhenQuitAlsoFails` uses a deterministic `WebDriver` proxy whose configuration and quit methods both fail. The unit suite passed 43/43 and the final full suite passed 213/213 at source SHA `bc1c1ec87e6c7cb12c68fa6383a2f4134bfdd98e`; PR CI passed on merge SHA `fdaaab3817c2690d092a80731ef520da00a71ffe`.
+- **Trade-off:** Cleanup remains best-effort after setup failure; the original cause stays primary and the cleanup failure remains available as suppressed diagnostic evidence.
+
+## D-023 - Mask password values in TestNG's retained provider parameters
+
+- **Decision:** Wrap the negative-login provider's password column in `SensitiveValue`, whose `toString()` returns a fixed mask. Unwrap only at the UI call site so the application still receives the original test value.
+- **Reason:** Allure parameter sanitization did not protect the built-in TestNG/Surefire retained result parameters. The final artifact scan confirmed raw negative-login passwords in those reports.
+- **Verification:** `TestDataTest.loginNegativeProviderMasksPasswordsInTestReports` checks every provider row remains a masked object; final unit/UI/full tests pass, and the retained Allure, Surefire and log scan found no checked demo or synthetic credential patterns. PR quality and nightly browser artifacts passed on source SHA `bc1c1ec87e6c7cb12c68fa6383a2f4134bfdd98e`.
+- **Trade-off:** The wrapper deliberately masks its string representation; tests that need to submit the password must explicitly access `value()` at the UI boundary.
+
+## D-024 - Require executed JaCoCo coverage in every production module
+
+- **Decision:** Require positive covered line and branch counts in each module report and in the designated production class (`OrderApi` for `demo-app`, `ApiClient` for `automation`). Add standard-library Python regressions for empty execution, module totals, and designated-class line/branch execution.
+- **Reason:** A report can list production classes and measurable missed counters while recording zero executed code; class presence alone does not prove coverage data belongs to the intended production path.
+- **Verification:** `python -B -m unittest discover -s scripts/tests -v` passed four verifier tests. The strengthened verifier accepted actual local JaCoCo reports generated from the Chrome smoke execution; PR and nightly coverage jobs now run the verifier regressions before checking their reports.
+- **Trade-off:** A module or designated class with no covered branch fails the gate even if lines ran. This is intentional for the current modules, whose designated classes contain branch decisions; no percentage threshold is introduced.

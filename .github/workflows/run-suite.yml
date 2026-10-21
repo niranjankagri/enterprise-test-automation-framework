@@ -42,6 +42,22 @@ jobs:
           -Dbrowser=${{ inputs.browser }}
           -Dheadless=true
           -Dthreads=${{ inputs.threads }}
+          -Dmaven.compiler.failOnWarning=true
+
+      - name: Record tested source revision for coverage
+        if: success()
+        run: printf '%s\n' "$GITHUB_SHA" > automation/target/coverage-source.sha
+
+      - name: Upload JaCoCo execution data
+        if: success()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-${{ inputs.name }}
+          path: |
+            automation/target/jacoco.exec
+            automation/target/coverage-source.sha
+          if-no-files-found: error
+          retention-days: 30
 
       # Always: a failed run is exactly when the evidence is needed
       - name: Upload results

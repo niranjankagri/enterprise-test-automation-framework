@@ -123,4 +123,11 @@ public class ProductApiTest extends BaseApiTest {
 
         assertThat(error.fieldErrors()).containsEntry("sku", "SKU is already in use");
     }
+
+    /** SQL-shaped search text is treated as data and cannot broaden a catalogue query. */
+    public void sqlInjectionShapedSearchIsBoundAsData() {
+        assertThat(products().findProducts(Map.of("search", "' OR '1'='1 --")))
+                .as("search text cannot turn a filter into an always-true SQL predicate")
+                .isEmpty();
+    }
 }

@@ -7,11 +7,18 @@ import com.enterprise.automation.api.services.CustomerService;
 import com.enterprise.automation.data.CleanupRegistry;
 import com.enterprise.automation.data.CustomerData;
 import com.enterprise.automation.data.TestDataFactory;
+import com.enterprise.automation.driver.DriverManager;
 import com.enterprise.automation.tests.base.BaseTest;
 import com.enterprise.automation.tests.base.TestDataProviders;
 import com.enterprise.automation.ui.components.ModalComponent;
 import com.enterprise.automation.ui.pages.CustomerPage;
+import java.util.List;
 import java.util.Map;
+import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.interactions.Actions;
 import org.testng.annotations.Test;
 
 /**
@@ -112,12 +119,57 @@ public class CustomerManagementTest extends BaseTest {
         CustomerPage customers = loginAsAdmin().navigation().openCustomers();
 
         // Fill the form completely, then Cancel instead of Save
+        WebElement addButton = DriverManager.getDriver().findElement(By.cssSelector("[data-testid='add-customer']"));
         ModalComponent form = customers.openAddCustomerForm();
+        WebElement dialog = DriverManager.getDriver().findElement(By.cssSelector("[data-testid='modal']"));
+        WebElement firstField = DriverManager.getDriver().findElement(By.id("field-firstName"));
+        assertThat(dialog.getAttribute("role")).isEqualTo("dialog");
+        assertThat(dialog.getAttribute("aria-modal")).isEqualTo("true");
+        assertThat(dialog.getAttribute("aria-labelledby")).isEqualTo("modal-title");
+        assertThat(DriverManager.getDriver().findElement(By.id("modal-title")).getText()).isEqualTo("Add customer");
+        assertThat(DriverManager.getDriver().switchTo().activeElement()).isEqualTo(firstField);
+        assertThat(((JavascriptExecutor) DriverManager.getDriver()).executeScript(
+                "return [...arguments[0].querySelectorAll('input,select')].every"
+                        + "(field => arguments[0].querySelector(`label[for=\"${field.id}\"]`));", dialog))
+                .isEqualTo(Boolean.TRUE);
+        assertThat(((JavascriptExecutor) DriverManager.getDriver()).executeScript(
+                "return [getComputedStyle(document.activeElement).outlineStyle,"
+                        + "parseFloat(getComputedStyle(document.activeElement).outlineWidth)];"))
+                .as("keyboard focus has a visible outline")
+                .satisfies(value -> {
+                    assertThat((List<?>) value).first().isEqualTo("solid");
+                    assertThat(((Number) ((List<?>) value).get(1)).doubleValue()).isGreaterThanOrEqualTo(1.5);
+                });
+        new Actions(DriverManager.getDriver()).keyDown(Keys.SHIFT).sendKeys(Keys.TAB).keyUp(Keys.SHIFT).perform();
+        assertThat(DriverManager.getDriver().switchTo().activeElement().getAttribute("data-testid"))
+                .isEqualTo("modal-submit");
+        new Actions(DriverManager.getDriver()).sendKeys(Keys.TAB).perform();
+        assertThat(DriverManager.getDriver().switchTo().activeElement()).isEqualTo(firstField);
         CustomerPage.fillForm(form, customer);
         form.cancel();
+        assertThat(DriverManager.getDriver().switchTo().activeElement()).isEqualTo(addButton);
+
+        customers.openAddCustomerForm();
+        new Actions(DriverManager.getDriver()).sendKeys(Keys.ESCAPE).perform();
+        assertThat(DriverManager.getDriver().findElements(By.cssSelector("[data-testid='modal']"))).isEmpty();
+        assertThat(DriverManager.getDriver().switchTo().activeElement()).isEqualTo(addButton);
 
         // Nothing was stored
         assertThat(customers.search(customer.email()).table().isEmpty()).isTrue();
+    }
+
+    /** Customer names containing HTML-shaped input remain literal text in the rendered table. */
+    public void htmlShapedCustomerNameRemainsInertInTheRenderedTable() {
+        String hostileName = "<img src=x onerror=window.__tafXss=1>";
+        CustomerData customer = TestDataFactory.newCustomer().withFirstName(hostileName);
+        registerRemoval(customer);
+        CustomerPage customers = loginAsAdmin().navigation().openCustomers().addCustomer(customer);
+
+        Map<String, String> row = customers.table().row("Email", customer.email());
+        assertThat(row.get("Name")).isEqualTo(customer.fullName());
+        assertThat(DriverManager.getDriver().findElements(By.cssSelector("img[src='x'][onerror]"))).isEmpty();
+        assertThat(((JavascriptExecutor) DriverManager.getDriver()).executeScript("return window.__tafXss || null"))
+                .isNull();
     }
 
     // One run per row of testdata/invalid-customers.csv (the same file drives the API test)

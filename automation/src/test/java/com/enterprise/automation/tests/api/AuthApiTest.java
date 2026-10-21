@@ -88,9 +88,13 @@ public class AuthApiTest extends BaseApiTest {
     /** A token the server never issued is 401. */
     public void invalidTokenGets401() {
         // A well-formed header with a token the server never issued
-        ErrorResponse error = error(expectStatus(ApiSession.withToken("not-a-real-token").customers().list(null), 401));
+        ErrorResponse unknown = error(expectStatus(ApiSession.withToken("not-a-real-token").customers().list(null), 401));
 
-        assertThat(error.message()).isEqualTo("Invalid or expired token");
+        assertThat(unknown.message()).isEqualTo("Invalid or expired token");
+
+        // A malformed token is rejected with the same public response and no parser details.
+        ErrorResponse malformed = error(expectStatus(ApiSession.withToken("%%%not-a-token").customers().list(null), 401));
+        assertThat(malformed.message()).isEqualTo("Invalid or expired token");
     }
 
     /** After logout the same token is rejected. */

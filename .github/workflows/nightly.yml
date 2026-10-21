@@ -44,11 +44,19 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - name: Compile production modules for separate container coverage reporting
+        run: ./mvnw -B -ntp clean package -DskipTests -Dmaven.compiler.failOnWarning=true
       - name: Run the platform with docker compose
         env:
           SUITE: regression
           BROWSER: firefox
           THREADS: "4"
+          DEMO_APP_JAVA_TOOL_OPTIONS: -javaagent:/app/jacocoagent.jar=destfile=/coverage/demo-app.exec,append=false
         run: >
           docker compose -f docker/docker-compose.yml up --build
           --abort-on-container-exit --exit-code-from tests
@@ -63,6 +71,24 @@ jobs:
       - name: Make results readable
         if: always()
         run: sudo chown -R "$(id -u):$(id -g)" automation/target || true
+      - name: Verify external app and Grid test execution data
+        if: success()
+        run: |
+          test -s automation/target/container-coverage/demo-app.exec
+          test -s automation/target/jacoco.exec
+          mkdir -p target/coverage-input/grid-app target/coverage-input/grid-tests
+          cp automation/target/container-coverage/demo-app.exec target/coverage-input/grid-app/jacoco.exec
+          cp automation/target/jacoco.exec target/coverage-input/grid-tests/jacoco.exec
+          printf '%s\n' "$GITHUB_SHA" > target/coverage-input/grid-app/coverage-source.sha
+          printf '%s\n' "$GITHUB_SHA" > target/coverage-input/grid-tests/coverage-source.sha
+          python3 scripts/verify_coverage_inputs.py target/coverage-input "$GITHUB_SHA" 2
+          ./mvnw -B -ntp -N -Dcoverage.merge=true org.jacoco:jacoco-maven-plugin:0.8.15:merge@merge-coverage-artifacts
+          cp target/jacoco-merged.exec demo-app/target/jacoco.exec
+          cp target/jacoco-merged.exec automation/target/jacoco.exec
+          ./mvnw -B -ntp -pl demo-app org.jacoco:jacoco-maven-plugin:0.8.15:report
+          ./mvnw -B -ntp -pl automation org.jacoco:jacoco-maven-plugin:0.8.15:report
+          python3 -m unittest discover -s scripts/tests -v
+          python3 scripts/verify_jacoco_reports.py
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v7
@@ -73,6 +99,18 @@ jobs:
             automation/target/screenshots
             automation/target/logs
           if-no-files-found: warn
+      - name: Upload Docker/Grid Java coverage
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-grid-${{ github.sha }}
+          path: |
+            automation/target/container-coverage/demo-app.exec
+            automation/target/jacoco.exec
+            demo-app/target/site/jacoco
+            automation/target/site/jacoco
+          if-no-files-found: warn
+          retention-days: 30
 
   report:
     name: Report
