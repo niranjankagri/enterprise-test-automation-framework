@@ -185,6 +185,23 @@ public class CustomerManagementTest extends BaseTest {
         // The API's message for that field appears under it, and the form stays open
         assertThat(form.fieldError(field)).as(testCase).isEqualTo(error);
         assertThat(form.isDisplayed()).as("form stays open").isTrue();
+        WebElement invalidField = DriverManager.getDriver().findElement(By.id("field-" + field));
+        assertThat(invalidField.getAttribute("aria-invalid")).as("invalid control is identified").isEqualTo("true");
+        assertThat(invalidField.getAttribute("aria-describedby")).contains("error-" + field);
+        assertThat(DriverManager.getDriver().findElement(By.id("error-" + field)).getAttribute("role"))
+                .isEqualTo("alert");
+        assertThat(DriverManager.getDriver().switchTo().activeElement()).as("focus moves to the first invalid field")
+                .isEqualTo(invalidField);
+    }
+
+    /** The customer list and add-customer dialog pass the selected automated axe rules. */
+    @Test(groups = "smoke")
+    public void customerListAndFormHaveNoAxeViolations() {
+        CustomerPage customers = loginAsAdmin().navigation().openCustomers();
+        AccessibilityAssertions.pageHasNoViolations(DriverManager.getDriver(), "customer list");
+
+        customers.openAddCustomerForm();
+        AccessibilityAssertions.pageHasNoViolations(DriverManager.getDriver(), "add-customer dialog");
     }
 
     /** An email already in use is rejected in the form. */

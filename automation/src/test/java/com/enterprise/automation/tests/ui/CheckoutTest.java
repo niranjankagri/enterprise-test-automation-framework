@@ -4,9 +4,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.enterprise.automation.data.OrderData;
 import com.enterprise.automation.data.TestDataFactory;
+import com.enterprise.automation.driver.DriverManager;
 import com.enterprise.automation.tests.base.BaseTest;
 import com.enterprise.automation.ui.pages.CheckoutPage;
 import com.enterprise.automation.ui.pages.ProductPage;
+import java.util.List;
+import org.openqa.selenium.By;
+import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.interactions.Actions;
 import org.testng.annotations.Test;
 
 /**
@@ -77,5 +83,27 @@ public class CheckoutTest extends BaseTest {
         // A viewer may fill a cart but not place the order
         assertThat(checkout.cart().column("Product")).containsExactly("Wireless Mouse");
         assertThat(checkout.canPlaceOrder()).as("read-only role").isFalse();
+    }
+
+    /** Checkout accessible names pass axe and its quantity/remove controls remain keyboard reachable. */
+    @Test(groups = "smoke")
+    public void checkoutHasNoAxeViolationsAndKeyboardFocusIsVisible() {
+        CheckoutPage checkout = loginAsAdmin().navigation().openProducts().addToCart("Wireless Mouse")
+                .header().openCart();
+        AccessibilityAssertions.pageHasNoViolations(DriverManager.getDriver(), "checkout with a cart line");
+
+        WebElement quantity = DriverManager.getDriver().findElement(By.cssSelector("[data-testid='quantity']"));
+        quantity.click();
+        new Actions(DriverManager.getDriver()).sendKeys(Keys.TAB).perform();
+        WebElement focused = DriverManager.getDriver().switchTo().activeElement();
+        assertThat(focused.getAttribute("data-testid")).isEqualTo("remove");
+        assertThat(((List<?>) ((org.openqa.selenium.JavascriptExecutor) DriverManager.getDriver()).executeScript(
+                "return [getComputedStyle(document.activeElement).outlineStyle,"
+                        + "parseFloat(getComputedStyle(document.activeElement).outlineWidth)];")))
+                .satisfies(style -> {
+                    assertThat(style).first().isEqualTo("solid");
+                    assertThat(((Number) style.get(1)).doubleValue()).isGreaterThanOrEqualTo(1.5);
+                });
+        assertThat(checkout.canPlaceOrder()).isTrue();
     }
 }

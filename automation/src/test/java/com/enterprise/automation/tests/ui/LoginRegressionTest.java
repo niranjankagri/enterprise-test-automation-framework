@@ -38,6 +38,14 @@ public class LoginRegressionTest extends BaseTest {
         String actual = "form".equals(expectedField) ? login.errorMessage() : login.fieldError(expectedField);
         assertThat(actual).as(testCase).isEqualTo(expectedMessage);
         assertThat(login.currentUrl()).as("still on the login page").contains("/login.html");
+        if (!"form".equals(expectedField)) {
+            WebElement field = DriverManager.getDriver().findElement(org.openqa.selenium.By.id(expectedField));
+            assertThat(field.getAttribute("aria-invalid")).as("invalid login field is identified").isEqualTo("true");
+            assertThat(field.getAttribute("aria-describedby")).contains(expectedField + "-error");
+            assertThat(DriverManager.getDriver().findElement(
+                    org.openqa.selenium.By.id(expectedField + "-error")).getAttribute("role")).isEqualTo("alert");
+            assertThat(DriverManager.getDriver().switchTo().activeElement()).isEqualTo(field);
+        }
     }
 
     // Method-level groups are added to the class-level ones (ui, regression + sanity)
@@ -59,6 +67,7 @@ public class LoginRegressionTest extends BaseTest {
     }
 
     /** Login controls have associated labels and remain reachable with visible keyboard focus. */
+    @Test(groups = "smoke")
     public void loginFieldsHaveLabelsAndKeyboardFocus() {
         openLoginPage();
         WebDriver driver = DriverManager.getDriver();
@@ -82,6 +91,7 @@ public class LoginRegressionTest extends BaseTest {
                     assertThat((List<?>) value).first().isEqualTo("solid");
                     assertThat(((Number) ((List<?>) value).get(1)).doubleValue()).isGreaterThanOrEqualTo(1.5);
                 });
+        AccessibilityAssertions.pageHasNoViolations(driver, "login page");
     }
 
     /** A deleted account's browser token is cleared and a useful reauthentication message is shown. */

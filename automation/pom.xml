@@ -86,6 +86,24 @@
             <artifactId>demo-app</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Pinned axe-core rules for repeatable accessibility checks in the existing Selenium tests. -->
+        <dependency>
+            <groupId>com.deque.html.axe-core</groupId>
+            <artifactId>selenium</artifactId>
+            <version>4.13.0</version>
+            <scope>test</scope>
+            <exclusions>
+                <!-- Use the framework's pinned Selenium and driver lifecycle instead of the helper defaults. -->
+                <exclusion>
+                    <groupId>org.seleniumhq.selenium</groupId>
+                    <artifactId>selenium-java</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.github.bonigarcia</groupId>
+                    <artifactId>webdrivermanager</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
 
     <build>

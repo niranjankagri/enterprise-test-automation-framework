@@ -165,7 +165,7 @@ const App = (() => {
     // Title, a general error slot, the caller's fields, Cancel and (optionally) a submit button
     backdrop.innerHTML = `
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1" data-testid="modal">
-        <header id="modal-title" data-testid="modal-title">${esc(title)}</header>
+        <h2 id="modal-title" class="modal-title" data-testid="modal-title">${esc(title)}</h2>
         <form novalidate>
           <div class="body">
             <div class="alert" data-testid="modal-error"></div>
@@ -207,7 +207,12 @@ const App = (() => {
       event.preventDefault();
       const submit = $('[data-testid="modal-submit"]', backdrop);
       // Clear the messages of a previous attempt
-      backdrop.querySelectorAll('.field-error').forEach((e) => { e.textContent = ''; });
+      backdrop.querySelectorAll('.field-error').forEach((e) => {
+        e.textContent = '';
+        const control = Array.from(backdrop.querySelectorAll('[name]'))
+          .find((field) => field.getAttribute('aria-describedby') === e.id);
+        control?.removeAttribute('aria-invalid');
+      });
       $('[data-testid="modal-error"]', backdrop).textContent = '';
       // Prevent double submission while the call runs
       submit.disabled = true;
@@ -217,13 +222,22 @@ const App = (() => {
       } catch (error) {
         // Validation errors go under their fields (error-<field>) ...
         const fields = error.fieldErrors || {};
+        const invalidControls = [];
         Object.entries(fields).forEach(([name, message]) => {
           const slot = $(`[data-testid="error-${name}"]`, backdrop);
-          if (slot) slot.textContent = message;
+          if (slot) {
+            slot.textContent = message;
+            const control = Array.from(backdrop.querySelectorAll('[name]')).find((field) => field.name === name);
+            if (control) {
+              control.setAttribute('aria-invalid', 'true');
+              invalidControls.push(control);
+            }
+          }
         });
         // ... any other error goes to the general slot at the top
         if (Object.keys(fields).length === 0) $('[data-testid="modal-error"]', backdrop).textContent = error.message;
         submit.disabled = false;
+        invalidControls[0]?.focus();
       }
     });
     // Focus the first field, as a user would expect
@@ -235,11 +249,13 @@ const App = (() => {
   function field({ name, label, type = 'text', value = '', options }) {
     const id = 'field-' + name;
     // A select when options are given, a text input otherwise
+    const errorId = `error-${name}`;
     const control = options
-      ? `<select id="${id}" name="${name}">${options.map((o) =>
+      ? `<select id="${id}" name="${name}" aria-describedby="${errorId}">${options.map((o) =>
           `<option value="${esc(o.value)}" ${String(o.value) === String(value) ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}</select>`
-      : `<input id="${id}" name="${name}" type="${type}" value="${esc(value)}">`;
-    return `<div class="field"><label for="${id}">${esc(label)}</label>${control}<div class="field-error" data-testid="error-${name}"></div></div>`;
+      : `<input id="${id}" name="${name}" type="${type}" value="${esc(value)}" aria-describedby="${errorId}">`;
+    return `<div class="field"><label for="${id}">${esc(label)}</label>${control}`
+      + `<div id="${errorId}" class="field-error" role="alert" data-testid="error-${name}"></div></div>`;
   }
 
   /* ---------- tables ---------- */
