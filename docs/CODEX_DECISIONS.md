@@ -187,3 +187,10 @@ Append material decisions with their evidence and trade-offs. Do not record cred
 - **Reason:** A focused scan exposed an unnamed checkout table header and a duplicate banner landmark in the customer dialog. The existing form flows also needed linked validation messages, an explicit invalid state and visible focus for interactive controls.
 - **Verification:** PR #21 head `44b9fa7565ad12ab3d39f53c35bce90801ab6401` passed Chrome smoke 44/44 and all other PR checks in run [39543851318](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39543851318); CodeQL [39543851259](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39543851259) passed. The full local UI suite passed 66/66 at implementation SHA `12cfbbbbd3cb14a77e43a0a7ba813fbac4f072e4`.
 - **Limit:** These automated checks cover named page states and axe rules; manual screen-reader assessment was not performed and is not implied.
+
+## D-028 - Keep malformed URL values out of configuration diagnostics
+
+- **Decision:** Report the configuration key and a concise URL validation error, but do not append the supplied URL or retain the URI parser exception as a cause.
+- **Reason:** Java URI parsing can include the full invalid input in its message; configured URLs may contain userinfo and sensitive query values. The key-specific diagnostic remains actionable without copying untrusted values into logs or reports.
+- **Verification:** `ConfigLoaderTest.invalidUrlDiagnosticDoesNotExposeCredentialsOrQueryValues` checks every cause message using synthetic values. H04 unit passed 45/45 and PR CI [39545017249](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39545017249), CodeQL [39545017051](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39545017051) passed at PR head `ad1e20fbc484c02e28c3d2a41ba59efb98f1c1f3`.
+- **Trade-off:** The low-level URI parser detail is omitted to prevent secret retention; the configuration key and invalid-URL cause category remain visible.
