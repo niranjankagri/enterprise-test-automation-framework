@@ -97,6 +97,8 @@ CheckoutPage checkout = loginAsAdmin().navigation().openProducts()
 assertThat(checkout.total()).isEqualTo("$49.00");
 ```
 
+Accessibility: `AccessibilityAssertions` runs axe-core (WCAG 2.0/2.1/2.2 A and AA rules plus best practices) inside the existing Selenium tests on the login page, dashboard navigation, the customer list and add-customer dialog, and checkout; the checkout test also checks that keyboard focus is visible.
+
 ## API automation
 
 `Test → ApiSession → Service → ApiClient → REST API`. Raw responses for status/header/error checks, typed records for happy paths, strict JSON schemas, bearer tokens per account.
@@ -107,6 +109,24 @@ ErrorResponse error = ApiAssertions.error(expectStatus(ApiSession.viewer().custo
 ```
 
 Mapped API tests exercise examples across GET/POST/PUT/PATCH/DELETE, response statuses, headers, payloads, authentication, authorization, validation and business rules (stock, order status flow). See the [coverage matrix](docs/TEST_COVERAGE_MATRIX.md) for route-level evidence and known gaps.
+
+### Transport, session and request bounds
+
+API connection/read timeouts default to 5000/30000 ms. Override with
+`-Dapi.connect.timeout.millis` / `-Dapi.read.timeout.millis`, or the equivalent
+`API_CONNECT_TIMEOUT_MILLIS` / `API_READ_TIMEOUT_MILLIS` environment variables.
+They are independent of browser waits. `ApiClient.forEndpoint` supports isolated
+service fixtures with positive explicit transport timeouts.
+
+`ApiSession` reuses tokens only until expiry and scopes them to endpoint and
+credentials. After logout, role changes or external app restart, call
+`ApiSession.forgetToken(username)` or `clearTokens()`. The local app lifecycle clears
+cached tokens. Automatic replay of writes after authentication failure is deliberately
+not performed. Role changes revoke existing server sessions; sign in again.
+
+Customer PATCH preserves absent fields and clears phone/city for explicit JSON null.
+Request bodies are bounded at 1 MiB; orders at 1000 lines. SQL bound parameters are
+redacted from evidence; use parameterized SQL, never untrusted concatenated fragments.
 
 ## Database validation
 
@@ -181,17 +201,23 @@ Not implemented by decision: `-Dexecution=cloud` fails fast with a clear message
 
 | Pipeline | Trigger | Runs |
 |---|---|---|
-| CI | pull request | compile (warnings = errors), Checkstyle, Allure failure verifier, unit tests → API regressions and Chrome smoke; dependency review; report |
+| CI | pull request | compile (warnings = errors), Checkstyle, Allure failure verifier, unit tests → API regressions, database/order integration and Chrome smoke → merged JaCoCo coverage report; dependency review; report |
 | Main | push to main | build → API → UI → smoke on Edge → report |
-| Nightly | daily + manual | full suite (Chrome), regression (Firefox, Edge), regression on Docker + Grid → report |
+| Nightly | daily + manual (+ PRs labelled `full-validation`) | full suite (Chrome), regression (Firefox, Edge), regression on Docker + Grid with JaCoCo coverage of the containerised app → report |
+| CodeQL | push, pull request, weekly | static security analysis of the Java code |
 
 <img src="docs/images/ci-nightly.png" alt="Nightly run: every job green, including Docker + Selenium Grid" width="60%">
 
 [docs/ci-cd.md](docs/ci-cd.md).
 
+CI/container browser execution sets `SE_AVOID_STATS=true` to disable Selenium Manager
+telemetry. For a local browser run, set the same environment variable before Maven.
+Add the `full-validation` PR label to execute the existing full browser/Grid Nightly
+workflow on that PR revision. Scheduled and manual Nightly runs remain unchanged.
+
 ## Quality gates
 
-Compilation without warnings (CI), Checkstyle (no sleeps, no implicit waits, no empty catch, no unused imports...), all tests green, no new high-severity vulnerable dependency (dependency review on every PR), Dependabot security alerts and grouped weekly updates.
+Compilation without warnings (CI), Checkstyle (no sleeps, no implicit waits, no empty catch, no unused imports...), all tests green, no new high-severity vulnerable dependency (dependency review on every PR), Dependabot security alerts and grouped weekly updates, CodeQL analysis. JaCoCo coverage is merged from the unit, API, integration and smoke jobs; the merge step fails if any input is missing or comes from another commit, and the report check fails if production classes were not executed. `main` is protected by a ruleset: changes reach it only through a pull request whose required quality-gate check passed.
 
 ## Security
 
@@ -252,7 +278,7 @@ Test pyramid with the bulk at API level, UI for what only the UI shows, cross-la
 - BrowserStack/LambdaTest execution target.
 - Publishing the Allure report with history to GitHub Pages.
 - Contract tests (OpenAPI) and performance smoke tests (k6/Gatling) in the nightly run.
-- Visual and accessibility checks (axe) on key pages.
+- Visual comparison checks on key pages (axe accessibility checks are already in place, see UI automation).
 - PostgreSQL for the application in Docker, to validate against a production-like database.
 
 ## Documentation
@@ -264,27 +290,3 @@ Topic documents: [Architecture](docs/architecture.md) · [Framework design](docs
 ## License
 
 [MIT](LICENSE)
-
-
-### Transport, session and request bounds
-
-API connection/read timeouts default to 5000/30000 ms. Override with
-`-Dapi.connect.timeout.millis` / `-Dapi.read.timeout.millis`, or the equivalent
-`API_CONNECT_TIMEOUT_MILLIS` / `API_READ_TIMEOUT_MILLIS` environment variables.
-They are independent of browser waits. `ApiClient.forEndpoint` supports isolated
-service fixtures with positive explicit transport timeouts.
-
-`ApiSession` reuses tokens only until expiry and scopes them to endpoint and
-credentials. After logout, role changes or external app restart, call
-`ApiSession.forgetToken(username)` or `clearTokens()`. The local app lifecycle clears
-cached tokens. Automatic replay of writes after authentication failure is deliberately
-not performed. Role changes revoke existing server sessions; sign in again.
-
-Customer PATCH preserves absent fields and clears phone/city for explicit JSON null.
-Request bodies are bounded at 1 MiB; orders at 1000 lines. SQL bound parameters are
-redacted from evidence; use parameterized SQL, never untrusted concatenated fragments.
-
-CI/container browser execution sets `SE_AVOID_STATS=true` to disable Selenium Manager
-telemetry. For a local browser run, set the same environment variable before Maven.
-Add the `full-validation` PR label to execute the existing full browser/Grid Nightly
-workflow on that PR revision. Scheduled and manual Nightly runs remain unchanged.
