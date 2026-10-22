@@ -20,7 +20,7 @@ COPY automation/src automation/src
 RUN mvn -B -q -DskipTests package \
     && mvn -B -q -DskipTests test-compile
 
-FROM eclipse-temurin:17.0.20.1_1-jre-noble@sha256:07fa0356cf354c5252947575f42ed42aa6fd921f36438b7bc77ad81c31c537dd AS app
+FROM eclipse-temurin:24.0.2_12-jre-noble@sha256:b416d02335e702b0403ff280de9475a3348e29382285969c9d4e17862ce632e7 AS app
 WORKDIR /app
 COPY --from=build /workspace/demo-app/target/demo-app.jar ./demo-app.jar
 # Keep this runtime agent version aligned with jacoco-maven-plugin.version in the parent POM.
