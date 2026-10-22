@@ -90,7 +90,7 @@
         <dependency>
             <groupId>com.deque.html.axe-core</groupId>
             <artifactId>selenium</artifactId>
-            <version>4.13.0</version>
+            <version>4.14.0</version>
             <scope>test</scope>
             <exclusions>
                 <!-- Use the framework's pinned Selenium and driver lifecycle instead of the helper defaults. -->
