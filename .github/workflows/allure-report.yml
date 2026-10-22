@@ -33,7 +33,7 @@ jobs:
           node-version: "20"
 
       - name: Generate report
-        run: npx -y allure-commandline generate allure-results -o allure-report --clean
+        run: npx -y allure-commandline@2.46.1 generate allure-results -o allure-report --clean
 
       - name: Upload report
         uses: actions/upload-artifact@v7

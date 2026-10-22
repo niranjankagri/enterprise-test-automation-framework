@@ -40,6 +40,8 @@ public record TestConfig(
         int windowHeight,
         Duration explicitWait,
         Duration pageLoadTimeout,
+        int apiConnectTimeoutMillis,
+        int apiReadTimeoutMillis,
         boolean appAutostart,
         Credentials admin,
         Credentials viewer,

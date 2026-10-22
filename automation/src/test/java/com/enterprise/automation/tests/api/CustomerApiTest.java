@@ -207,4 +207,17 @@ public class CustomerApiTest extends BaseApiTest {
         assertThat(error(expectStatus(admin().client().put("/customers", Map.of()), 405)).error())
                 .isEqualTo("Method Not Allowed");
     }
+    /** Missing PATCH fields preserve state, while explicit nulls clear nullable fields. */
+    public void explicitNullPatchClearsOptionalFields() {
+        CustomerResponse customer = givenCustomer(TestDataFactory.newCustomer());
+        Map<String, Object> clear = new HashMap<>();
+        clear.put("phone", null);
+        clear.put("city", null);
+        expectStatus(customers().update(customer.id(), clear), 200);
+        CustomerResponse stored = customers().getCustomer(customer.id());
+        assertThat(stored.phone()).isNull();
+        assertThat(stored.city()).isNull();
+        assertThat(stored.email()).isEqualTo(customer.email());
+    }
+
 }

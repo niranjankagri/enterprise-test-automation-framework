@@ -210,3 +210,24 @@ See [CODEX_HARDENING_ROADMAP.md](CODEX_HARDENING_ROADMAP.md) for H03-H06 scope a
 | H06-BROWSER-01 | Full Chrome, Firefox, Edge and Docker/Grid regressions pass; Grid app coverage and cleanup are verified. | Critical | Nightly browser/Grid workflow | Browser/deployment | Nightly [39550266187](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39550266187) | `1cc3004fb0968bda9fdb5d393f2d1dd1dbb96705` | VERIFIED: Chrome 233, Firefox 174, Edge 174, Grid 174; zero failures/errors/skips | Browser execution is evidence for the exercised suites, not exhaustive browser behavior. |
 | H06-JACOCO-01 | App and framework production classes have same-run executed lines/branches; designated production classes are exercised. | Medium | `scripts/verify_jacoco_reports.py`; four Python verifier regressions | Build/coverage | PR coverage merge and Nightly Grid | `1cc3004fb0968bda9fdb5d393f2d1dd1dbb96705` | VERIFIED; see `RELEASE_READINESS.md` for per-module line/branch counts | Test-JVM and external container captures remain separate; no arbitrary threshold is imposed. |
 | SEC-CQL-03 | Typed password text does not enter `ElementActions` log events or Allure step/failure details. | High | `LoginRegressionTest.typedPasswordsAreOmittedFromLogsAndReportSteps`; `ReportRedactionTest.apiAndUiEvidenceRedactsUrlSecretsBeforeAllurePersistsThem`; `scripts/verify_allure_failure_redaction.py` | UI/reporting | Chrome smoke + pure unit + persisted verifier | `71498df9ef4be011178b312a00b0ef078f6bf337` | VERIFIED locally: unit 46/46, Chrome smoke 47/47, persisted verifier passed; zero failures/errors/skips | PR CI [39558201952](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39558201952), CodeQL [39558201940](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/runs/39558201940) passed on review head `38c7645565002ab1c5e47efcf72883bd5f06cd76`. Alert remains open; synthetic markers only. |
+
+
+## Final audit regression additions (single PR)
+
+| ID | Behavior | Evidence | Status |
+|---|---|---|---|
+| F01 | Oversized product IDs do not wrap; item limits preserve stock/orders | OrderApiTest.overflowingProductIdsAreRejectedWithoutStateChanges; orderItemLimitIsRejectedBeforeWrites | Local API passed |
+| F02 | Explicit null clears nullable customer fields | CustomerApiTest.explicitNullPatchClearsOptionalFields | Local API passed |
+| F03 | Concurrent duplicate creation returns 201/409; independent PATCH values survive | FinalHardeningApiTest duplicate and patch races | Local API passed |
+| F04 | Role demotion revokes existing sessions | UserApiTest.roleDemotionRevokesEveryExistingAdminSession | Local API passed |
+| F05 | Bounded client transport and immutable configuration | ApiTransportTimeoutTest; ConfigLoaderTest.apiTransportTimeoutsHaveDefaultsAndRejectInvalidValues | Local API/unit passed |
+| F06 | Token expiry, identity/endpoint scope and explicit invalidation | SessionTokenCacheTest | Local unit passed |
+| F07 | Bound database values stay out of retained diagnostics | DatabaseEvidenceTest | Local unit passed |
+| F08 | Oversized request has no write; OpenAPI records bounds | FinalHardeningApiTest.oversizedRequestIsRejectedWithoutCreatingARecord; OpenApiLimitsTest | Local API/unit passed |
+| F09 | Session 101 evicts the oldest live session; newest expires exactly at its deadline | AuthServiceExpiryTest.tokensExpireAtTheirDeadlineAndSessionCapacityIsBounded | Local API 93/93 passed |
+
+Final per-head integration/browser/Grid counts and run links are maintained in
+[PR #24](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/24).
+Focused DatabaseLayerTest: 15/15 passed; constraint failures retain SQLState class
+235 without an unsafe driver cause. No constraints or browser tests are skipped.
+These additions do not claim exhaustive branch or production security coverage.

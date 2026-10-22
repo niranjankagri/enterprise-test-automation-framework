@@ -9,6 +9,7 @@
 <configuration>
     <!-- %maskedMsg: the message with passwords, tokens and other secrets replaced by **** -->
     <conversionRule conversionWord="maskedMsg" class="com.enterprise.automation.reporting.MaskingConverter"/>
+    <conversionRule conversionWord="maskedEx" class="com.enterprise.automation.reporting.MaskedThrowableConverter"/>
     <!-- %component: the framework layer that logged (UI, API, DB, DRIVER, CONFIG, DATA, TEST, APP...) -->
     <conversionRule conversionWord="component" class="com.enterprise.automation.reporting.ComponentConverter"/>
 
@@ -19,7 +20,7 @@
             <level>INFO</level>
         </filter>
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %-5level [%thread] [%X{test:--}] [%component] %maskedMsg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} %-5level [%thread] [%X{test:--}] [%component] %maskedMsg%n%maskedEx</pattern>
         </encoder>
     </appender>
 
@@ -28,7 +29,7 @@
         <append>false</append>
         <encoder>
             <!-- %X{test}: the test that wrote the line (set by TestLogContextListener), essential in parallel runs -->
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [%X{test:--}] [%component] %logger{36} - %maskedMsg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [%X{test:--}] [%component] %logger{36} - %maskedMsg%n%maskedEx</pattern>
         </encoder>
     </appender>
 

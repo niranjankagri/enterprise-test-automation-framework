@@ -74,6 +74,8 @@ public final class ConfigLoader {
                 resolver.positiveInt(ConfigKey.WINDOW_HEIGHT),
                 Duration.ofSeconds(resolver.positiveInt(ConfigKey.TIMEOUT_EXPLICIT_SECONDS)),
                 Duration.ofSeconds(resolver.positiveInt(ConfigKey.TIMEOUT_PAGE_LOAD_SECONDS)),
+                resolver.positiveInt(ConfigKey.API_CONNECT_TIMEOUT_MILLIS),
+                resolver.positiveInt(ConfigKey.API_READ_TIMEOUT_MILLIS),
                 resolver.booleanValue(ConfigKey.APP_AUTOSTART),
                 new Credentials(resolver.required(ConfigKey.ADMIN_USERNAME), resolver.required(ConfigKey.ADMIN_PASSWORD)),
                 new Credentials(resolver.required(ConfigKey.VIEWER_USERNAME), resolver.required(ConfigKey.VIEWER_PASSWORD)),

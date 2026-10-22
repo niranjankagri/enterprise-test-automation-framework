@@ -126,7 +126,17 @@ public final class AuthService {
                     // Remember who the token belongs to and until when it is valid
                     Session session = new Session(username, rs.getString("full_name"), rs.getString("role"),
                             clock.instant().plus(tokenLifetime));
-                    sessions.put(token, session);
+                    sessions.entrySet().removeIf(entry -> !entry.getValue().expiresAt().isAfter(clock.instant()));
+                    // Bound abandoned sessions without introducing a scheduled thread into the demo lifecycle.
+                    synchronized (sessions) {
+                        long count = sessions.values().stream().filter(value -> value.username().equals(username)).count();
+                        if (count >= 100) {
+                            sessions.entrySet().stream().filter(entry -> entry.getValue().username().equals(username))
+                                    .min(java.util.Comparator.comparing(entry -> entry.getValue().expiresAt()))
+                                    .ifPresent(entry -> sessions.remove(entry.getKey()));
+                        }
+                        sessions.put(token, session);
+                    }
 
                     // Login response: the token plus the user's display data for the UI header
                     Map<String, Object> result = new LinkedHashMap<>();
@@ -192,6 +202,48 @@ public final class AuthService {
                 sessions.entrySet().removeIf(entry -> entry.getValue().username().equals(username));
             }
             return deleted;
+        } finally {
+            accountLifecycle.writeLock().unlock();
+        }
+    }
+
+    /** Role changes invalidate old privileges immediately; in-flight authorized requests may finish. */
+    public void updateUser(long id, String fullName, String role) throws SQLException {
+        accountLifecycle.writeLock().lock();
+        try (Connection connection = database.connect()) {
+            connection.setAutoCommit(false);
+            try {
+                String username;
+                String oldRole;
+                String oldName;
+                try (PreparedStatement select = connection.prepareStatement(
+                        "SELECT username, role, full_name FROM app_users WHERE id = ? FOR UPDATE")) {
+                    select.setLong(1, id);
+                    try (ResultSet row = select.executeQuery()) {
+                        if (!row.next()) {
+                            throw ApiException.notFound("User", id);
+                        }
+                        username = row.getString("username");
+                        oldRole = row.getString("role");
+                        oldName = row.getString("full_name");
+                    }
+                }
+                String newRole = role == null ? oldRole : role;
+                try (PreparedStatement update = connection.prepareStatement(
+                        "UPDATE app_users SET full_name = ?, role = ? WHERE id = ?")) {
+                    update.setString(1, fullName == null ? oldName : fullName);
+                    update.setString(2, newRole);
+                    update.setLong(3, id);
+                    update.executeUpdate();
+                }
+                connection.commit();
+                if (!oldRole.equals(newRole)) {
+                    sessions.entrySet().removeIf(entry -> entry.getValue().username().equals(username));
+                }
+            } catch (SQLException | RuntimeException failure) {
+                connection.rollback();
+                throw failure;
+            }
         } finally {
             accountLifecycle.writeLock().unlock();
         }

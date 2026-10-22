@@ -213,3 +213,45 @@ gh workflow run "Nightly regression" --ref main
 ```
 
 When dispatched on `main`, the nightly workflow uses the existing Chrome/Firefox/Edge and Docker/Selenium Grid provisioning, produces source-stamped coverage inputs and runs container cleanup. Review the linked main run before treating any local rerun as a replacement for post-merge CI evidence.
+
+
+## Final correctness hardening — 2026-10-21
+
+Owner-authorized single PR on `codex/final-correctness-hardening`, based on main
+`1df5ec4b5e308aab43239dba94c8eead5b0c98fb`. This extends completed C/H history.
+
+Implemented: range-safe positive order IDs; 1 MiB request and 1000-item limits;
+explicit-null customer PATCH (including preservation of null map entries in the
+framework serializer); database-enforced case-insensitive customer email uniqueness;
+SQLState conflict translation; row-locked read-modify-write customer/product updates;
+role-change session revocation coordinated with login; abandoned-session expiry and
+100-session-per-account bound; expiry/endpoint/credential-scoped client token caching
+with explicit lifecycle invalidation; configurable bounded API transport; SQL parameter
+and driver-error redaction with masked stack diagnostics; OpenAPI numeric limits;
+pinned Selenium release, Docker base digests and Allure CLI, plus Docker Dependabot.
+
+Local checks: unit 51/51 and API 93/93 passed with Checkstyle 0 and compiler warnings
+as errors (Java 17). The read-timeout regression uses a gated loopback handler.
+Browser validation is delegated to PR CI and the `full-validation` label's existing
+Nightly workflow. Local smoke was blocked by automatic approval review because
+Selenium Manager attempted external telemetry. Supported `SE_AVOID_STATS=true` is
+now set for CI/container browser execution; no telemetry authorization is assumed.
+Docker is not installed locally, so container execution must be verified remotely.
+The focused database class passed 15/15 with exit 0 using a temporary suite containing
+`DatabaseLayerTest`; the temporary suite was removed. Its constraint assertions now
+verify SQLState class 235 and the absence of an unsafe driver cause. Initial remote
+CI/browser/Grid runs exposed those two obsolete cause assertions; they were corrected,
+not skipped. The final API rerun passed 93/93 (exit 0), including the isolated
+`AuthServiceExpiryTest.tokensExpireAtTheirDeadlineAndSessionCapacityIsBounded`
+regression: login 101 evicts the oldest live session, preserves the newest, and an
+adjustable clock proves exact deadline expiry without sleeping.
+
+The single deliverable is [PR #24](https://github.com/niranjankagri/enterprise-test-automation-framework/pull/24).
+Its description and per-head checks provide final remote run links and counts for
+CI, CodeQL and full Chrome/Firefox/Edge/Docker Grid. The `full-validation` label
+reruns that matrix on each PR synchronization. Owner review is the merge gate;
+no merge, deployment or release is performed by this work. Existing alert #3's
+owner disposition and manual screen-reader/pixel-redaction limitations remain as
+documented; passing suites do not establish exhaustive production security.
+The owner's existing Desktop memory file is unavailable in this environment and
+was not recreated; durable implementation and evidence remain in this repository/PR.

@@ -29,6 +29,10 @@ public final class JsonMapper {
             // null request fields are left out, e.g. a customer without phone
             .setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
 
+    // Explicit map entries represent PATCH intent; unlike optional DTO properties, null map values must survive.
+    private static final ObjectMapper MAP_MAPPER = MAPPER.copy()
+            .setDefaultPropertyInclusion(JsonInclude.Include.ALWAYS);
+
     // Static helpers only
     private JsonMapper() {
     }
@@ -36,7 +40,7 @@ public final class JsonMapper {
     /** Object (record, map) -> JSON text. */
     public static String toJson(Object value) {
         try {
-            return MAPPER.writeValueAsString(value);
+            return (value instanceof java.util.Map<?, ?> ? MAP_MAPPER : MAPPER).writeValueAsString(value);
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("Cannot serialize " + value, e);
         }

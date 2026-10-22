@@ -310,4 +310,25 @@ public class OrderApiTest extends BaseApiTest {
                 .as("no order line was committed").isZero();
         assertThat(database.stockOf(highPrice.sku())).as("the failed transaction leaves stock unchanged").isEqualTo(101);
     }
+    /** A product ID must not wrap to a real product during long conversion. */
+    public void overflowingProductIdsAreRejectedWithoutStateChanges() {
+        String oversized = java.math.BigInteger.ONE.shiftLeft(64)
+                .add(java.math.BigInteger.valueOf(product().id())).toString();
+        String body = "{\"customerId\":" + customer().id() + ",\"items\":[{\"productId\":"
+                + oversized + ",\"quantity\":1}]}";
+        ErrorResponse failure = expectInvalidOrder(body);
+        assertThat(failure.fieldErrors()).containsKey("items[0].productId");
+        assertThat(stockOf(product())).isEqualTo(5);
+        assertThat(orders().ordersOf(customer().id())).isEmpty();
+    }
+
+    public void orderItemLimitIsRejectedBeforeWrites() {
+        String line = "{\"productId\":" + product().id() + ",\"quantity\":1}";
+        String body = "{\"customerId\":" + customer().id() + ",\"items\":["
+                + String.join(",", java.util.Collections.nCopies(1001, line)) + "]}";
+        assertThat(expectInvalidOrder(body).fieldErrors()).containsKey("items");
+        assertThat(stockOf(product())).isEqualTo(5);
+        assertThat(orders().ordersOf(customer().id())).isEmpty();
+    }
+
 }

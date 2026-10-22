@@ -188,4 +188,19 @@ public class UserApiTest extends BaseApiTest {
             throw new IllegalStateException("Timed out waiting to race login/authentication with deletion");
         }
     }
+    public void roleDemotionRevokesEveryExistingAdminSession() {
+        UserData user = TestDataFactory.newUser("ADMIN");
+        UserResponse created = givenUser(user);
+        Credentials credentials = new Credentials(user.username(), user.password());
+        ApiSession first = ApiSession.withToken(anonymous().auth().loginAs(credentials).token());
+        ApiSession second = ApiSession.withToken(anonymous().auth().loginAs(credentials).token());
+        expectStatus(first.users().list(), 200);
+        expectStatus(admin().users().update(created.id(), Map.of("role", "VIEWER")), 200);
+        expectStatus(first.users().list(), 401);
+        expectStatus(second.users().list(), 401);
+        ApiSession fresh = ApiSession.withToken(anonymous().auth().loginAs(credentials).token());
+        expectStatus(fresh.users().list(), 403);
+        expectStatus(fresh.customers().list(null), 200);
+    }
+
 }

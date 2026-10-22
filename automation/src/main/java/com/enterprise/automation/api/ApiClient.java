@@ -4,6 +4,8 @@ import static io.restassured.RestAssured.given;
 
 import com.enterprise.automation.config.ConfigManager;
 import io.restassured.http.ContentType;
+import io.restassured.config.RestAssuredConfig;
+import io.restassured.config.HttpClientConfig;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.net.URI;
@@ -32,27 +34,42 @@ public final class ApiClient {
     private final String token;
     // Fixed correlation id, or null for a new one per call (the normal case)
     private final String requestId;
+    private final int connectTimeoutMillis;
+    private final int readTimeoutMillis;
 
     /** Use anonymous() or a signed-in session; every client keeps one request id for the calls of one test. */
-    private ApiClient(URI baseUri, String token, String requestId) {
+    private ApiClient(URI baseUri, String token, String requestId, int connectTimeoutMillis, int readTimeoutMillis) {
         this.baseUri = baseUri;
         this.token = token;
         this.requestId = requestId;
+        this.connectTimeoutMillis = connectTimeoutMillis;
+        this.readTimeoutMillis = readTimeoutMillis;
     }
 
     /** Anonymous client for the configured API base URL. */
     public static ApiClient anonymous() {
-        return new ApiClient(ConfigManager.config().apiBaseUrl(), null, null);
+        return forEndpoint(ConfigManager.config().apiBaseUrl(), ConfigManager.config().apiConnectTimeoutMillis(),
+                ConfigManager.config().apiReadTimeoutMillis());
+    }
+
+    /** An isolated endpoint/transport configuration, useful for controlled service fixtures. */
+    public static ApiClient forEndpoint(URI endpoint, int connectMillis, int readMillis) {
+        if (endpoint == null || endpoint.getHost() == null
+                || !("http".equals(endpoint.getScheme()) || "https".equals(endpoint.getScheme()))
+                || connectMillis <= 0 || readMillis <= 0) {
+            throw new IllegalArgumentException("HTTP endpoint and positive transport timeouts are required");
+        }
+        return new ApiClient(endpoint, null, null, connectMillis, readMillis);
     }
 
     /** Same base URL, authenticated with {@code bearerToken}. */
     public ApiClient withToken(String bearerToken) {
-        return new ApiClient(baseUri, bearerToken, requestId);
+        return new ApiClient(baseUri, bearerToken, requestId, connectTimeoutMillis, readTimeoutMillis);
     }
 
     /** Same client, sending {@code id} as the correlation id of every call (to trace a call by a known id). */
     public ApiClient withRequestId(String id) {
-        return new ApiClient(baseUri, token, id);
+        return new ApiClient(baseUri, token, id, connectTimeoutMillis, readTimeoutMillis);
     }
 
     // One method per HTTP verb; bodies are any object (serialized to JSON) or a ready JSON string
@@ -100,6 +117,10 @@ public final class ApiClient {
     private RequestSpecification request() {
         RequestSpecification spec = given()
                 .baseUri(baseUri.toString())
+                .config(RestAssuredConfig.config().httpClient(HttpClientConfig.httpClientConfig()
+                        .setParam("http.connection.timeout", connectTimeoutMillis)
+                        .setParam("http.socket.timeout", readTimeoutMillis)
+                        .setParam("http.connection-manager.timeout", (long) connectTimeoutMillis)))
                 // Send and expect JSON
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)

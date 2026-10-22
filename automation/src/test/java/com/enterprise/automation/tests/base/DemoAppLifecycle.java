@@ -46,6 +46,7 @@ public class DemoAppLifecycle implements ISuiteListener {
             options = options.withDbTcpPort(Integer.parseInt(tcp.group(1)));
         }
         LOG.info("Starting the application under test on port {} (database port {})", port, options.dbTcpPort());
+        com.enterprise.automation.api.ApiSession.clearTokens();
         app = DemoApp.start(options);
         // Stopped when the test JVM exits, after all suites and their clean-ups
         Runtime.getRuntime().addShutdownHook(new Thread(app::close, "demo-app-shutdown"));
