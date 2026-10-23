@@ -225,7 +225,7 @@ No real credentials in code or Git (scan of all files and the full history); the
 
 ## Running tests
 
-Requirements: JDK 17+, Chrome/Edge (Selenium Manager can download Firefox), and Node.js for the Allure CLI. The checked-in Maven Wrapper pins Maven 3.9.16: use `./mvnw` in macOS/Linux/Git Bash, `mvnw.cmd` in Windows Command Prompt, or `.\mvnw.cmd` in PowerShell; a separate Maven installation is not required.
+Requirements: JDK 17+, Chrome/Edge (Selenium Manager can download Firefox), and Node.js for the Allure CLI. The checked-in Maven Wrapper pins Maven 3.10.0: use `./mvnw` in macOS/Linux/Git Bash, `mvnw.cmd` in Windows Command Prompt, or `.\mvnw.cmd` in PowerShell; a separate Maven installation is not required.
 
 ```bash
 ./mvnw clean test                                   # full suite, local app, Chrome
