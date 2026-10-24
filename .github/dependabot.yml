@@ -25,3 +25,13 @@ updates:
     directory: "/docker"
     schedule:
       interval: weekly
+    ignore:
+      # The images follow maven.compiler.release (Java 17, an LTS release). A Java major
+      # upgrade is a deliberate change to an LTS version, made by hand with a Docker build
+      # and Grid run, not a weekly bump to a short-lived non-LTS release (PRs #25, #26).
+      - dependency-name: eclipse-temurin
+        update-types: ["version-update:semver-major"]
+      # The build image's tag encodes the JDK in a suffix (maven:<ver>-eclipse-temurin-17),
+      # which semver rules cannot see; Dependabot proposed temurin-26 as a plain update.
+      # Update it by hand together with the Maven Wrapper version.
+      - dependency-name: maven
