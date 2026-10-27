@@ -50,7 +50,7 @@ A production-style test automation platform for a web application that has a **U
 | Language / build | Java 17, Maven (multi-module) |
 | Test runner | TestNG 7.12.0 |
 | UI | Selenium 4.51.0 |
-| API | REST Assured 6.2.0, Jackson 2.22.4, JSON Schema validator |
+| API | REST Assured 6.3.0, Jackson 2.22.4, JSON Schema validator |
 | Database | JDBC, H2 |
 | Assertions | AssertJ |
 | Test data | Datafaker, JSON, CSV |

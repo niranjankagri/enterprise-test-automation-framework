@@ -2,7 +2,7 @@
 
 [![Main](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/workflows/regression.yml/badge.svg)](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/workflows/regression.yml)
 [![Nightly regression](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/workflows/nightly.yml/badge.svg)](https://github.com/niranjankagri/enterprise-test-automation-framework/actions/workflows/nightly.yml)
-![Java 17](https://img.shields.io/badge/Java-17-blue) ![Selenium 4](https://img.shields.io/badge/Selenium-4.51.0-green) ![TestNG](https://img.shields.io/badge/TestNG-7.12.0-orange) ![REST Assured](https://img.shields.io/badge/REST%20Assured-6.2.0-brightgreen) ![Allure](https://img.shields.io/badge/Allure-3.0.0-yellow) ![Docker](https://img.shields.io/badge/Docker-Selenium%20Grid-blue)
+![Java 17](https://img.shields.io/badge/Java-17-blue) ![Selenium 4](https://img.shields.io/badge/Selenium-4.51.0-green) ![TestNG](https://img.shields.io/badge/TestNG-7.12.0-orange) ![REST Assured](https://img.shields.io/badge/REST%20Assured-6.3.0-brightgreen) ![Allure](https://img.shields.io/badge/Allure-3.0.0-yellow) ![Docker](https://img.shields.io/badge/Docker-Selenium%20Grid-blue)
 
 ## Overview
 
@@ -51,7 +51,7 @@ Layers depend downwards only; tests contain no Selenium, HTTP or SQL. Full descr
 | Language / build | Java 17, Maven (multi-module) |
 | Test runner | TestNG 7.12.0 (groups, suites, listeners, data providers) |
 | UI | Selenium 4.51.0 (local, Selenium Grid) |
-| API | REST Assured 6.2.0, Jackson, JSON Schema validation |
+| API | REST Assured 6.3.0, Jackson, JSON Schema validation |
 | Database | JDBC (H2), parameterized queries |
 | Assertions | AssertJ |
 | Test data | Datafaker, JSON and CSV files |
