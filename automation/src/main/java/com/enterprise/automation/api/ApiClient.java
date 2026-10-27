@@ -9,6 +9,7 @@ import io.restassured.config.HttpClientConfig;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.net.URI;
+import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
 
@@ -118,9 +119,9 @@ public final class ApiClient {
         RequestSpecification spec = given()
                 .baseUri(baseUri.toString())
                 .config(RestAssuredConfig.config().httpClient(HttpClientConfig.httpClientConfig()
-                        .setParam("http.connection.timeout", connectTimeoutMillis)
-                        .setParam("http.socket.timeout", readTimeoutMillis)
-                        .setParam("http.connection-manager.timeout", (long) connectTimeoutMillis)))
+                        .connectTimeout(Duration.ofMillis(connectTimeoutMillis))
+                        .readTimeout(Duration.ofMillis(readTimeoutMillis))
+                        .connectionRequestTimeout(Duration.ofMillis(connectTimeoutMillis))))
                 // Send and expect JSON
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
