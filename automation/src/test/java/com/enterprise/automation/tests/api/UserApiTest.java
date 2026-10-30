@@ -38,7 +38,7 @@ public class UserApiTest extends BaseApiTest {
     }
 
     /** An admin creates a user who can then sign in with the given role; the password is never returned. */
-    public void adminCreatesAUserWhoCanSignInWithTheirRole() {
+    public void tc259_adminCreatesAUserWhoCanSignInWithTheirRole() {
         UserData user = TestDataFactory.newUser("VIEWER");
 
         Response response = admin().users().create(UserRequest.from(user));
@@ -56,7 +56,7 @@ public class UserApiTest extends BaseApiTest {
     }
 
     /** Promoting a user to ADMIN gives a new login access to the admin-only users list. */
-    public void promotingAUserGrantsWriteAccess() {
+    public void tc260_promotingAUserGrantsWriteAccess() {
         UserData user = TestDataFactory.newUser("VIEWER");
         UserResponse created = givenUser(user);
 
@@ -71,7 +71,7 @@ public class UserApiTest extends BaseApiTest {
     }
 
     /** The users list holds at least the two seeded accounts. */
-    public void adminListsUsers() {
+    public void tc261_adminListsUsers() {
         List<?> users = JsonMapper.fromJson(expectStatus(admin().users().list(), 200).asString(), List.class);
 
         // At least the two seeded accounts (other tests may add more in parallel)
@@ -79,7 +79,7 @@ public class UserApiTest extends BaseApiTest {
     }
 
     /** A short password and an unknown role are 400; an existing username is refused too. */
-    public void invalidAndDuplicateUsersAreRejected() {
+    public void tc262_invalidAndDuplicateUsersAreRejected() {
         // Too-short password and a role that does not exist
         ErrorResponse invalid = error(expectStatus(admin().users().create(
                 new UserRequest("someone", "short", "Some One", "OWNER")), 400));
@@ -94,7 +94,7 @@ public class UserApiTest extends BaseApiTest {
     }
 
     /** An admin cannot delete their own account (409): that would lock them out. */
-    public void adminCannotDeleteTheirOwnAccount() {
+    public void tc263_adminCannotDeleteTheirOwnAccount() {
         // The admin's own id, via /users/me
         long ownId = admin().users().currentUser().id();
 
@@ -105,7 +105,7 @@ public class UserApiTest extends BaseApiTest {
     }
 
     /** Deletion revokes an active token and prevents another login. */
-    public void deletedUserCannotSignIn() {
+    public void tc264_deletedUserCannotSignIn() {
         UserData user = TestDataFactory.newUser("VIEWER");
         UserResponse created = admin().users().createUser(user);
         registerUserCleanup(created);
@@ -128,7 +128,7 @@ public class UserApiTest extends BaseApiTest {
 
     /** Login and token authentication racing deletion may finish first, but cannot remain valid afterward. */
     @Test(groups = "regression")
-    public void concurrentLoginAndAuthenticationWithDeletionCannotPreserveAccess() throws Exception {
+    public void tc265_concurrentLoginAndAuthenticationWithDeletionCannotPreserveAccess() throws Exception {
         UserData user = TestDataFactory.newUser("VIEWER");
         UserResponse created = admin().users().createUser(user);
         registerUserCleanup(created);
@@ -188,7 +188,7 @@ public class UserApiTest extends BaseApiTest {
             throw new IllegalStateException("Timed out waiting to race login/authentication with deletion");
         }
     }
-    public void roleDemotionRevokesEveryExistingAdminSession() {
+    public void tc266_roleDemotionRevokesEveryExistingAdminSession() {
         UserData user = TestDataFactory.newUser("ADMIN");
         UserResponse created = givenUser(user);
         Credentials credentials = new Credentials(user.username(), user.password());

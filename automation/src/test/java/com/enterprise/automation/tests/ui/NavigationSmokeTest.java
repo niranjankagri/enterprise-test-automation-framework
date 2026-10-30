@@ -13,7 +13,7 @@ import org.testng.annotations.Test;
 public class NavigationSmokeTest extends BaseTest {
 
     /** Every section opens from the menu with its heading and highlighted entry. */
-    public void everySectionOpensFromTheMenu() {
+    public void tc110_everySectionOpensFromTheMenu() {
         DashboardPage dashboard = loginAsAdmin();
         // The same menu component is used for every hop (it re-finds its elements on each page)
         NavigationComponent menu = dashboard.navigation();
@@ -36,7 +36,7 @@ public class NavigationSmokeTest extends BaseTest {
     }
 
     /** The dashboard shows its figures and the recent-orders table with the right columns. */
-    public void dashboardShowsTheKeyFigures() {
+    public void tc111_dashboardShowsTheKeyFigures() {
         DashboardPage dashboard = loginAsAdmin();
 
         // Figures are checked loosely (other tests change them in parallel); the shape is checked exactly
@@ -47,7 +47,7 @@ public class NavigationSmokeTest extends BaseTest {
     }
 
     /** The dashboard and shared navigation pass the selected automated axe rules. */
-    public void dashboardNavigationHasNoAxeViolations() {
+    public void tc112_dashboardNavigationHasNoAxeViolations() {
         loginAsAdmin();
 
         AccessibilityAssertions.pageHasNoViolations(DriverManager.getDriver(), "dashboard navigation");

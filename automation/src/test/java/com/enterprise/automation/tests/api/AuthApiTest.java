@@ -22,7 +22,7 @@ public class AuthApiTest extends BaseApiTest {
 
     /** Login with the admin credentials returns a Bearer token that matches the login contract. */
     @Test(groups = "smoke")
-    public void adminLogsInAndGetsABearerToken() {
+    public void tc201_adminLogsInAndGetsABearerToken() {
         // Log in without any token, with the configured admin credentials
         Response response = anonymous().auth().login(LoginRequest.of(config().admin()));
 
@@ -40,7 +40,7 @@ public class AuthApiTest extends BaseApiTest {
      * A wrong password and an unknown user get the same 401 message, so the API does not reveal which usernames
      * exist.
      */
-    public void wrongPasswordGives401WithoutRevealingWhichPartWasWrong() {
+    public void tc202_wrongPasswordGives401WithoutRevealingWhichPartWasWrong() {
         // A known user with a wrong password, and an unknown user
         ErrorResponse wrongPassword = error(expectStatus(
                 anonymous().auth().login(new LoginRequest("admin", "wrong")), 401));
@@ -53,7 +53,7 @@ public class AuthApiTest extends BaseApiTest {
     }
 
     /** A login without username and password reports both missing fields in one 400. */
-    public void missingCredentialsGive400PerField() {
+    public void tc203_missingCredentialsGive400PerField() {
         // An empty JSON object: no username, no password
         ErrorResponse error = error(expectStatus(anonymous().auth().login(Map.of()), 400));
 
@@ -65,7 +65,7 @@ public class AuthApiTest extends BaseApiTest {
     /**
      * The client's X-Request-Id comes back for correlation; an unsafe value is replaced by an id the server makes.
      */
-    public void theClientsRequestIdIsUsedForCorrelation() {
+    public void tc204_theClientsRequestIdIsUsedForCorrelation() {
         // ApiClient sends an X-Request-Id with every call; the application logs and returns it
         Response traced = ApiClient.anonymous().withRequestId("trace-auth-0001").get("/customers");
         // An id that is not a safe token is not echoed back: the application makes its own
@@ -76,7 +76,7 @@ public class AuthApiTest extends BaseApiTest {
     }
 
     /** A protected endpoint without a token is 401, naming the problem and the path. */
-    public void requestsWithoutTokenGet401() {
+    public void tc205_requestsWithoutTokenGet401() {
         // A protected endpoint called without Authorization header
         ErrorResponse error = error(expectStatus(anonymous().customers().list(null), 401));
 
@@ -86,7 +86,7 @@ public class AuthApiTest extends BaseApiTest {
     }
 
     /** A token the server never issued is 401. */
-    public void invalidTokenGets401() {
+    public void tc206_invalidTokenGets401() {
         // A well-formed header with a token the server never issued
         ErrorResponse unknown = error(expectStatus(ApiSession.withToken("not-a-real-token").customers().list(null), 401));
 
@@ -98,7 +98,7 @@ public class AuthApiTest extends BaseApiTest {
     }
 
     /** After logout the same token is rejected. */
-    public void loggedOutTokenStopsWorking() {
+    public void tc207_loggedOutTokenStopsWorking() {
         // A fresh token of its own (not the cached one other tests use), proven to work
         String token = anonymous().auth().loginAs(config().viewer()).token();
         ApiSession session = ApiSession.withToken(token);
@@ -113,7 +113,7 @@ public class AuthApiTest extends BaseApiTest {
 
     /** The viewer role can read but every write, and the users list, is 403. */
     @Test(groups = "sanity")
-    public void viewerCanReadButNotWrite() {
+    public void tc208_viewerCanReadButNotWrite() {
         // Reads are allowed
         expectStatus(viewer().customers().list(null), 200);
         expectStatus(viewer().products().list(Map.of()), 200);
@@ -127,7 +127,7 @@ public class AuthApiTest extends BaseApiTest {
     }
 
     /** /users/me returns the signed-in user, and the body never contains a password. */
-    public void currentUserIsReturnedWithoutPassword() {
+    public void tc209_currentUserIsReturnedWithoutPassword() {
         Response me = expectStatus(viewer().users().me(), 200);
 
         // The user schema has no password field, and the raw body contains no password at all

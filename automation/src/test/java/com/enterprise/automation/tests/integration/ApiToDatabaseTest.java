@@ -55,7 +55,7 @@ public class ApiToDatabaseTest extends BaseApiTest {
 
     /** A customer created through the API is stored with every column exactly as sent. */
     @Test(groups = "sanity")
-    public void createdCustomerIsStoredExactlyAsSent() {
+    public void tc306_createdCustomerIsStoredExactlyAsSent() {
         CustomerData data = TestDataFactory.newCustomer();
 
         CustomerResponse created = givenCustomer(data);
@@ -72,7 +72,7 @@ public class ApiToDatabaseTest extends BaseApiTest {
     }
 
     /** PATCH and DELETE through the API change the stored row. */
-    public void updatesAndDeletesReachTheDatabase() {
+    public void tc307_updatesAndDeletesReachTheDatabase() {
         CustomerResponse created = givenCustomer(TestDataFactory.newCustomer());
 
         // PATCH reaches the database...
@@ -86,7 +86,7 @@ public class ApiToDatabaseTest extends BaseApiTest {
 
     /** A placed order is stored with its total and line, and the product's stock drops by the quantity. */
     @Test(groups = "sanity")
-    public void placedOrderIsStoredWithItsLinesAndReservesStock() {
+    public void tc308_placedOrderIsStoredWithItsLinesAndReservesStock() {
         CustomerResponse customer = givenCustomer(TestDataFactory.newCustomer());
         // Own product: price 12.25, stock 10
         ProductResponse product = givenProduct(10, "12.25");
@@ -106,7 +106,7 @@ public class ApiToDatabaseTest extends BaseApiTest {
     }
 
     /** Cancelling one order and deleting another both give their units back in the database. */
-    public void cancellingAndDeletingOrdersGiveStockBackInTheDatabase() {
+    public void tc309_cancellingAndDeletingOrdersGiveStockBackInTheDatabase() {
         CustomerResponse customer = givenCustomer(TestDataFactory.newCustomer());
         ProductResponse product = givenProduct(4, "5.00");
         OrderResponse cancelled = admin().orders().placeOrder(OrderRequest.of(customer.id(), item(product.id(), 2)));
@@ -127,7 +127,7 @@ public class ApiToDatabaseTest extends BaseApiTest {
     }
 
     /** A refused order leaves no order row and no reserved stock behind. */
-    public void rejectedOrderLeavesNoTraceInTheDatabase() {
+    public void tc310_rejectedOrderLeavesNoTraceInTheDatabase() {
         CustomerResponse customer = givenCustomer(TestDataFactory.newCustomer());
         ProductResponse plenty = givenProduct(50, "1.00");
         ProductResponse scarce = givenProduct(1, "1.00");
@@ -142,7 +142,7 @@ public class ApiToDatabaseTest extends BaseApiTest {
 
     /** Two users with the same password must not be stored with the same value: passwords are hashed with a salt. */
     @Test(groups = "security")
-    public void passwordsAreStoredHashedAndSalted() {
+    public void tc311_passwordsAreStoredHashedAndSalted() {
         // Two different users with the SAME password
         UserData first = TestDataFactory.newUser("VIEWER");
         UserData second = new UserData(TestDataFactory.newUser("VIEWER").username(), first.password(), "Same Password",

@@ -48,7 +48,7 @@ public class CustomerManagementTest extends BaseTest {
 
     /** A customer created through the form shows a toast and appears with exactly the entered values. */
     @Test(groups = "sanity")
-    public void adminCreatesACustomer() {
+    public void tc120_adminCreatesACustomer() {
         // A unique, valid customer and the customer list
         CustomerData customer = TestDataFactory.newCustomer();
         CustomerPage customers = loginAsAdmin().navigation().openCustomers();
@@ -66,7 +66,7 @@ public class CustomerManagementTest extends BaseTest {
     }
 
     /** A customer without phone and city is saved with empty cells. */
-    public void customerWithoutOptionalFieldsIsAccepted() {
+    public void tc121_customerWithoutOptionalFieldsIsAccepted() {
         // Phone and city are optional: leave them empty
         CustomerData customer = TestDataFactory.newCustomer().withPhone(null).withCity(null);
         CustomerPage customers = loginAsAdmin().navigation().openCustomers();
@@ -79,7 +79,7 @@ public class CustomerManagementTest extends BaseTest {
     }
 
     /** The edit form opens pre-filled, and the saved change shows in the list. */
-    public void adminEditsACustomer() {
+    public void tc122_adminEditsACustomer() {
         CustomerData customer = TestDataFactory.newCustomer();
         CustomerPage customers = createCustomer(loginAsAdmin().navigation().openCustomers(), customer);
         // Same customer, new city
@@ -98,7 +98,7 @@ public class CustomerManagementTest extends BaseTest {
     }
 
     /** The delete confirmation names the customer, and the customer is gone afterwards. */
-    public void adminDeletesACustomer() {
+    public void tc123_adminDeletesACustomer() {
         CustomerData customer = TestDataFactory.newCustomer();
         registerRemoval(customer); // safety net if the deletion under test fails
         CustomerPage customers = loginAsAdmin().navigation().openCustomers().addCustomer(customer);
@@ -114,7 +114,7 @@ public class CustomerManagementTest extends BaseTest {
     }
 
     /** Cancelling a filled form creates nothing. */
-    public void cancellingTheFormCreatesNothing() {
+    public void tc124_cancellingTheFormCreatesNothing() {
         CustomerData customer = TestDataFactory.newCustomer();
         CustomerPage customers = loginAsAdmin().navigation().openCustomers();
 
@@ -159,7 +159,7 @@ public class CustomerManagementTest extends BaseTest {
     }
 
     /** Customer names containing HTML-shaped input remain literal text in the rendered table. */
-    public void htmlShapedCustomerNameRemainsInertInTheRenderedTable() {
+    public void tc125_htmlShapedCustomerNameRemainsInertInTheRenderedTable() {
         String hostileName = "<img src=x onerror=window.__tafXss=1>";
         CustomerData customer = TestDataFactory.newCustomer().withFirstName(hostileName);
         registerRemoval(customer);
@@ -174,7 +174,7 @@ public class CustomerManagementTest extends BaseTest {
 
     // One run per row of testdata/invalid-customers.csv (the same file drives the API test)
     @Test(dataProvider = "invalidCustomers", dataProviderClass = TestDataProviders.class, groups = "smoke")
-    public void invalidInputIsRejectedPerField(String testCase, String field, String label, String value, String error) {
+    public void tc126_invalidInputIsRejectedPerField(String testCase, String field, String label, String value, String error) {
         CustomerPage customers = loginAsAdmin().navigation().openCustomers();
 
         // A valid form with exactly one field made invalid
@@ -196,7 +196,7 @@ public class CustomerManagementTest extends BaseTest {
 
     /** The customer list and add-customer dialog pass the selected automated axe rules. */
     @Test(groups = "smoke")
-    public void customerListAndFormHaveNoAxeViolations() {
+    public void tc127_customerListAndFormHaveNoAxeViolations() {
         CustomerPage customers = loginAsAdmin().navigation().openCustomers();
         AccessibilityAssertions.pageHasNoViolations(DriverManager.getDriver(), "customer list");
 
@@ -205,7 +205,7 @@ public class CustomerManagementTest extends BaseTest {
     }
 
     /** An email already in use is rejected in the form. */
-    public void duplicateEmailIsRejected() {
+    public void tc128_duplicateEmailIsRejected() {
         // A new customer, but with the email of a seeded one
         CustomerData duplicate = TestDataFactory.newCustomer().withEmail("ava.patel@example.com");
         CustomerPage customers = loginAsAdmin().navigation().openCustomers();
@@ -219,7 +219,7 @@ public class CustomerManagementTest extends BaseTest {
 
     /** A viewer sees the list but no add, edit or delete controls. */
     @Test(groups = "sanity")
-    public void viewerCannotChangeCustomers() {
+    public void tc129_viewerCannotChangeCustomers() {
         CustomerPage customers = loginAsViewer().navigation().openCustomers();
 
         // Read access yes, write controls no
@@ -230,7 +230,7 @@ public class CustomerManagementTest extends BaseTest {
 
     /** A failed customer-list request is announced, and Retry loads the list without a page reload. */
     @Test(groups = "smoke")
-    public void customerListFailureShowsRetryAndRecovers() {
+    public void tc130_customerListFailureShowsRetryAndRecovers() {
         CustomerPage customers = loginAsAdmin().navigation().openCustomers();
         var driver = DriverManager.getDriver();
         BrowserRequestSimulator.gateNetworkFailure(driver, "GET", "/api/customers");
