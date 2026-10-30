@@ -55,7 +55,7 @@ public class UiApiDatabaseTest extends BaseTest {
      * Create through the API → verify the response → verify the database → find it in the UI.
      */
     @Test(groups = "sanity")
-    public void customerCreatedThroughTheApiIsStoredAndVisibleInTheUi() {
+    public void tc318_customerCreatedThroughTheApiIsStoredAndVisibleInTheUi() {
         CustomerData customer = TestDataFactory.newCustomer();
         registerRemoval(customer.email());
 
@@ -79,7 +79,7 @@ public class UiApiDatabaseTest extends BaseTest {
     }
 
     /** The other direction: change through the UI, verify through the API and in the database. */
-    public void customerChangedInTheUiIsVisibleThroughTheApiAndStored() {
+    public void tc319_customerChangedInTheUiIsVisibleThroughTheApiAndStored() {
         CustomerData customer = TestDataFactory.newCustomer();
         registerRemoval(customer.email());
         CustomerPage customers = loginAsAdmin().navigation().openCustomers().addCustomer(customer);
@@ -99,7 +99,7 @@ public class UiApiDatabaseTest extends BaseTest {
     }
 
     /** An order placed in the UI: API returns it, the database holds its lines and the stock moved. */
-    public void orderPlacedInTheUiIsConsistentInApiAndDatabase() {
+    public void tc320_orderPlacedInTheUiIsConsistentInApiAndDatabase() {
         CustomerData customer = TestDataFactory.newCustomer();
         registerRemoval(customer.email());
         ApiSession.admin().customers().createCustomer(customer);

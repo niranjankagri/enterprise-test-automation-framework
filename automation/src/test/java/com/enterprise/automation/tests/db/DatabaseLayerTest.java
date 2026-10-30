@@ -31,7 +31,7 @@ public class DatabaseLayerTest {
 
     /** The database layer connects and sees exactly the application's five tables. */
     @Test(groups = "smoke")
-    public void connectsAndReadsTheSchema() {
+    public void tc301_connectsAndReadsTheSchema() {
         // The standard information_schema lists the application's tables (H2 keeps them in PUBLIC)
         List<Map<String, Object>> tables = db.sql().queryForList(
                 "SELECT LOWER(table_name) AS name FROM information_schema.tables WHERE table_schema = 'PUBLIC'"
@@ -43,7 +43,7 @@ public class DatabaseLayerTest {
 
     /** Each seeded product's row matches the reference data, column by column. */
     @Test(dataProvider = "catalogue", dataProviderClass = TestDataProviders.class)
-    public void catalogueRowsMatchTheReferenceData(String sku, ProductData expected) {
+    public void tc302_catalogueRowsMatchTheReferenceData(String sku, ProductData expected) {
         // The stored row of each reference product, column by column
         assertRow(db.productBySku(sku), "product " + sku)
                 .hasValue("name", expected.name())
@@ -80,7 +80,7 @@ public class DatabaseLayerTest {
     }
 
     /** The seeded catalogue in the database has as many products as the reference file. */
-    public void catalogueSizeMatches() {
+    public void tc303_catalogueSizeMatches() {
         // Seeded products only (TST- products come and go with other tests)
         long seeded = db.sql().count("SELECT COUNT(*) FROM products WHERE sku NOT LIKE 'TST-%'");
 
@@ -88,7 +88,7 @@ public class DatabaseLayerTest {
     }
 
     /** Database uniqueness constraints reject duplicates without inserting another row. */
-    public void uniqueConstraintsRejectDuplicateKeys() {
+    public void tc304_uniqueConstraintsRejectDuplicateKeys() {
         assertConstraintViolation("INSERT INTO app_users (username, password_hash, salt, full_name, role)"
                 + " VALUES (?, ?, ?, ?, ?)", "admin", "synthetic-hash", "synthetic-salt", "Duplicate", "VIEWER");
         assertThat(db.sql().count("SELECT COUNT(*) FROM app_users WHERE username = ?", "admin")).isEqualTo(1);
@@ -104,7 +104,7 @@ public class DatabaseLayerTest {
     }
 
     /** Foreign keys reject missing references, protect referenced rows, and cascade order-line deletion. */
-    public void foreignKeysProtectReferencesAndCascadeOrderLines() {
+    public void tc305_foreignKeysProtectReferencesAndCascadeOrderLines() {
         long customerId = -ThreadLocalRandom.current().nextLong(1_000_000_000L, 2_000_000_000L);
         long productId = customerId - 1;
         long orderId = customerId - 2;

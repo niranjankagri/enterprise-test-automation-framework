@@ -251,7 +251,7 @@ In PowerShell, use `.\mvnw.cmd` and quote each Maven `-D` argument, for example 
 | `integration` | Tests tagged `integration` and `db`, including API/database and cross-layer checks. |
 | `e2e` | Business journeys tagged `e2e`. |
 
-Suite XML files select TestNG groups, which can overlap. Test totals change as tests and data providers change; they are execution evidence, not a coverage measure. The current requirement and test mapping is in [docs/TEST_COVERAGE_MATRIX.md](docs/TEST_COVERAGE_MATRIX.md).
+Every test of the shop starts with its case ID (`tc229_placingAnOrderComputesTotalsAndReservesStock`); the 128 cases (UI TC-101 to TC-142, API TC-201 to TC-266, database and integration TC-301 to TC-320) are written out for a manual run in [docs/manual-test-cases.md](docs/manual-test-cases.md). Suite XML files select TestNG groups, which can overlap. Test totals change as tests and data providers change; they are execution evidence, not a coverage measure. The current requirement and test mapping is in [docs/TEST_COVERAGE_MATRIX.md](docs/TEST_COVERAGE_MATRIX.md).
 
 ## Reports
 

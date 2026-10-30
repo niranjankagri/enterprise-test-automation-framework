@@ -55,7 +55,7 @@ public class AuthorizationRouteMatrixTest extends BaseApiTest {
 
     /** Every route receives valid fixture IDs/payloads so denials prove the declared access check ran. */
     @Test
-    public void everyProtectedRouteEnforcesThePrincipalMatrixAndPreservesDeniedWrites() {
+    public void tc211_everyProtectedRouteEnforcesThePrincipalMatrixAndPreservesDeniedWrites() {
         ShopDatabase db = ShopDatabase.fromConfig();
 
         UserData targetUserData = TestDataFactory.newUser("VIEWER");
@@ -119,7 +119,7 @@ public class AuthorizationRouteMatrixTest extends BaseApiTest {
 
     /** User collection and detail contracts must never expose hashes, salts or supplied passwords. */
     @Test
-    public void userCollectionAndDetailOmitCredentials() {
+    public void tc212_userCollectionAndDetailOmitCredentials() {
         UserData user = TestDataFactory.newUser("VIEWER");
         var created = admin().users().createUser(user);
         registerUserCleanup(created.id());

@@ -48,7 +48,7 @@ public class ProductApiTest extends BaseApiTest {
 
     /** Each seeded product matches the reference data and the single-product contract. */
     @Test(dataProvider = "catalogue", dataProviderClass = TestDataProviders.class, groups = "smoke")
-    public void catalogueMatchesTheReferenceData(String sku, ProductData expected) {
+    public void tc246_catalogueMatchesTheReferenceData(String sku, ProductData expected) {
         // Look the product up by SKU, then fetch it by id to check the single-product contract
         ProductResponse product = products().getBySku(sku);
 
@@ -61,7 +61,7 @@ public class ProductApiTest extends BaseApiTest {
     }
 
     /** A new product is stored as sent and found through its category. */
-    public void createdProductIsListedInItsCategory() {
+    public void tc247_createdProductIsListedInItsCategory() {
         ProductData data = TestDataFactory.newProduct();
 
         ProductResponse created = givenProduct(data);
@@ -74,7 +74,7 @@ public class ProductApiTest extends BaseApiTest {
     }
 
     /** PATCH changes price and stock; a stock of 0 is valid, and the name stays. */
-    public void patchUpdatesPriceAndStock() {
+    public void tc248_patchUpdatesPriceAndStock() {
         ProductResponse created = givenProduct(TestDataFactory.newProduct());
 
         // Change two fields; stock 0 is valid (sold out), not "missing"
@@ -88,7 +88,7 @@ public class ProductApiTest extends BaseApiTest {
     }
 
     /** PUT replaces the product; a fresh GET shows the new values. */
-    public void putReplacesTheProduct() {
+    public void tc249_putReplacesTheProduct() {
         ProductResponse created = givenProduct(TestDataFactory.newProduct());
         ProductData replacement = TestDataFactory.newProduct();
 
@@ -101,7 +101,7 @@ public class ProductApiTest extends BaseApiTest {
     }
 
     /** DELETE deactivates a product: it stays readable by id for order history but leaves the catalogue. */
-    public void deleteDeactivatesInsteadOfRemoving() {
+    public void tc250_deleteDeactivatesInsteadOfRemoving() {
         ProductResponse created = products().createProduct(TestDataFactory.newProduct());
 
         expectStatus(products().delete(created.id()), 204);
@@ -112,7 +112,7 @@ public class ProductApiTest extends BaseApiTest {
     }
 
     /** Empty SKU, missing name, negative price and negative stock are each reported in one 400. */
-    public void invalidValuesGive400PerField() {
+    public void tc251_invalidValuesGive400PerField() {
         // Empty SKU, no name, negative price and negative stock in one request
         ErrorResponse error = error(expectStatus(products().create(
                 new ProductRequest("", null, "Audio", new BigDecimal("-1"), -5)), 400));
@@ -125,7 +125,7 @@ public class ProductApiTest extends BaseApiTest {
     }
 
     /** A SKU already in use is a 409 on the sku field. */
-    public void duplicateSkuGives409() {
+    public void tc252_duplicateSkuGives409() {
         // A valid new product that reuses a seeded SKU
         ProductData duplicate = TestDataFactory.newProduct();
         ProductRequest request = new ProductRequest("ACC-3002", duplicate.name(), duplicate.category(),
@@ -137,7 +137,7 @@ public class ProductApiTest extends BaseApiTest {
     }
 
     /** SQL-shaped search text is treated as data and cannot broaden a catalogue query. */
-    public void sqlInjectionShapedSearchIsBoundAsData() {
+    public void tc253_sqlInjectionShapedSearchIsBoundAsData() {
         assertThat(products().findProducts(Map.of("search", "' OR '1'='1 --")))
                 .as("search text cannot turn a filter into an always-true SQL predicate")
                 .isEmpty();
@@ -145,7 +145,7 @@ public class ProductApiTest extends BaseApiTest {
 
     /** Prices with a non-zero fractional digit beyond cents are rejected without inserting a rounded value. */
     @Test(groups = "integration")
-    public void priceWithMoreThanTwoDecimalPlacesIsRejectedWithoutWriting() {
+    public void tc254_priceWithMoreThanTwoDecimalPlacesIsRejectedWithoutWriting() {
         ProductData data = TestDataFactory.newProduct().withPrice(new BigDecimal("1.001"));
 
         ErrorResponse error = expectInvalidPrice(data);
@@ -158,7 +158,7 @@ public class ProductApiTest extends BaseApiTest {
 
     /** Product prices above the DECIMAL(10,2) maximum are rejected before the database write. */
     @Test(groups = "integration")
-    public void priceAboveDatabaseMaximumIsRejectedWithoutWriting() {
+    public void tc255_priceAboveDatabaseMaximumIsRejectedWithoutWriting() {
         ProductData data = TestDataFactory.newProduct().withPrice(new BigDecimal("100000000.00"));
 
         ErrorResponse error = expectInvalidPrice(data);
@@ -171,7 +171,7 @@ public class ProductApiTest extends BaseApiTest {
 
     /** The DECIMAL(10,2) maximum is accepted and stored without precision loss. */
     @Test(groups = "integration")
-    public void maximumSupportedProductPriceIsStoredExactly() {
+    public void tc256_maximumSupportedProductPriceIsStoredExactly() {
         ProductData data = TestDataFactory.newProduct().withPrice(new BigDecimal("99999999.99"));
 
         ProductResponse created = JsonMapper.fromJson(expectStatus(
@@ -186,7 +186,7 @@ public class ProductApiTest extends BaseApiTest {
 
     /** Extra zeroes after cents are accepted because they do not require numeric rounding. */
     @Test(groups = "integration")
-    public void insignificantTrailingPriceZeroesAreAcceptedAndNormalized() {
+    public void tc257_insignificantTrailingPriceZeroesAreAcceptedAndNormalized() {
         ProductData data = TestDataFactory.newProduct().withPrice(new BigDecimal("1.000"));
 
         ProductResponse created = JsonMapper.fromJson(expectStatus(
@@ -200,7 +200,7 @@ public class ProductApiTest extends BaseApiTest {
 
     /** A PATCH with a non-cent value is rejected and does not alter the existing database price. */
     @Test(groups = "integration")
-    public void unsupportedPricePrecisionPatchLeavesStoredValueUnchanged() {
+    public void tc258_unsupportedPricePrecisionPatchLeavesStoredValueUnchanged() {
         ProductData data = TestDataFactory.newProduct().withPrice(new BigDecimal("10.00"));
         ProductResponse created = products().createProduct(data);
         ShopDatabase database = ShopDatabase.fromConfig();

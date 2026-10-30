@@ -23,7 +23,7 @@ import org.testng.annotations.Test;
 public class CheckoutTest extends BaseTest {
 
     /** An empty cart shows a zero total and cannot be ordered. */
-    public void emptyCartCannotBeOrdered() {
+    public void tc131_emptyCartCannotBeOrdered() {
         // A fresh browser session has an empty cart
         CheckoutPage checkout = loginAsAdmin().navigation().openCheckout();
 
@@ -34,7 +34,7 @@ public class CheckoutTest extends BaseTest {
     }
 
     /** Changing a line's quantity updates the total, which matches the catalogue maths. */
-    public void quantitiesDriveTheTotal() {
+    public void tc132_quantitiesDriveTheTotal() {
         // Expected total computed from the reference catalogue (no customer needed for the maths)
         OrderData expected = TestDataFactory.order(null,
                 TestDataFactory.line("MON-2001", 3), TestDataFactory.line("ACC-3001", 1));
@@ -50,7 +50,7 @@ public class CheckoutTest extends BaseTest {
     }
 
     /** Removing the only line empties the cart and the badge. */
-    public void removingTheLastItemEmptiesTheCart() {
+    public void tc133_removingTheLastItemEmptiesTheCart() {
         ProductPage products = loginAsAdmin().navigation().openProducts().addToCart("USB-C Dock");
 
         // Remove the only line
@@ -63,7 +63,7 @@ public class CheckoutTest extends BaseTest {
     }
 
     /** An order without a customer is refused by the page before any API call. */
-    public void orderNeedsACustomer() {
+    public void tc134_orderNeedsACustomer() {
         ProductPage products = loginAsAdmin().navigation().openProducts().addToCart("Wireless Mouse");
 
         // A filled cart but no customer selected
@@ -75,7 +75,7 @@ public class CheckoutTest extends BaseTest {
 
     /** A viewer can fill a cart but not place the order. */
     @Test(groups = "sanity")
-    public void viewerCannotPlaceOrders() {
+    public void tc135_viewerCannotPlaceOrders() {
         ProductPage products = loginAsViewer().navigation().openProducts().addToCart("Wireless Mouse");
 
         CheckoutPage checkout = products.header().openCart();
@@ -87,7 +87,7 @@ public class CheckoutTest extends BaseTest {
 
     /** Checkout accessible names pass axe and its quantity/remove controls remain keyboard reachable. */
     @Test(groups = "smoke")
-    public void checkoutHasNoAxeViolationsAndKeyboardFocusIsVisible() {
+    public void tc136_checkoutHasNoAxeViolationsAndKeyboardFocusIsVisible() {
         CheckoutPage checkout = loginAsAdmin().navigation().openProducts().addToCart("Wireless Mouse")
                 .header().openCart();
         AccessibilityAssertions.pageHasNoViolations(DriverManager.getDriver(), "checkout with a cart line");

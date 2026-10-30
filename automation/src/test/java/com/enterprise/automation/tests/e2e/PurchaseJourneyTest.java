@@ -68,7 +68,7 @@ public class PurchaseJourneyTest extends BaseTest {
      * check the result.
      */
     @Test(groups = "smoke")
-    public void adminPlacesAnOrderForACustomer() {
+    public void tc137_adminPlacesAnOrderForACustomer() {
         // The order to place: 1 laptop + 2 mice; its expected total comes from the reference catalogue
         OrderData order = TestDataFactory.order(buyer(),
                 TestDataFactory.line("LAP-1001", 1), TestDataFactory.line("ACC-3002", 2));
@@ -122,17 +122,17 @@ public class PurchaseJourneyTest extends BaseTest {
     }
 
     /** A stale cart cannot buy stock that was consumed after the product was displayed. */
-    public void checkoutWithStaleStockPreservesTheCartAndCreatesNoOrder() {
+    public void tc138_checkoutWithStaleStockPreservesTheCartAndCreatesNoOrder() {
         assertRejectedCheckoutPreservesState(false);
     }
 
     /** A product deactivated after it was displayed cannot be bought from the stale cart. */
-    public void checkoutWithInactiveProductPreservesTheCartAndCreatesNoOrder() {
+    public void tc139_checkoutWithInactiveProductPreservesTheCartAndCreatesNoOrder() {
         assertRejectedCheckoutPreservesState(true);
     }
 
     /** A second submit while the first request is pending cannot create a duplicate order. */
-    public void repeatedCheckoutSubmissionCreatesOneOrder() {
+    public void tc140_repeatedCheckoutSubmissionCreatesOneOrder() {
         ProductData productData = TestDataFactory.newProduct().withStock(4);
         var product = ApiSession.admin().products().createProduct(productData);
         CleanupRegistry.register("deactivate product " + product.id(),
@@ -167,7 +167,7 @@ public class PurchaseJourneyTest extends BaseTest {
 
     /** A failed order request leaves no writes behind, restores the control and can be retried safely. */
     @Test(groups = "smoke")
-    public void failedOrderSubmissionCanBeRetriedWithoutPartialWrites() {
+    public void tc141_failedOrderSubmissionCanBeRetriedWithoutPartialWrites() {
         ShopDatabase db = ShopDatabase.fromConfig();
         ProductData productData = TestDataFactory.newProduct().withStock(3);
         var product = ApiSession.admin().products().createProduct(productData);
@@ -215,7 +215,7 @@ public class PurchaseJourneyTest extends BaseTest {
     }
 
     /** An order placed through the UI can be cancelled from its detail dialog. */
-    public void adminCancelsAnOrder() {
+    public void tc142_adminCancelsAnOrder() {
         // Place a one-line order for a private fixture so cross-layer stock assertions are isolated.
         ShopDatabase db = ShopDatabase.fromConfig();
         ProductData productData = TestDataFactory.newProduct().withStock(1);

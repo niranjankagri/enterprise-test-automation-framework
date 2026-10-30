@@ -27,7 +27,7 @@ public class ProductCatalogTest extends BaseTest {
 
     // One run per product of testdata/products.json
     @Test(dataProvider = "catalogue", dataProviderClass = TestDataProviders.class)
-    public void productIsListedWithItsDetails(String sku, ProductData expected) {
+    public void tc116_productIsListedWithItsDetails(String sku, ProductData expected) {
         ProductPage products = loginAsAdmin().navigation().openProducts().search(sku);
 
         // The row of exactly this SKU (a search can match more than one) shows the reference values
@@ -40,7 +40,7 @@ public class ProductCatalogTest extends BaseTest {
 
     /** Each category filter shows exactly its seeded products and no product of another category. */
     @Test(dataProvider = "categories", dataProviderClass = TestDataProviders.class)
-    public void categoryFilterShowsExactlyItsProducts(String category, List<String> expectedNames) {
+    public void tc117_categoryFilterShowsExactlyItsProducts(String category, List<String> expectedNames) {
         ProductPage products = loginAsAdmin().navigation().openProducts().filterByCategory(category);
 
         // Seeded products of the category: exactly the expected ones; any listed row: that category only
@@ -49,7 +49,7 @@ public class ProductCatalogTest extends BaseTest {
     }
 
     /** A search without a match shows the empty placeholder and a zero count. */
-    public void searchWithoutMatchShowsAnEmptyList() {
+    public void tc118_searchWithoutMatchShowsAnEmptyList() {
         ProductPage products = loginAsAdmin().navigation().openProducts().search("no-such-product-xyz");
 
         // The "no products" placeholder row and a zero count
@@ -59,7 +59,7 @@ public class ProductCatalogTest extends BaseTest {
 
     /** A failed catalogue request is announced, and Retry reloads the current search. */
     @Test(groups = "smoke")
-    public void catalogueFailureShowsRetryAndRecovers() {
+    public void tc119_catalogueFailureShowsRetryAndRecovers() {
         ProductPage products = loginAsAdmin().navigation().openProducts();
         var driver = DriverManager.getDriver();
         BrowserRequestSimulator.gateNetworkFailure(driver, "GET", "/api/products");

@@ -35,7 +35,7 @@ public class AuthServiceExpiryTest {
 
     /** Tokens expire at their deadline, and the oldest of more than 100 live sessions is evicted. */
     @Test
-    public void tokensExpireAtTheirDeadlineAndSessionCapacityIsBounded() throws Exception {
+    public void tc210_tokensExpireAtTheirDeadlineAndSessionCapacityIsBounded() throws Exception {
         AdjustableClock clock = new AdjustableClock(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC);
         Duration tokenLifetime = Duration.ofMinutes(5);
         String databaseName = "auth_expiry_" + UUID.randomUUID().toString().replace("-", "");

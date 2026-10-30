@@ -13,7 +13,7 @@ public class LoginSmokeTest extends BaseTest {
 
     // Class-level @Test: every public method is a test with the class's groups
 
-    public void adminSignsInAndSeesTheDashboard() {
+    public void tc101_adminSignsInAndSeesTheDashboard() {
         // Sign in with the configured admin account
         DashboardPage dashboard = loginAsAdmin();
 
@@ -24,7 +24,7 @@ public class LoginSmokeTest extends BaseTest {
     }
 
     /** A wrong password shows the API's message and stays on the login page. */
-    public void wrongPasswordIsRejected() {
+    public void tc102_wrongPasswordIsRejected() {
         // A real username with a wrong password
         LoginPage login = openLoginPage().attemptLogin(config().admin().username(), "wrong-password");
 
@@ -34,7 +34,7 @@ public class LoginSmokeTest extends BaseTest {
     }
 
     /** Logging out returns to the login page with a confirmation. */
-    public void signingOutReturnsToTheLoginPage() {
+    public void tc103_signingOutReturnsToTheLoginPage() {
         // Sign in, then use the header's "Log out"
         LoginPage login = loginAsAdmin().header().logout();
 

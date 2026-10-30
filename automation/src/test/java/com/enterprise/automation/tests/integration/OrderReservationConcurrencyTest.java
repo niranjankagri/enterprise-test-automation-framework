@@ -46,7 +46,7 @@ public class OrderReservationConcurrencyTest extends BaseApiTest {
 
     /** Two requests cannot both reserve the last units or leave a partial reservation behind. */
     @Test
-    public void competingOrdersReserveLimitedStockWithoutOverselling() throws SQLException, InterruptedException,
+    public void tc312_competingOrdersReserveLimitedStockWithoutOverselling() throws SQLException, InterruptedException,
             ExecutionException, TimeoutException {
         ShopDatabase db = ShopDatabase.fromConfig();
         CustomerResponse customer = admin().customers().createCustomer(TestDataFactory.newCustomer());
@@ -114,7 +114,7 @@ public class OrderReservationConcurrencyTest extends BaseApiTest {
 
     /** Opposite input line orders acquire overlapping product locks consistently and finish without deadlock. */
     @Test
-    public void overlappingOrdersWithReversedLinesCompleteWithoutDeadlock() throws SQLException, InterruptedException,
+    public void tc313_overlappingOrdersWithReversedLinesCompleteWithoutDeadlock() throws SQLException, InterruptedException,
             ExecutionException, TimeoutException {
         ShopDatabase db = ShopDatabase.fromConfig();
         CustomerResponse customer = admin().customers().createCustomer(TestDataFactory.newCustomer());
@@ -175,7 +175,7 @@ public class OrderReservationConcurrencyTest extends BaseApiTest {
 
     /** Cancellation restores products in stable ID order when two orders contain the same products in reverse order. */
     @Test
-    public void overlappingCancellationsWithReversedLinesCompleteWithoutDeadlock() throws SQLException,
+    public void tc314_overlappingCancellationsWithReversedLinesCompleteWithoutDeadlock() throws SQLException,
             InterruptedException, ExecutionException, TimeoutException {
         ShopDatabase db = ShopDatabase.fromConfig();
         CustomerResponse customer = admin().customers().createCustomer(TestDataFactory.newCustomer());
@@ -228,21 +228,21 @@ public class OrderReservationConcurrencyTest extends BaseApiTest {
 
     /** Two simultaneous cancellations must restore the reservation only once. */
     @Test
-    public void concurrentCancellationRestoresStockExactlyOnce() throws SQLException, InterruptedException,
+    public void tc315_concurrentCancellationRestoresStockExactlyOnce() throws SQLException, InterruptedException,
             ExecutionException, TimeoutException {
         assertConcurrentRelease(false, false);
     }
 
     /** Two simultaneous deletes must not both return the same order's reserved stock. */
     @Test
-    public void concurrentDeletionRestoresStockExactlyOnce() throws SQLException, InterruptedException,
+    public void tc316_concurrentDeletionRestoresStockExactlyOnce() throws SQLException, InterruptedException,
             ExecutionException, TimeoutException {
         assertConcurrentRelease(true, true);
     }
 
     /** A cancellation racing a deletion still returns the reservation exactly once. */
     @Test
-    public void concurrentCancellationAndDeletionRestoresStockExactlyOnce() throws SQLException, InterruptedException,
+    public void tc317_concurrentCancellationAndDeletionRestoresStockExactlyOnce() throws SQLException, InterruptedException,
             ExecutionException, TimeoutException {
         assertConcurrentRelease(false, true);
     }

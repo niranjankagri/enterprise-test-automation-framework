@@ -42,7 +42,7 @@ public class LoginRegressionTest extends BaseTest {
 
     // One run per row of testdata/login-negative.csv; the provider wraps the password in a report-safe value.
     @Test(dataProvider = "loginNegative", dataProviderClass = TestDataProviders.class, groups = "smoke")
-    public void signInIsRejected(String testCase, String username, TestDataProviders.SensitiveValue password,
+    public void tc104_signInIsRejected(String testCase, String username, TestDataProviders.SensitiveValue password,
                                  String expectedField,
                                  String expectedMessage) {
         LoginPage login = openLoginPage().attemptLogin(username, password.value());
@@ -63,7 +63,7 @@ public class LoginRegressionTest extends BaseTest {
 
     // Method-level groups are added to the class-level ones (ui, regression + sanity)
     @Test(groups = "sanity")
-    public void viewerSignsInWithTheReadOnlyRole() {
+    public void tc105_viewerSignsInWithTheReadOnlyRole() {
         DashboardPage dashboard = loginAsViewer();
 
         // The header shows the read-only role
@@ -71,7 +71,7 @@ public class LoginRegressionTest extends BaseTest {
     }
 
     /** Opening a protected page without a session redirects to the login page. */
-    public void protectedPagesRedirectToLoginWithoutASession() {
+    public void tc106_protectedPagesRedirectToLoginWithoutASession() {
         // A fresh browser has no session: open a protected page directly
         new CustomerPage().visit();
 
@@ -81,7 +81,7 @@ public class LoginRegressionTest extends BaseTest {
 
     /** Login controls have associated labels and remain reachable with visible keyboard focus. */
     @Test(groups = "smoke")
-    public void loginFieldsHaveLabelsAndKeyboardFocus() {
+    public void tc107_loginFieldsHaveLabelsAndKeyboardFocus() {
         openLoginPage();
         WebDriver driver = DriverManager.getDriver();
         assertThat(((JavascriptExecutor) driver).executeScript(
@@ -145,7 +145,7 @@ public class LoginRegressionTest extends BaseTest {
     }
 
     /** A deleted account's browser token is cleared and a useful reauthentication message is shown. */
-    public void deletedAccountBrowserSessionReturnsToLogin() {
+    public void tc108_deletedAccountBrowserSessionReturnsToLogin() {
         UserData user = TestDataFactory.newUser("VIEWER");
         UserResponse created = ApiSession.admin().users().createUser(user);
         CleanupRegistry.register("delete browser session user " + created.id(), () -> {
@@ -167,7 +167,7 @@ public class LoginRegressionTest extends BaseTest {
 
     /** A controlled expired-session response clears browser state and redirects to sign-in. */
     @Test(groups = "smoke")
-    public void expiredBrowserSessionClearsTheCartAndReturnsToLogin() {
+    public void tc109_expiredBrowserSessionClearsTheCartAndReturnsToLogin() {
         CustomerPage customers = loginAsAdmin().navigation().openProducts().addToCart("Wireless Mouse")
                 .navigation().openCustomers();
         WebDriver driver = DriverManager.getDriver();

@@ -103,7 +103,7 @@ public class OrderApiTest extends BaseApiTest {
 
     /** Placing an order returns 201 with its Location, computes line and order totals, and reserves the stock. */
     @Test(groups = {"smoke", "sanity"})
-    public void placingAnOrderComputesTotalsAndReservesStock() {
+    public void tc229_placingAnOrderComputesTotalsAndReservesStock() {
         // 2 x product (10.50, stock 5) + 1 x otherProduct (4.00, stock 3)
         Response response = orders().create(OrderRequest.of(customer().id(), item(product().id(), 2), item(otherProduct().id(), 1)));
 
@@ -126,7 +126,7 @@ public class OrderApiTest extends BaseApiTest {
     }
 
     /** Duplicate product lines remain separate ordered lines and collectively reserve exact stock once. */
-    public void duplicateProductLinesRemainSeparateAndCanConsumeExactStock() {
+    public void tc230_duplicateProductLinesRemainSeparateAndCanConsumeExactStock() {
         OrderResponse order = placeOrder(OrderRequest.of(customer().id(), item(product().id(), 2),
                 item(product().id(), 3)));
 
@@ -139,7 +139,7 @@ public class OrderApiTest extends BaseApiTest {
     }
 
     /** Orders can be filtered by customer and by status. */
-    public void ordersCanBeListedPerCustomerAndStatus() {
+    public void tc231_ordersCanBeListedPerCustomerAndStatus() {
         OrderResponse order = placeOrder(OrderRequest.of(customer().id(), item(product().id(), 1)));
 
         // Filter by customer: exactly this order; by customer + SHIPPED: none (it is PLACED)
@@ -150,7 +150,7 @@ public class OrderApiTest extends BaseApiTest {
     }
 
     /** Status moves PLACED -> SHIPPED -> DELIVERED; a delivered order cannot be cancelled (409). */
-    public void statusFollowsTheAllowedFlow() {
+    public void tc232_statusFollowsTheAllowedFlow() {
         OrderResponse order = placeOrder(OrderRequest.of(customer().id(), item(product().id(), 1)));
 
         // The allowed path: PLACED -> SHIPPED -> DELIVERED
@@ -163,7 +163,7 @@ public class OrderApiTest extends BaseApiTest {
     }
 
     /** Cancelling an order puts its units back in stock. */
-    public void cancellingGivesTheStockBack() {
+    public void tc233_cancellingGivesTheStockBack() {
         // Reserve 4 of 5
         OrderResponse order = placeOrder(OrderRequest.of(customer().id(), item(product().id(), 4)));
         assertThat(stockOf(product())).isEqualTo(1);
@@ -175,7 +175,7 @@ public class OrderApiTest extends BaseApiTest {
     }
 
     /** Ordering more than the stock is a 409 naming the product, and the whole order is rolled back. */
-    public void orderingMoreThanTheStockGives409AndChangesNothing() {
+    public void tc234_orderingMoreThanTheStockGives409AndChangesNothing() {
         // The first line is fine, the second asks for 6 of 5
         ErrorResponse error = error(expectStatus(orders().create(
                 OrderRequest.of(customer().id(), item(otherProduct().id(), 1), item(product().id(), 6))), 409));
@@ -187,7 +187,7 @@ public class OrderApiTest extends BaseApiTest {
     }
 
     /** Missing customer, no items and a zero quantity each give a field error; a line is named by its index. */
-    public void invalidOrdersGive400PerField() {
+    public void tc235_invalidOrdersGive400PerField() {
         // No customer and no items
         ErrorResponse empty = error(expectStatus(orders().create(new OrderRequest(null, List.of())), 400));
         assertThat(empty.fieldErrors()).containsEntry("customerId", "Customer is required")
@@ -202,7 +202,7 @@ public class OrderApiTest extends BaseApiTest {
 
     /** Invalid JSON quantity shapes and out-of-range integers are rejected without changing state. */
     @Test(dataProvider = "invalidQuantities", dataProviderClass = TestDataProviders.class)
-    public void invalidQuantitiesAreRejectedWithoutChangingState(String caseName, String quantityJson) {
+    public void tc236_invalidQuantitiesAreRejectedWithoutChangingState(String caseName, String quantityJson) {
         String quantityField = quantityJson == null ? "" : ",\"quantity\":" + quantityJson;
         String item = "{\"productId\":" + product().id() + quantityField + "}";
         String body = "{\"customerId\":" + customer().id() + ",\"items\":[" + item + "]}";
@@ -216,7 +216,7 @@ public class OrderApiTest extends BaseApiTest {
     }
 
     /** The largest supported positive quantity parses, then fails only the stock business rule. */
-    public void maximumSupportedQuantityIsAStockConflict() {
+    public void tc237_maximumSupportedQuantityIsAStockConflict() {
         ErrorResponse error = error(expectStatus(orders().create(OrderRequest.of(
                 customer().id(), item(product().id(), Integer.MAX_VALUE))), 409));
 
@@ -226,7 +226,7 @@ public class OrderApiTest extends BaseApiTest {
     }
 
     /** A valid earlier line is not reserved when a later line has an overflowing quantity. */
-    public void overflowingQuantityInMixedOrderRollsBackEveryLine() {
+    public void tc238_overflowingQuantityInMixedOrderRollsBackEveryLine() {
         String body = "{\"customerId\":" + customer().id() + ",\"items\":["
                 + "{\"productId\":" + otherProduct().id() + ",\"quantity\":1},"
                 + "{\"productId\":" + product().id() + ",\"quantity\":4294967297}]}";
@@ -240,7 +240,7 @@ public class OrderApiTest extends BaseApiTest {
     }
 
     /** An unknown customer or product is 404 and reserves nothing. */
-    public void unknownReferencesGive404() {
+    public void tc239_unknownReferencesGive404() {
         // Unknown customer, then unknown product
         expectStatus(orders().create(OrderRequest.of(999_999, item(product().id(), 1))), 404);
         expectStatus(orders().create(OrderRequest.of(customer().id(), item(999_999, 1))), 404);
@@ -249,7 +249,7 @@ public class OrderApiTest extends BaseApiTest {
     }
 
     /** An inactive customer cannot order: a business rule (409), not a validation error. */
-    public void inactiveCustomerCannotOrder() {
+    public void tc240_inactiveCustomerCannotOrder() {
         // Deactivate this test's customer
         admin().customers().update(customer().id(), Map.of("status", "INACTIVE"));
 
@@ -261,7 +261,7 @@ public class OrderApiTest extends BaseApiTest {
 
     /** A viewer can read an order but not place one (403). */
     @Test(groups = "sanity")
-    public void viewerCanReadOrdersButNotPlaceThem() {
+    public void tc241_viewerCanReadOrdersButNotPlaceThem() {
         OrderResponse order = placeOrder(OrderRequest.of(customer().id(), item(product().id(), 1)));
 
         // Reading an existing order is fine; placing one is admin-only
@@ -271,7 +271,7 @@ public class OrderApiTest extends BaseApiTest {
 
     /** The exact DECIMAL(12,2) maximum order total is accepted and persisted precisely. */
     @Test(groups = "integration")
-    public void maximumSupportedOrderTotalIsStoredExactly() {
+    public void tc242_maximumSupportedOrderTotalIsStoredExactly() {
         ShopDatabase database = ShopDatabase.fromConfig();
         ProductResponse highPrice = admin().products().createProduct(TestDataFactory.newProduct()
                 .withPrice(new BigDecimal("99999999.99")).withStock(100));
@@ -293,7 +293,7 @@ public class OrderApiTest extends BaseApiTest {
 
     /** A total beyond DECIMAL(12,2) is a client error and leaves no order, lines or stock changes. */
     @Test(groups = "integration")
-    public void orderTotalAboveDatabaseMaximumIsRejectedWithoutWriting() {
+    public void tc243_orderTotalAboveDatabaseMaximumIsRejectedWithoutWriting() {
         ShopDatabase database = ShopDatabase.fromConfig();
         ProductResponse highPrice = admin().products().createProduct(TestDataFactory.newProduct()
                 .withPrice(new BigDecimal("99999999.99")).withStock(101));
@@ -311,7 +311,7 @@ public class OrderApiTest extends BaseApiTest {
         assertThat(database.stockOf(highPrice.sku())).as("the failed transaction leaves stock unchanged").isEqualTo(101);
     }
     /** A product ID must not wrap to a real product during long conversion. */
-    public void overflowingProductIdsAreRejectedWithoutStateChanges() {
+    public void tc244_overflowingProductIdsAreRejectedWithoutStateChanges() {
         String oversized = java.math.BigInteger.ONE.shiftLeft(64)
                 .add(java.math.BigInteger.valueOf(product().id())).toString();
         String body = "{\"customerId\":" + customer().id() + ",\"items\":[{\"productId\":"
@@ -322,7 +322,7 @@ public class OrderApiTest extends BaseApiTest {
         assertThat(orders().ordersOf(customer().id())).isEmpty();
     }
 
-    public void orderItemLimitIsRejectedBeforeWrites() {
+    public void tc245_orderItemLimitIsRejectedBeforeWrites() {
         String line = "{\"productId\":" + product().id() + ",\"quantity\":1}";
         String body = "{\"customerId\":" + customer().id() + ",\"items\":["
                 + String.join(",", java.util.Collections.nCopies(1001, line)) + "]}";

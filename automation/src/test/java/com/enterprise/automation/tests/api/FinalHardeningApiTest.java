@@ -23,7 +23,7 @@ import org.testng.annotations.Test;
 @Test(groups = {"api", "regression"})
 public class FinalHardeningApiTest extends BaseApiTest {
 
-    public void duplicateCreationReturnsOneCreatedAndOneConflict() throws Exception {
+    public void tc226_duplicateCreationReturnsOneCreatedAndOneConflict() throws Exception {
         CustomerData data = TestDataFactory.newCustomer();
         List<Response> results = race(() -> admin().customers().create(
                 com.enterprise.automation.api.models.CustomerRequest.from(data)),
@@ -39,7 +39,7 @@ public class FinalHardeningApiTest extends BaseApiTest {
                 .filter(customer -> customer.email().equalsIgnoreCase(data.email())).count()).isEqualTo(1);
     }
 
-    public void concurrentPatchesPreserveBothIndependentFields() throws Exception {
+    public void tc227_concurrentPatchesPreserveBothIndependentFields() throws Exception {
         CustomerResponse created = admin().customers().createCustomer(TestDataFactory.newCustomer());
         CleanupRegistry.register("delete patch race customer", () -> admin().customers().deleteCustomerIfExists(created.id()));
         List<Response> results = race(() -> admin().customers().update(created.id(), Map.of("city", "Patch City")),
@@ -50,7 +50,7 @@ public class FinalHardeningApiTest extends BaseApiTest {
         assertThat(stored.phone()).isEqualTo("+1-555-0199");
     }
 
-    public void oversizedRequestIsRejectedWithoutCreatingARecord() {
+    public void tc228_oversizedRequestIsRejectedWithoutCreatingARecord() {
         String body = JsonMapper.toJson(Map.of("firstName", "x".repeat(Request.MAX_BODY_BYTES),
                 "lastName", "Oversized", "email", "oversized@example.test"));
         assertThat(admin().client().postRaw("/customers", body).statusCode()).isEqualTo(413);

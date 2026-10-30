@@ -38,7 +38,7 @@ public class CustomerApiTest extends BaseApiTest {
 
     /** POST creates an active customer: 201, the contract, and every field as sent. */
     @Test(groups = {"smoke", "sanity"})
-    public void postCreatesACustomer() {
+    public void tc213_postCreatesACustomer() {
         CustomerData data = TestDataFactory.newCustomer();
 
         // The raw call: status, headers and body are what is tested here
@@ -62,7 +62,7 @@ public class CustomerApiTest extends BaseApiTest {
     }
 
     /** GET returns exactly what POST returned. */
-    public void getReturnsTheCustomer() {
+    public void tc214_getReturnsTheCustomer() {
         CustomerResponse created = givenCustomer(TestDataFactory.newCustomer());
 
         Response response = expectStatus(customers().get(created.id()), 200);
@@ -73,7 +73,7 @@ public class CustomerApiTest extends BaseApiTest {
     }
 
     /** Search finds a customer by email and by city, ignoring case; an unknown term finds nothing. */
-    public void searchFindsByEmailNameAndCity() {
+    public void tc215_searchFindsByEmailNameAndCity() {
         // A city nobody else has, so a city search can only find this customer
         CustomerData data = TestDataFactory.newCustomer().withCity("Reykjavik-" + System.nanoTime());
         CustomerResponse created = givenCustomer(data);
@@ -90,7 +90,7 @@ public class CustomerApiTest extends BaseApiTest {
     }
 
     /** PUT replaces every field except id and creation time; an omitted phone becomes null. */
-    public void putReplacesTheWholeCustomer() {
+    public void tc216_putReplacesTheWholeCustomer() {
         CustomerResponse created = givenCustomer(TestDataFactory.newCustomer());
         // Completely different data, without a phone
         CustomerData replacement = TestDataFactory.newCustomer().withPhone(null);
@@ -108,7 +108,7 @@ public class CustomerApiTest extends BaseApiTest {
     }
 
     /** PATCH changes only the given field and leaves the others exactly as they were. */
-    public void patchChangesOnlyTheGivenFields() {
+    public void tc217_patchChangesOnlyTheGivenFields() {
         CustomerResponse created = givenCustomer(TestDataFactory.newCustomer());
 
         CustomerResponse patched = JsonMapper.fromJson(
@@ -121,7 +121,7 @@ public class CustomerApiTest extends BaseApiTest {
     }
 
     /** DELETE answers 204 with an empty body, and the customer is gone afterwards. */
-    public void deleteRemovesTheCustomer() {
+    public void tc218_deleteRemovesTheCustomer() {
         // No clean-up registered: deleting it is the test
         CustomerResponse created = customers().createCustomer(TestDataFactory.newCustomer());
 
@@ -136,7 +136,7 @@ public class CustomerApiTest extends BaseApiTest {
 
     /** Each invalid value from the CSV gives a 400 with the same field message the UI shows. */
     @Test(dataProvider = "invalidCustomers", dataProviderClass = TestDataProviders.class)
-    public void invalidFieldsGive400WithTheFieldMessage(String testCase, String field, String label, String value,
+    public void tc219_invalidFieldsGive400WithTheFieldMessage(String testCase, String field, String label, String value,
                                                         String expected) {
         // A valid body as a mutable map, then the CSV row overwrites one field with an invalid value
         Map<String, Object> body = new HashMap<>(Map.of(
@@ -151,7 +151,7 @@ public class CustomerApiTest extends BaseApiTest {
     }
 
     /** Several invalid fields are all reported in one 400, and nothing else. */
-    public void allInvalidFieldsAreReportedTogether() {
+    public void tc220_allInvalidFieldsAreReportedTogether() {
         // Two names missing, a bad email and an unknown status in one request
         ErrorResponse error = error(expectStatus(customers().create(Map.of("email", "bad", "status", "UNKNOWN")), 400));
 
@@ -160,7 +160,7 @@ public class CustomerApiTest extends BaseApiTest {
     }
 
     /** An email already in use, even in another case, is a 409 on the email field. */
-    public void duplicateEmailGives409() {
+    public void tc221_duplicateEmailGives409() {
         CustomerResponse existing = givenCustomer(TestDataFactory.newCustomer());
         // Upper-cased: uniqueness must ignore case
         CustomerData duplicate = TestDataFactory.newCustomer().withEmail(existing.email().toUpperCase());
@@ -171,7 +171,7 @@ public class CustomerApiTest extends BaseApiTest {
     }
 
     /** A customer with orders cannot be deleted (409), so order history stays complete. */
-    public void customerWithOrdersCannotBeDeleted() {
+    public void tc222_customerWithOrdersCannotBeDeleted() {
         CustomerResponse customer = givenCustomer(TestDataFactory.newCustomer());
         // Give the customer one order (removed again after the test, before the customer)
         long productId = admin().products().getBySku("ACC-3001").id();
@@ -184,7 +184,7 @@ public class CustomerApiTest extends BaseApiTest {
     }
 
     /** GET, PATCH and DELETE on an unknown id are 404. */
-    public void unknownIdsGive404() {
+    public void tc223_unknownIdsGive404() {
         // GET, PATCH and DELETE on an id that cannot exist
         assertThat(error(expectStatus(customers().get(999_999), 404)).error()).isEqualTo("Not Found");
         expectStatus(customers().update(999_999, Map.of("city", "X")), 404);
@@ -195,7 +195,7 @@ public class CustomerApiTest extends BaseApiTest {
      * Requests the typed client cannot send (non-numeric id, broken JSON, an array body, an unsupported method) get
      * 400 or 405 with a clear message, never a 500.
      */
-    public void malformedRequestsGive400Or405() {
+    public void tc224_malformedRequestsGive400Or405() {
         // The raw client sends what the typed services cannot: a non-numeric id, broken JSON,
         // a JSON array instead of an object, and a method the path does not support
         assertThat(error(expectStatus(admin().client().get("/customers/abc"), 400)).message())
@@ -208,7 +208,7 @@ public class CustomerApiTest extends BaseApiTest {
                 .isEqualTo("Method Not Allowed");
     }
     /** Missing PATCH fields preserve state, while explicit nulls clear nullable fields. */
-    public void explicitNullPatchClearsOptionalFields() {
+    public void tc225_explicitNullPatchClearsOptionalFields() {
         CustomerResponse customer = givenCustomer(TestDataFactory.newCustomer());
         Map<String, Object> clear = new HashMap<>();
         clear.put("phone", null);

@@ -17,7 +17,7 @@ import org.testng.annotations.Test;
 public class CatalogSmokeTest extends BaseTest {
 
     /** Searching for a customer's email leaves exactly that customer with the seeded values. */
-    public void customerSearchNarrowsTheList() {
+    public void tc113_customerSearchNarrowsTheList() {
         CustomerPage customers = loginAsAdmin().navigation().openCustomers();
         // How many customers are listed before searching
         int all = customers.table().rowCount();
@@ -36,7 +36,7 @@ public class CatalogSmokeTest extends BaseTest {
     }
 
     /** The category filter and the name search each list only matching products. */
-    public void productSearchAndCategoryFilter() {
+    public void tc114_productSearchAndCategoryFilter() {
         ProductPage products = loginAsAdmin().navigation().openProducts();
 
         // Category filter: only monitors are listed
@@ -50,7 +50,7 @@ public class CatalogSmokeTest extends BaseTest {
     }
 
     /** Adding products fills the cart: merged quantities, lines and the right total. */
-    public void addingProductsFillsTheCart() {
+    public void tc115_addingProductsFillsTheCart() {
         ProductPage products = loginAsAdmin().navigation().openProducts();
 
         // Two mice and one dock: three units, two lines
