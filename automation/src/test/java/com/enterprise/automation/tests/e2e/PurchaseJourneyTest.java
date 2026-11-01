@@ -23,7 +23,6 @@ import io.qameta.allure.Allure;
 import io.qameta.allure.model.StepResult;
 import java.util.List;
 import java.util.Map;
-import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -83,10 +82,9 @@ public class PurchaseJourneyTest extends BaseTest {
 
         // Checkout
         CheckoutPage checkout = products.header().openCart();
-        assertThat(DriverManager.getDriver().findElement(By.cssSelector("[data-testid='checkout-customer']"))
-                .getAttribute("aria-label")).isEqualTo("Customer");
-        assertThat(DriverManager.getDriver().findElements(By.cssSelector("[data-testid='quantity']")))
-                .allSatisfy(quantity -> assertThat(quantity.getAttribute("aria-label")).startsWith("Quantity of "));
+        assertThat(checkout.customerSelectLabel()).isEqualTo("Customer");
+        assertThat(checkout.quantityLabels()).isNotEmpty()
+                .allSatisfy(label -> assertThat(label).startsWith("Quantity of "));
         for (OrderData.Line line : order.lines()) {
             checkout.setQuantity(line.product().name(), line.quantity());
         }
@@ -139,7 +137,7 @@ public class PurchaseJourneyTest extends BaseTest {
                 () -> ApiSession.admin().products().deleteProduct(product.id()));
         ProductPage products = loginAsAdmin().navigation().openProducts();
         products.search(product.sku()).addToCart(product.name());
-        products.header().openCart().selectCustomer(buyer().email());
+        CheckoutPage checkout = products.header().openCart().selectCustomer(buyer().email());
         var driver = DriverManager.getDriver();
         ((JavascriptExecutor) driver).executeScript("""
                 const originalFetch = window.fetch.bind(window);
@@ -151,7 +149,7 @@ public class PurchaseJourneyTest extends BaseTest {
                   : originalFetch(url, options);
                 """);
 
-        var submit = driver.findElement(By.cssSelector("[data-testid='place-order']"));
+        var submit = checkout.placeOrderButton();
         submit.click();
         assertThat(submit.isEnabled()).as("first request disables the submit control").isFalse();
         ((JavascriptExecutor) driver).executeScript("arguments[0].click();", submit);

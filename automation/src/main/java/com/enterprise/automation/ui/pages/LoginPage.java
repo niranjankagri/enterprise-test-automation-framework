@@ -4,6 +4,7 @@ import com.enterprise.automation.config.Credentials;
 import com.enterprise.automation.ui.BasePage;
 import com.enterprise.automation.ui.TestId;
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 
 /** The sign-in screen. */
 public class LoginPage extends BasePage {
@@ -53,6 +54,22 @@ public class LoginPage extends BasePage {
         By error = TestId.of(field + "-error");
         wait.until(d -> !d.findElement(error).getText().isBlank(), field + " error");
         return actions.text(error);
+    }
+
+    /** The input of {@code field} ({@code username} or {@code password}), e.g. to check its aria attributes. */
+    public WebElement field(String field) {
+        // The inputs have id = field name
+        return wait.visible(By.id(field));
+    }
+
+    /** ARIA role of the message under {@code field}; "alert" makes screen readers announce it. */
+    public String fieldErrorRole(String field) {
+        return driver.findElement(By.id(field + "-error")).getDomAttribute("role");
+    }
+
+    /** What the password field currently holds (its DOM value, not what is shown). */
+    public String passwordValue() {
+        return wait.visible(PASSWORD).getDomProperty("value");
     }
 
     /** Information banner, e.g. after logout. */

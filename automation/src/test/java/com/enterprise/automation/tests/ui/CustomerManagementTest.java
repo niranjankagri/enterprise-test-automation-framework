@@ -14,7 +14,6 @@ import com.enterprise.automation.ui.components.ModalComponent;
 import com.enterprise.automation.ui.pages.CustomerPage;
 import java.util.List;
 import java.util.Map;
-import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebElement;
@@ -119,19 +118,17 @@ public class CustomerManagementTest extends BaseTest {
         CustomerPage customers = loginAsAdmin().navigation().openCustomers();
 
         // Fill the form completely, then Cancel instead of Save
-        WebElement addButton = DriverManager.getDriver().findElement(By.cssSelector("[data-testid='add-customer']"));
+        WebElement addButton = customers.addCustomerButton();
         ModalComponent form = customers.openAddCustomerForm();
-        WebElement dialog = DriverManager.getDriver().findElement(By.cssSelector("[data-testid='modal']"));
-        WebElement firstField = DriverManager.getDriver().findElement(By.id("field-firstName"));
+        // The dialog is a labelled, modal dialog and focus starts in its first field
+        WebElement dialog = form.element();
+        WebElement firstField = form.fieldByName("firstName");
         assertThat(dialog.getAttribute("role")).isEqualTo("dialog");
         assertThat(dialog.getAttribute("aria-modal")).isEqualTo("true");
         assertThat(dialog.getAttribute("aria-labelledby")).isEqualTo("modal-title");
-        assertThat(DriverManager.getDriver().findElement(By.id("modal-title")).getText()).isEqualTo("Add customer");
+        assertThat(form.title()).isEqualTo("Add customer");
         assertThat(DriverManager.getDriver().switchTo().activeElement()).isEqualTo(firstField);
-        assertThat(((JavascriptExecutor) DriverManager.getDriver()).executeScript(
-                "return [...arguments[0].querySelectorAll('input,select')].every"
-                        + "(field => arguments[0].querySelector(`label[for=\"${field.id}\"]`));", dialog))
-                .isEqualTo(Boolean.TRUE);
+        assertThat(form.everyFieldHasLabel()).as("every field has a label").isTrue();
         assertThat(((JavascriptExecutor) DriverManager.getDriver()).executeScript(
                 "return [getComputedStyle(document.activeElement).outlineStyle,"
                         + "parseFloat(getComputedStyle(document.activeElement).outlineWidth)];"))
@@ -149,9 +146,9 @@ public class CustomerManagementTest extends BaseTest {
         form.cancel();
         assertThat(DriverManager.getDriver().switchTo().activeElement()).isEqualTo(addButton);
 
-        customers.openAddCustomerForm();
+        ModalComponent reopened = customers.openAddCustomerForm();
         new Actions(DriverManager.getDriver()).sendKeys(Keys.ESCAPE).perform();
-        assertThat(DriverManager.getDriver().findElements(By.cssSelector("[data-testid='modal']"))).isEmpty();
+        assertThat(reopened.isPresent()).as("Escape closes the dialog").isFalse();
         assertThat(DriverManager.getDriver().switchTo().activeElement()).isEqualTo(addButton);
 
         // Nothing was stored
@@ -167,7 +164,7 @@ public class CustomerManagementTest extends BaseTest {
 
         Map<String, String> row = customers.table().row("Email", customer.email());
         assertThat(row.get("Name")).isEqualTo(customer.fullName());
-        assertThat(DriverManager.getDriver().findElements(By.cssSelector("img[src='x'][onerror]"))).isEmpty();
+        assertThat(customers.rendersInjectedImage()).as("name rendered as text, not as HTML").isFalse();
         assertThat(((JavascriptExecutor) DriverManager.getDriver()).executeScript("return window.__tafXss || null"))
                 .isNull();
     }
@@ -185,11 +182,10 @@ public class CustomerManagementTest extends BaseTest {
         // The API's message for that field appears under it, and the form stays open
         assertThat(form.fieldError(field)).as(testCase).isEqualTo(error);
         assertThat(form.isDisplayed()).as("form stays open").isTrue();
-        WebElement invalidField = DriverManager.getDriver().findElement(By.id("field-" + field));
+        WebElement invalidField = form.fieldByName(field);
         assertThat(invalidField.getAttribute("aria-invalid")).as("invalid control is identified").isEqualTo("true");
         assertThat(invalidField.getAttribute("aria-describedby")).contains("error-" + field);
-        assertThat(DriverManager.getDriver().findElement(By.id("error-" + field)).getAttribute("role"))
-                .isEqualTo("alert");
+        assertThat(form.fieldErrorRole(field)).isEqualTo("alert");
         assertThat(DriverManager.getDriver().switchTo().activeElement()).as("focus moves to the first invalid field")
                 .isEqualTo(invalidField);
     }
@@ -238,23 +234,21 @@ public class CustomerManagementTest extends BaseTest {
             customers.beginSearch("Ava");
             BrowserRequestSimulator.awaitPending(driver, config().explicitWait());
 
-            assertThat(((JavascriptExecutor) driver).executeScript("return document.body.dataset.busy"))
-                    .isEqualTo("true");
-            assertThat(driver.findElement(By.cssSelector("[data-testid='loader']")).isDisplayed()).isTrue();
+            assertThat(customers.isBusy()).as("request in flight").isTrue();
+            assertThat(customers.isLoaderDisplayed()).isTrue();
 
             BrowserRequestSimulator.release(driver);
             customers.waitUntilLoaded();
 
             assertThat(customers.hasLoadError()).isTrue();
             assertThat(customers.loadErrorMessage()).contains("Customers could not be loaded");
-            assertThat(driver.findElement(By.cssSelector("[data-testid='customer-load-retry']")).isEnabled()).isTrue();
+            assertThat(customers.canRetryLoading()).isTrue();
 
             BrowserRequestSimulator.gatePassThrough(driver, "GET", "/api/customers");
             customers.beginRetryLoading();
             BrowserRequestSimulator.awaitPending(driver, config().explicitWait());
             assertThat(customers.hasLoadError()).isFalse();
-            assertThat(((JavascriptExecutor) driver).executeScript("return document.body.dataset.busy"))
-                    .isEqualTo("true");
+            assertThat(customers.isBusy()).as("request in flight").isTrue();
 
             BrowserRequestSimulator.release(driver);
             customers.waitUntilLoaded();

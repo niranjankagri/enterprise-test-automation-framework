@@ -74,6 +74,11 @@ public class ProductPage extends ShopPage<ProductPage> {
         return actions.text(LOAD_ERROR);
     }
 
+    /** Whether the Retry button of the catalogue error can be clicked. */
+    public boolean canRetryLoading() {
+        return actions.isEnabled(LOAD_RETRY);
+    }
+
     /** Retries loading the current catalogue search and category. */
     public ProductPage retryLoading() {
         return beginRetryLoading().waitUntilLoaded();
