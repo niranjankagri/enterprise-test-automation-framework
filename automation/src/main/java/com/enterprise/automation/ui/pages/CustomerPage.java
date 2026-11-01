@@ -5,6 +5,7 @@ import com.enterprise.automation.ui.TestId;
 import com.enterprise.automation.ui.components.ModalComponent;
 import com.enterprise.automation.ui.components.TableComponent;
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 
 /** Customer list: search, add, edit and delete. Rows are identified by their unique email. */
 public class CustomerPage extends ShopPage<CustomerPage> {
@@ -56,6 +57,11 @@ public class CustomerPage extends ShopPage<CustomerPage> {
         return actions.text(LOAD_ERROR);
     }
 
+    /** Whether the Retry button of the customer list error can be clicked. */
+    public boolean canRetryLoading() {
+        return actions.isEnabled(LOAD_RETRY);
+    }
+
     /** Retries loading the current customer search. */
     public CustomerPage retryLoading() {
         return beginRetryLoading().waitUntilLoaded();
@@ -75,6 +81,20 @@ public class CustomerPage extends ShopPage<CustomerPage> {
     /** Only admins see the "Add customer" button. */
     public boolean canAddCustomers() {
         return actions.isDisplayed(ADD);
+    }
+
+    /** The "Add customer" button itself, e.g. to check that focus returns to it after the dialog closes. */
+    public WebElement addCustomerButton() {
+        return wait.visible(ADD);
+    }
+
+    /**
+     * Whether the page contains an {@code <img src="x" onerror=...>} element, i.e. a customer name
+     * like {@code <img src=x onerror=...>} was rendered as HTML instead of as text.
+     */
+    public boolean rendersInjectedImage() {
+        // findElements (plural): an empty list means the name stayed plain text
+        return !driver.findElements(By.cssSelector("img[src='x'][onerror]")).isEmpty();
     }
 
     /** Only admins get Edit and Delete buttons in the rows. */

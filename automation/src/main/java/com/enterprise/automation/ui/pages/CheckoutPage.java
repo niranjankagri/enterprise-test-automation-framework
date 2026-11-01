@@ -6,6 +6,9 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebElement;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /** Cart review and order placement. */
 public class CheckoutPage extends ShopPage<CheckoutPage> {
 
@@ -14,6 +17,8 @@ public class CheckoutPage extends ShopPage<CheckoutPage> {
     private static final By PLACE_ORDER = TestId.of("place-order");
     private static final By TOTAL = TestId.of("order-total");
     private static final By ERROR = TestId.of("checkout-error");
+    // Quantity input of a cart line (one per line)
+    private static final By QUANTITY = TestId.of("quantity");
     // Cart rows are identified by the product name column
     private static final String PRODUCT = "Product";
 
@@ -77,6 +82,32 @@ public class CheckoutPage extends ShopPage<CheckoutPage> {
     public CheckoutPage selectCustomer(String text) {
         actions.selectContaining(CUSTOMER, text);
         return this;
+    }
+
+    /** Accessible name of the customer select (its {@code aria-label}). */
+    public String customerSelectLabel() {
+        return wait.visible(CUSTOMER).getDomAttribute("aria-label");
+    }
+
+    /** Accessible names of all quantity inputs, one per cart line, e.g. "Quantity of Wireless Mouse". */
+    public List<String> quantityLabels() {
+        // Simple loop instead of a stream: read the aria-label of every quantity input
+        List<String> labels = new ArrayList<>();
+        for (WebElement quantity : driver.findElements(QUANTITY)) {
+            labels.add(quantity.getDomAttribute("aria-label"));
+        }
+        return labels;
+    }
+
+    /** Clicks into the first quantity input, e.g. as the start of a keyboard (Tab) check. */
+    public CheckoutPage focusFirstQuantity() {
+        actions.click(QUANTITY);
+        return this;
+    }
+
+    /** The "Place order" button itself, for tests that check it while a request is running. */
+    public WebElement placeOrderButton() {
+        return wait.visible(PLACE_ORDER);
     }
 
     /** The button is disabled for an empty cart and for read-only users. */

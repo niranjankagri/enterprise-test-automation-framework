@@ -4,6 +4,7 @@ import com.enterprise.automation.reporting.Report;
 import com.enterprise.automation.ui.BaseComponent;
 import com.enterprise.automation.ui.TestId;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.Select;
 
@@ -47,6 +48,35 @@ public class ModalComponent extends BaseComponent {
     public TableComponent table(String testId) {
         // Scoped to the dialog, so a table with the same test id on the page behind is never used
         return new TableComponent(By.cssSelector("[data-testid='modal'] [data-testid='" + testId + "']"));
+    }
+
+    /** The dialog element itself, e.g. to check its role and aria attributes. */
+    public WebElement element() {
+        return rootElement();
+    }
+
+    /** Immediate check, no waiting: is the dialog in the page at all (closed dialogs are removed)? */
+    public boolean isPresent() {
+        return !driver.findElements(root).isEmpty();
+    }
+
+    /** The input or select of the API field {@code name}, e.g. {@code firstName} (id {@code field-firstName}). */
+    public WebElement fieldByName(String name) {
+        return child(By.id("field-" + name));
+    }
+
+    /** ARIA role of the message under field {@code name}; "alert" makes screen readers announce it. */
+    public String fieldErrorRole(String name) {
+        return driver.findElement(root).findElement(By.id("error-" + name)).getDomAttribute("role");
+    }
+
+    /** Whether every input and select in the dialog has a {@code <label for=...>}. */
+    public boolean everyFieldHasLabel() {
+        // Checked in the browser in one go; each field id must be named by some label's "for"
+        Object result = ((JavascriptExecutor) driver).executeScript(
+                "return [...arguments[0].querySelectorAll('input,select')].every"
+                        + "(field => arguments[0].querySelector(`label[for=\"${field.id}\"]`));", rootElement());
+        return Boolean.TRUE.equals(result);
     }
 
     /** Whether the submit button is offered (e.g. "Cancel order" only for open orders). */

@@ -59,6 +59,17 @@ public abstract class ShopPage<T extends ShopPage<T>> extends BasePage {
         return self();
     }
 
+    /** Immediate check, no waiting: is an API call of this page still running ({@code body[data-busy]})? */
+    public boolean isBusy() {
+        // The app sets data-busy="true" on the body while a request is in flight
+        return "true".equals(driver.findElement(By.tagName("body")).getDomAttribute("data-busy"));
+    }
+
+    /** Immediate check, no waiting: is the loading bar visible right now? */
+    public boolean isLoaderDisplayed() {
+        return actions.isDisplayed(LOADER);
+    }
+
     /** The page heading, e.g. "Customers". */
     public String heading() {
         return actions.text(PAGE_TITLE);

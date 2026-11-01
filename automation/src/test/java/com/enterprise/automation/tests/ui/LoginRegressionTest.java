@@ -52,11 +52,10 @@ public class LoginRegressionTest extends BaseTest {
         assertThat(actual).as(testCase).isEqualTo(expectedMessage);
         assertThat(login.currentUrl()).as("still on the login page").contains("/login.html");
         if (!"form".equals(expectedField)) {
-            WebElement field = DriverManager.getDriver().findElement(org.openqa.selenium.By.id(expectedField));
+            WebElement field = login.field(expectedField);
             assertThat(field.getAttribute("aria-invalid")).as("invalid login field is identified").isEqualTo("true");
             assertThat(field.getAttribute("aria-describedby")).contains(expectedField + "-error");
-            assertThat(DriverManager.getDriver().findElement(
-                    org.openqa.selenium.By.id(expectedField + "-error")).getAttribute("role")).isEqualTo("alert");
+            assertThat(login.fieldErrorRole(expectedField)).isEqualTo("alert");
             assertThat(DriverManager.getDriver().switchTo().activeElement()).isEqualTo(field);
         }
     }
@@ -131,7 +130,7 @@ public class LoginRegressionTest extends BaseTest {
         StringBuilder stepNames = new StringBuilder();
         Allure.getLifecycle().updateTest(testCase -> appendStepNames(testCase.getSteps(), stepNames));
 
-        assertThat(marker.equals(driver.findElement(passwordLocator).getDomProperty("value")))
+        assertThat(marker.equals(new LoginPage().passwordValue()))
                 .as("the typed value reaches the password field").isTrue();
         assertThat(logMessages).contains("type into " + passwordLocator).doesNotContain(marker);
         assertThat(stepNames).contains("Type [redacted] into password").doesNotContain(marker);

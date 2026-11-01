@@ -16,8 +16,6 @@ import io.qameta.allure.model.StepResult;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
 import org.testng.annotations.Test;
 
@@ -67,23 +65,21 @@ public class ProductCatalogTest extends BaseTest {
             products.beginSearch("Wireless");
             BrowserRequestSimulator.awaitPending(driver, config().explicitWait());
 
-            assertThat(((JavascriptExecutor) driver).executeScript("return document.body.dataset.busy"))
-                    .isEqualTo("true");
-            assertThat(driver.findElement(By.cssSelector("[data-testid='loader']")).isDisplayed()).isTrue();
+            assertThat(products.isBusy()).as("request in flight").isTrue();
+            assertThat(products.isLoaderDisplayed()).isTrue();
 
             BrowserRequestSimulator.release(driver);
             products.waitUntilLoaded();
 
             assertThat(products.hasLoadError()).isTrue();
             assertThat(products.loadErrorMessage()).contains("Products could not be loaded");
-            assertThat(driver.findElement(By.cssSelector("[data-testid='product-load-retry']")).isEnabled()).isTrue();
+            assertThat(products.canRetryLoading()).isTrue();
 
             BrowserRequestSimulator.gatePassThrough(driver, "GET", "/api/products");
             products.beginRetryLoading();
             BrowserRequestSimulator.awaitPending(driver, config().explicitWait());
             assertThat(products.hasLoadError()).isFalse();
-            assertThat(((JavascriptExecutor) driver).executeScript("return document.body.dataset.busy"))
-                    .isEqualTo("true");
+            assertThat(products.isBusy()).as("request in flight").isTrue();
 
             BrowserRequestSimulator.release(driver);
             products.waitUntilLoaded();

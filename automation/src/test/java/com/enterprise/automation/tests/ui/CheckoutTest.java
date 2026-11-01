@@ -9,7 +9,6 @@ import com.enterprise.automation.tests.base.BaseTest;
 import com.enterprise.automation.ui.pages.CheckoutPage;
 import com.enterprise.automation.ui.pages.ProductPage;
 import java.util.List;
-import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
@@ -92,8 +91,7 @@ public class CheckoutTest extends BaseTest {
                 .header().openCart();
         AccessibilityAssertions.pageHasNoViolations(DriverManager.getDriver(), "checkout with a cart line");
 
-        WebElement quantity = DriverManager.getDriver().findElement(By.cssSelector("[data-testid='quantity']"));
-        quantity.click();
+        checkout.focusFirstQuantity();
         new Actions(DriverManager.getDriver()).sendKeys(Keys.TAB).perform();
         WebElement focused = DriverManager.getDriver().switchTo().activeElement();
         assertThat(focused.getAttribute("data-testid")).isEqualTo("remove");
