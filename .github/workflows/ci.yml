@@ -112,13 +112,13 @@ jobs:
       - name: Verify source revisions and execution data
         run: python3 scripts/verify_coverage_inputs.py target/coverage-input "$GITHUB_SHA" 4
       - name: Merge execution data
-        run: ./mvnw -B -ntp -N -Dcoverage.merge=true org.jacoco:jacoco-maven-plugin:0.8.15:merge@merge-coverage-artifacts
+        run: ./mvnw -B -ntp -N -Dcoverage.merge=true org.jacoco:jacoco-maven-plugin:merge@merge-coverage-artifacts
       - name: Generate separate module reports
         run: |
           cp target/jacoco-merged.exec demo-app/target/jacoco.exec
           cp target/jacoco-merged.exec automation/target/jacoco.exec
-          ./mvnw -B -ntp -pl demo-app org.jacoco:jacoco-maven-plugin:0.8.15:report
-          ./mvnw -B -ntp -pl automation org.jacoco:jacoco-maven-plugin:0.8.15:report
+          ./mvnw -B -ntp -pl demo-app org.jacoco:jacoco-maven-plugin:report
+          ./mvnw -B -ntp -pl automation org.jacoco:jacoco-maven-plugin:report
       - name: Test JaCoCo report verifier
         run: python3 -m unittest discover -s scripts/tests -v
       - name: Verify measured production classes and summarize line/branch counts
