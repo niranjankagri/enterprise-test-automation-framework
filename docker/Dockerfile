@@ -19,12 +19,19 @@ COPY demo-app/src demo-app/src
 COPY automation/src automation/src
 RUN mvn -B -q -DskipTests package \
     && mvn -B -q -DskipTests test-compile
+# The JaCoCo runtime agent the build just downloaded, under a fixed name for the app stage. No version
+# in the path: it follows jacoco-maven-plugin.version in the parent POM (a hard-coded 0.8.15 broke the
+# nightly Grid job after Dependabot moved the POM to 0.8.16). Exactly one agent jar must be there.
+RUN set -e; \
+    agents=$(ls /root/.m2/repository/org/jacoco/org.jacoco.agent/*/org.jacoco.agent-*-runtime.jar); \
+    test "$(echo "$agents" | wc -l)" -eq 1 || { echo "Expected one JaCoCo agent jar, found: $agents"; exit 1; }; \
+    cp "$agents" /workspace/jacocoagent.jar
 
 FROM eclipse-temurin:17.0.20.1_1-jre-noble@sha256:07fa0356cf354c5252947575f42ed42aa6fd921f36438b7bc77ad81c31c537dd AS app
 WORKDIR /app
 COPY --from=build /workspace/demo-app/target/demo-app.jar ./demo-app.jar
-# Keep this runtime agent version aligned with jacoco-maven-plugin.version in the parent POM.
-COPY --from=build /root/.m2/repository/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar ./jacocoagent.jar
+# JaCoCo runtime agent, same version as jacoco-maven-plugin in the parent POM (copied in the build stage)
+COPY --from=build /workspace/jacocoagent.jar ./jacocoagent.jar
 # Inside containers: qa-style ports, database reachable from the test container
 ENV PORT=8081 \
     DB_TCP_PORT=9093 \

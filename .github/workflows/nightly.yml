@@ -87,11 +87,11 @@ jobs:
           printf '%s\n' "$GITHUB_SHA" > target/coverage-input/grid-app/coverage-source.sha
           printf '%s\n' "$GITHUB_SHA" > target/coverage-input/grid-tests/coverage-source.sha
           python3 scripts/verify_coverage_inputs.py target/coverage-input "$GITHUB_SHA" 2
-          ./mvnw -B -ntp -N -Dcoverage.merge=true org.jacoco:jacoco-maven-plugin:0.8.15:merge@merge-coverage-artifacts
+          ./mvnw -B -ntp -N -Dcoverage.merge=true org.jacoco:jacoco-maven-plugin:merge@merge-coverage-artifacts
           cp target/jacoco-merged.exec demo-app/target/jacoco.exec
           cp target/jacoco-merged.exec automation/target/jacoco.exec
-          ./mvnw -B -ntp -pl demo-app org.jacoco:jacoco-maven-plugin:0.8.15:report
-          ./mvnw -B -ntp -pl automation org.jacoco:jacoco-maven-plugin:0.8.15:report
+          ./mvnw -B -ntp -pl demo-app org.jacoco:jacoco-maven-plugin:report
+          ./mvnw -B -ntp -pl automation org.jacoco:jacoco-maven-plugin:report
           python3 -m unittest discover -s scripts/tests -v
           python3 scripts/verify_jacoco_reports.py
       - name: Upload results
