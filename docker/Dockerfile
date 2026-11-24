@@ -27,7 +27,7 @@ RUN set -e; \
     test "$(echo "$agents" | wc -l)" -eq 1 || { echo "Expected one JaCoCo agent jar, found: $agents"; exit 1; }; \
     cp "$agents" /workspace/jacocoagent.jar
 
-FROM eclipse-temurin:17.0.21_9-jre-noble@sha256:042c05a77eb915684fc8c92cfbbef4fd6f8c24ca7d934d1a7db3543453aaa077 AS app
+FROM eclipse-temurin:17.0.21.1_2-jre-noble@sha256:a9fc3bded7efe95fe0c06f3f5d7e5beea947925f729b71b61e39e0b9ddd4d7e3 AS app
 WORKDIR /app
 COPY --from=build /workspace/demo-app/target/demo-app.jar ./demo-app.jar
 # JaCoCo runtime agent, same version as jacoco-maven-plugin in the parent POM (copied in the build stage)
